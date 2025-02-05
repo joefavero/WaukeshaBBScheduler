@@ -372,6 +372,7 @@ public class RESTController {
 			return FAILURE;
 		}
 	}
+	
 
 	@RequestMapping(value = "/api/createCourse", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
