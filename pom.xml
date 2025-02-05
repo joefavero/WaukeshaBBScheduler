@@ -12,7 +12,6 @@
 	
   
   <dependencies>
-  
 	<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-dependencies -->
   	<dependency>
         <groupId>org.springframework.boot</groupId>
