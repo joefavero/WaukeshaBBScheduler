@@ -1,0 +1,23 @@
+/*
+ * Copyright 2022-2023 Obsidian Solution Inc
+ * Consulting work for Tulsa Tech Progress Tool
+ */
+package com.obsidiansoln.blackboard.coursecopy;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class CourseCopyProxy {
+
+	@JsonProperty("targetCourse")
+	private TargetCourseProxy targetCourse;
+
+	public TargetCourseProxy getTargetCourse() {
+		return targetCourse;
+	}
+
+	public void setTargetCourse (TargetCourseProxy targetCourse) {
+		this.targetCourse = targetCourse;
+	}
+}

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:int-sftp="http://www.springframework.org/schema/integration/sftp"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           https://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                           https://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/mvc
+                           https://www.springframework.org/schema/mvc/spring-mvc.xsd
+                           http://www.springframework.org/schema/tx
+               			   https://www.springframework.org/schema/tx/spring-tx.xsd
+                           http://www.springframework.org/schema/aop
+                           https://www.springframework.org/schema/aop/spring-aop.xsd
+                           http://www.springframework.org/schema/task
+                           https://www.springframework.org/schema/task/spring-task.xsd
+                           http://www.springframework.org/schema/integration
+                           https://www.springframework.org/schema/integration/spring-integration-4.2.xsd
+                           http://www.springframework.org/schema/integration/sftp
+    					   https://www.springframework.org/schema/integration/sftp/spring-integration-sftp.xsd">
+
+	<!-- Tells Spring that we're using annotations on our classes. -->
+	<context:annotation-config />
+
+	<!-- Include the default set of argument resolvers to handle Id objects, 
+		standard Learn types like User and Context values. -->
+	<mvc:annotation-driven>
+		<mvc:argument-resolvers>
+		</mvc:argument-resolvers>
+	</mvc:annotation-driven>
+
+	<mvc:resources mapping="/static/**" location="/static/" />
+	<mvc:default-servlet-handler />
+
+	<!-- Tells Spring to scan the classpath for component annotations so it 
+		can build the references. -->
+	<context:component-scan
+		base-package="com.obsidiansoln" />
+
+
+	<task:scheduled-tasks scheduler="myScheduler">
+		<task:scheduled ref="BBSchedulerTasks"
+			method="syncUsers" cron="0 0 6,9,12,20 * * *" />
+	</task:scheduled-tasks>
+
+	<task:scheduler id="myScheduler" />
+
+	<!-- Basic resolver for mapping to the proper JSPs -->
+	<bean id="primaryViewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewClass"
+			value="org.springframework.web.servlet.view.JstlView" />
+		<property name="prefix" value="/WEB-INF/jsp/" />
+		<property name="suffix" value=".jsp" />
+		<property name="order" value="2" />
+		<property name="contentType" value="text/html; charset=UTF-8" />
+	</bean>
+
+	<!-- Handle exceptions generically -->
+	<bean id="genericExceptionResolver"
+		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<props>
+				<prop key="java.lang.Exception">error</prop>
+			</props>
+		</property>
+		<property name="exceptionAttribute" value="exceptionObj" />
+	</bean>
+
+	<!-- database source to setup Statistics -->
+	<bean id="ds"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName"
+			value="com.microsoft.sqlserver.jdbc.SQLServerDriver" />
+		<property name="url"
+			value="jdbc:sqlserver://waukeshawi.infinitecampus.org:7771;databaseName=waukesha_sandbox;encrypt=true;trustServerCertificate=true;" />
+		<property name="username" value="SDW_BBDEV" />
+		<property name="password" value="dWUV0nxK9*9JwRGf" />
+	</bean>
+	
+	 <bean id="namedParameterJdbcTemplate" class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate">  
+        <constructor-arg ref="ds"></constructor-arg>  
+    </bean>  
+   
+    <bean id="dao" class="com.obsidiansoln.database.dao.InfiniteCampusDAO">  
+        <constructor-arg><ref bean="namedParameterJdbcTemplate"/></constructor-arg>  
+    </bean>   
+
+
+</beans>

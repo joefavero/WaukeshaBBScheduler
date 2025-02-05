@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
+
+<configuration>
+ <property resource="application.properties" />
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %date{yyyy-MM-dd HH:mm:ss} | %-5level | %-45(%L:%logger{40}) | %m%n%ex{10}
+            </Pattern>
+        </layout>
+    </appender>
+
+	<appender name="FILE"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<!-- This path is relative to the service-wrapper bin directory located 
+			at ${bb.root}/apps/service-wrapper/bin. The path below maps to {bb.root}/logs/custom/. -->
+		<file>/Users/jfavero/logs/ttec-BBScheduler.log</file>
+		<append>true</append>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- daily rollover -->
+			<fileNamePattern>ttec-BBScheduler.%d{yyyy-MM-dd}.log
+			</fileNamePattern>
+			<!-- keep 10 days' worth of history -->
+			<maxHistory>10</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%date{yyyy-MM-dd HH:mm:ss} | %-5level | %-45(%L:%logger{40}) | %m%n%ex{10}</pattern>
+		</encoder>
+	</appender>
+	
+    <logger name="com.obsidiansoln" level="info" additivity="false">
+        <appender-ref ref="FILE"/>
+    </logger>
+    
+    <logger name="com.obsidiansoln" level="info" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <root level="error">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>
