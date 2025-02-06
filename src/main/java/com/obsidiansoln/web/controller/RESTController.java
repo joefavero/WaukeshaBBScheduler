@@ -372,7 +372,7 @@ public class RESTController {
 			return FAILURE;
 		}
 	}
-	
+
 
 	@RequestMapping(value = "/api/createCourse", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
@@ -391,61 +391,66 @@ public class RESTController {
 		mLog.info(" Target SECTIONS: " + courseInfo.getSections());
 		ConfigData l_configData;
 		if (checkApiKey(request)) {
+			if (courseInfo.getSections().size() > 0) {
 
-			// Insert a record in the SDWBlackboardSchedulerBbCourses
-			Number l_key = dao.insertBBCourseLink(courseInfo);
-			if (l_key != null) {
+				// Insert a record in the SDWBlackboardSchedulerBbCourses
+				Number l_key = dao.insertBBCourseLink(courseInfo);
+				if (l_key != null) {
 
-				// Fix The Course ID to contain the Key
-				String l_convertedKey = StringUtils.leftPad(Long.toString(l_key.longValue()), 9, "0");
-				mLog.info(" KEY: " + l_convertedKey);
+					// Fix The Course ID to contain the Key
+					String l_convertedKey = StringUtils.leftPad(Long.toString(l_key.longValue()), 9, "0");
+					mLog.info(" KEY: " + l_convertedKey);
 
-				courseInfo.setTargetCourseId(courseInfo.getTargetCourseId().concat("_"+l_convertedKey));
+					courseInfo.setTargetCourseId(courseInfo.getTargetCourseId().concat("_"+l_convertedKey));
 
-				// Update the Course ID in SDWBlackboardSchedulerBbCourses
-				Number l_key2 = dao.updateBBCourseLink(l_key, courseInfo);
-				if (l_key2 != null ) {
+					// Update the Course ID in SDWBlackboardSchedulerBbCourses
+					Number l_key2 = dao.updateBBCourseLink(l_key, courseInfo);
+					if (l_key2 != null ) {
 
-					try {
-						l_configData = m_service.getConfigData();
-						RestManager l_manager = new RestManager(l_configData);
-						CourseProxy l_course = l_manager.getCourseByName(courseInfo.getCourseTemplateId());
-						courseInfo.setCourseTemplateId(l_course.getId());
-						l_manager.createCourseCopy(courseInfo);
+						try {
+							l_configData = m_service.getConfigData();
+							RestManager l_manager = new RestManager(l_configData);
+							CourseProxy l_course = l_manager.getCourseByName(courseInfo.getCourseTemplateId());
+							courseInfo.setCourseTemplateId(l_course.getId());
+							l_manager.createCourseCopy(courseInfo);
 
 
-						// Update The Section Link Info
-						SectionInfo l_sectionInfo = new SectionInfo();
-						for (String l_section : courseInfo.getSections()) {
-							ICSectionInfo l_sectionICInfo = dao.getSectionInfo(l_section);
-							l_sectionInfo.setBbCourseId(l_key.longValue());
-							l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
-							l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
-							l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
-							l_sectionInfo.setPersonId(courseInfo.getPersonId());
-							dao.insertBBSectionLink(l_sectionInfo);
+							// Update The Section Link Info
+							SectionInfo l_sectionInfo = new SectionInfo();
+							for (String l_section : courseInfo.getSections()) {
+								ICSectionInfo l_sectionICInfo = dao.getSectionInfo(l_section);
+								l_sectionInfo.setBbCourseId(l_key.longValue());
+								l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
+								l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
+								l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
+								l_sectionInfo.setPersonId(courseInfo.getPersonId());
+								dao.insertBBSectionLink(l_sectionInfo);
+							}
+
+							// Create Enrollments In New Course
+							List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(courseInfo.getSections());
+							mLog.info("Number of Enrollments Returned: " + l_enrollments.size());
+							for (ICEnrollment l_enrollment : l_enrollments) {
+								mLog.info("       Username: " + l_enrollment.getUsername());
+								l_manager.createMembership(courseInfo.getTargetCourseId(), l_enrollment.getUsername(), "Student");
+							}
+
+							return SUCCESS;
+						} catch (Exception e) {
+							mLog.error(e.getMessage());
+							return FAILURE;
 						}
 
-						// Create Enrollments In New Course
-						List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(courseInfo.getSections());
-						mLog.info("Number of Enrollments Returned: " + l_enrollments.size());
-						for (ICEnrollment l_enrollment : l_enrollments) {
-							mLog.info("       Username: " + l_enrollment.getUsername());
-							l_manager.createMembership(courseInfo.getTargetCourseId(), l_enrollment.getUsername(), "Student");
-						}
-
-						return SUCCESS;
-					} catch (Exception e) {
-						mLog.error(e.getMessage());
+					} else {
+						mLog.error ("SDW BB Course Update Failed");
 						return FAILURE;
 					}
-
 				} else {
-					mLog.error ("SDW BB Course Update Failed");
+					mLog.error ("SDW BB Course Insert Failed");
 					return FAILURE;
 				}
 			} else {
-				mLog.error ("SDW BB Course Insert Failed");
+				mLog.error ("No Sections Detected");
 				return FAILURE;
 			}
 		} else {
@@ -534,6 +539,17 @@ public class RESTController {
 		return null;
 	}
 
+	@RequestMapping(value = "/api/cleanupData", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public String cleanupData(HttpServletRequest request) {
+		mLog.info("In cleanUpData ...");
+		if (checkApiKey(request)) {
+
+			dao.deleteBBCourses();
+			dao.deleteBBSections();
+		}
+		return SUCCESS;
+	}
 	@RequestMapping(value = "/api/getTeachers", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public List<EnrollmentProxy> getTeachers(HttpServletRequest request) {

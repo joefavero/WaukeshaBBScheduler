@@ -13,6 +13,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 
 import com.obsidiansoln.blackboard.coursecopy.CourseInfo;
+import com.obsidiansoln.blackboard.coursecopy.PersonInfo;
 import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
 import com.obsidiansoln.database.model.ICBBCourse;
 import com.obsidiansoln.database.model.ICCalendar;
@@ -109,8 +110,7 @@ public class InfiniteCampusDAO {
 		return courses;
 	}
 	public List<ICSection> getSectionsByCourseId(String courseId, String username) {
-		mLog.info("Course ID: " + courseId);
-		mLog.info("UserName: " + username);
+		mLog.trace("In getSectionsByCourseId ...");
 
 		String sql2 = "select Distinct"
 				+ " Section.sectionID," 
@@ -178,14 +178,12 @@ public class InfiniteCampusDAO {
 		try {
 			sections= template.query(sql2, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
 			for (ICSection section : sections) {
-				mLog.info("Processing Section: " + section.getSectionID());
 				// Get the TERMS For the Section
 				MapSqlParameterSource params2 = new MapSqlParameterSource();
 				params2.addValue("sectionid", section.getSectionID());
 				List<ICTerm> terms= template.query(termSQL, params2, new BeanPropertyRowMapper<ICTerm>(ICTerm.class));
 				String termValue = null;
 				for (ICTerm term:terms) {
-					mLog.info("TERM: " + term.getTermName());
 					if (termValue == null) {
 						termValue = term.getTermName();
 					} else {
@@ -202,7 +200,6 @@ public class InfiniteCampusDAO {
 				List<ICPeriod> periods= template.query(periodSQL, params3, new BeanPropertyRowMapper<ICPeriod>(ICPeriod.class));
 				String periodValue = null;
 				for (ICPeriod period:periods) {
-					mLog.info("PERIOD: " + period.getPeriodName());
 					if (periodValue == null) {
 						periodValue = period.getPeriodName();
 					} else {
@@ -673,6 +670,33 @@ public class InfiniteCampusDAO {
 		return keyHolder.getKey();
 
 	}
+	
+	public Number insertBBPersonLink (PersonInfo personInfo) {
+		mLog.info("insertBBPersonLink  called ...");
+
+		String sql = "insert into SDWBlackboardSchedulerSISCoursePersons"
+				+ " (bbCourseID, personID, personType, sourcePersonType, "
+				+ " modifiedByPersonID, modified) "
+				+ " values (:bbCourseId, :personId, :personType, :sourcePersonType,"
+				+ " :personId, GETDATE())";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("bbCourseId", personInfo.getBbCourseId());
+		params.addValue("personId", personInfo.getPersonId());
+		params.addValue("personType", personInfo.getPersonType());
+		params.addValue("sourcePersonType", personInfo.getSourcePersonType());
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		try {
+			int id = template.update(sql, params, keyHolder);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+
+		return keyHolder.getKey();
+
+	}
+
 
 	public Number updateBBCourseLink (Number p_key, CourseInfo courseInfo) {
 		mLog.info("updateBBCourseLink  called ...");
@@ -700,4 +724,38 @@ public class InfiniteCampusDAO {
 
 	}
 
+	public Number deleteBBCourses() {
+		mLog.info("deleteBBCourses  called ...");
+		Number rows = null;
+		String sql = "delete from  SDWBlackboardSchedulerBBCourses where bbCourseID>8292";
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		
+		try {
+			rows = template.update(sql, params);
+			mLog.info("Number of rows deleted: " + rows);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+
+		
+		return rows;
+	}
+
+	public Number deleteBBSections() {
+		mLog.info("deleteBBSections  called ...");
+		Number rows = null;
+		String sql = "delete from  SDWBlackboardSchedulerSISCourseSections where courseSectionID>50292";
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		
+		try {
+			rows = template.update(sql, params);
+			mLog.info("Number of rows deleted: " + rows);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		
+		return rows;
+	}
 }

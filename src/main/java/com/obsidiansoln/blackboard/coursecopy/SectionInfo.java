@@ -1,7 +1,5 @@
 package com.obsidiansoln.blackboard.coursecopy;
 
-import java.util.List;
-
 public class SectionInfo {
 	
 	private Long bbCourseId;
