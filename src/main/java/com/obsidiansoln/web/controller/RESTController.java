@@ -1,13 +1,9 @@
 package com.obsidiansoln.web.controller;
 
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -26,20 +22,23 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.obsidiansoln.blackboard.course.CourseProxy;
 import com.obsidiansoln.blackboard.coursecopy.CourseInfo;
+import com.obsidiansoln.blackboard.coursecopy.PersonInfo;
 import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
-import com.obsidiansoln.blackboard.membership.EnrollmentProxy;
+import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.blackboard.model.BBRestCounts;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.blackboard.term.TermProxy;
-import com.obsidiansoln.blackboard.user.ParentProxy;
 import com.obsidiansoln.blackboard.user.UserProxy;
 import com.obsidiansoln.database.dao.InfiniteCampusDAO;
+import com.obsidiansoln.database.model.ICBBCourse;
 import com.obsidiansoln.database.model.ICCalendar;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
+import com.obsidiansoln.database.model.ICStudent;
+import com.obsidiansoln.database.model.ICTeacher;
 import com.obsidiansoln.database.model.ICTemplate;
 import com.obsidiansoln.database.model.ICUser;
 import com.obsidiansoln.util.EmailManager;
@@ -355,6 +354,25 @@ public class RESTController {
 		}
 	}
 
+	@RequestMapping(value = "/api/getBBCourses/{userName}", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public String getBBCourses (@PathVariable("userName") String userName,
+			HttpServletRequest request) {
+		mLog.info("In getCourses ...");
+		if (checkApiKey(request)) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				List<ICBBCourse> l_courses = dao.getBBCoursesByUsername(userName);
+				return mapper.writeValueAsString(l_courses);
+			} catch (Exception e) {
+				mLog.error(e.getMessage());
+				return FAILURE;
+			}
+		} else {
+			return FAILURE;
+		}
+	}
+
 	@RequestMapping(value = "/api/getSections/{courseId}/{userName}", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getSections (@PathVariable("courseId") String courseId, @PathVariable("userName") String userName, HttpServletRequest request) {
@@ -363,6 +381,20 @@ public class RESTController {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
 				List<ICSection> l_sections = dao.getSectionsByCourseId(courseId, userName);
+
+				//  Add in the BB URL If there is a Linked Course
+				for (ICSection l_section:l_sections) {
+					if (l_section.getLinkedCourseName() != null) {
+						ConfigData l_configData = m_service.getConfigData();
+						RestManager l_manager = new RestManager(l_configData);
+						if (l_section.getLinkedCourseId() != null) {
+							CourseProxy l_course = l_manager.getCourseByName(l_section.getLinkedCourseId());
+							if (l_course != null) {
+								l_section.setLinkedCourseURL(l_configData.getRestHost()+"/ultra/courses/_" + l_course.getId() +"_1/cl/outline");
+							}
+						}
+					}
+				}
 				return mapper.writeValueAsString(l_sections);
 			} catch (Exception e) {
 				mLog.error(e.getMessage());
@@ -389,6 +421,8 @@ public class RESTController {
 		mLog.info(" Target Calendar ID: " + courseInfo.getCalendarId());
 		mLog.info(" Target Term: " + courseInfo.getTargetCourseTerm());
 		mLog.info(" Target SECTIONS: " + courseInfo.getSections());
+		mLog.info(" Additional Students: " + courseInfo.getAdditionalStudents());
+		mLog.info(" Additional Teachers: " + courseInfo.getAdditionalTeachers());
 		ConfigData l_configData;
 		if (checkApiKey(request)) {
 			if (courseInfo.getSections().size() > 0) {
@@ -427,14 +461,28 @@ public class RESTController {
 								dao.insertBBSectionLink(l_sectionInfo);
 							}
 
+							// Add Groups to BB Course
+							HashMap<String,GroupProxy> l_list=l_manager.createCourseGroup(courseInfo);
+
+
 							// Create Enrollments In New Course
 							List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(courseInfo.getSections());
 							mLog.info("Number of Enrollments Returned: " + l_enrollments.size());
 							for (ICEnrollment l_enrollment : l_enrollments) {
 								mLog.info("       Username: " + l_enrollment.getUsername());
 								l_manager.createMembership(courseInfo.getTargetCourseId(), l_enrollment.getUsername(), "Student");
+								l_manager.updateGroup(courseInfo.getTargetCourseId(), l_enrollment, l_list);
+
 							}
 
+							// Add the Extra students and teachers
+							// Add to SDW Person Table
+							PersonInfo l_personInfo = new PersonInfo();
+							//l_personInfo.setBbCourseId(l_key.longValue());
+							//l_personInfo.setPersonId(l_enrollment.getPersonId());
+							//l_personInfo.setPersonType('S');
+							//l_personInfo.setSourcePersonType('S');
+							//dao.insertBBPersonLink(l_personInfo);
 							return SUCCESS;
 						} catch (Exception e) {
 							mLog.error(e.getMessage());
@@ -511,29 +559,12 @@ public class RESTController {
 
 	@RequestMapping(value = "/api/getStudents", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
-	public List<EnrollmentProxy> getStudents(HttpServletRequest request) {
+	public List<ICStudent> getStudents(HttpServletRequest request) {
 		mLog.info("In getStudents ...");
 		if (checkApiKey(request)) {
+			List<ICStudent> l_students = dao.getStudents();
 
-			ConfigData l_configData;
-			try {
-				l_configData = m_service.getConfigData();
-				RestManager l_manager = new RestManager(l_configData);
-
-				List<UserProxy> l_list = l_manager.getUsersByDatasource("SIS", false);
-
-				List<EnrollmentProxy> l_enrollments= new ArrayList<EnrollmentProxy>();
-				for (UserProxy l_user:l_list) {
-					EnrollmentProxy l_enrollment = new EnrollmentProxy();
-					l_enrollment.setTeacherId(l_user.getId());
-					l_enrollment.setTeacherName(l_user.getName().getFamily());
-					l_enrollment.setTeacherUsername(l_user.getUserName());
-					l_enrollments.add(l_enrollment);
-				}
-				return l_enrollments;
-			} catch (Exception e) {
-				mLog.error("Error: ", e);
-			}
+			return l_students;
 		}
 
 		return null;
@@ -550,31 +581,15 @@ public class RESTController {
 		}
 		return SUCCESS;
 	}
+
 	@RequestMapping(value = "/api/getTeachers", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
-	public List<EnrollmentProxy> getTeachers(HttpServletRequest request) {
+	public List<ICTeacher> getTeachers(HttpServletRequest request) {
 		mLog.trace("In getTeachers ...");
 		if (checkApiKey(request)) {
 
-			ConfigData l_configData;
-			try {
-				l_configData = m_service.getConfigData();
-				RestManager l_manager = new RestManager(l_configData);
-
-				List<UserProxy> l_list = l_manager.getUsersByDatasource("SIS.Staff", false);
-
-				List<EnrollmentProxy> l_enrollments= new ArrayList<EnrollmentProxy>();
-				for (UserProxy l_user:l_list) {
-					EnrollmentProxy l_enrollment = new EnrollmentProxy();
-					l_enrollment.setTeacherId(l_user.getId());
-					l_enrollment.setTeacherName(l_user.getName().getFamily());
-					l_enrollment.setTeacherUsername(l_user.getUserName());
-					l_enrollments.add(l_enrollment);
-				}
-				return l_enrollments;
-			} catch (Exception e) {
-				mLog.error("Error: ", e);
-			}
+			List <ICTeacher> l_teachers = dao.getTeachers();
+			return l_teachers;
 		}
 
 		return null;

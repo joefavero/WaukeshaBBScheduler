@@ -4,6 +4,8 @@ public class ICBBCourse {
 	private String bbCourseId;
 	private String courseId;
 	private String courseName;
+	private String courseDescription;
+	
 	public String getCourseId() {
 		return courseId;
 	}
@@ -24,6 +26,14 @@ public class ICBBCourse {
 	}
 	public void setCourseName(String courseName) {
 		this.courseName = courseName;
+	}
+
+	public String getCourseDescription() {
+		return courseDescription;
+	}
+
+	public void setCourseDescription(String courseDescription) {
+		this.courseDescription = courseDescription;
 	}
 	
 	

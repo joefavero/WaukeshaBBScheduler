@@ -24,6 +24,8 @@ import com.obsidiansoln.database.model.ICPerson;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
+import com.obsidiansoln.database.model.ICStudent;
+import com.obsidiansoln.database.model.ICTeacher;
 import com.obsidiansoln.database.model.ICTemplate;
 import com.obsidiansoln.database.model.ICTerm;
 import com.obsidiansoln.database.model.ICUser;
@@ -109,6 +111,28 @@ public class InfiniteCampusDAO {
 		}
 		return courses;
 	}
+	
+	public List<ICBBCourse> getBBCoursesByUsername(String username) {
+		mLog.info("In getBBCoursesByUsername ...");
+		String sql = "select distinct sdw.bbCourseID as bbCourseId, sdw.bbCOURSE_ID as courseId, sdw.bbCOURSE_NAME as courseName, sdw.bbDESCRIPTION as courseDescription from SDWBlackboardSchedulerBbCourses sdw"
+				+ " left join SDWBlackboardSchedulerSISCourseSections on SDWBlackboardSchedulerSISCourseSections.bbCourseID=sdw.bbCourseID"
+				+ " left join UserAccount on UserAccount.personID=sdw.createdByPersonID"
+				+ " where UserAccount.username=:username";
+
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("username", username);
+		List<ICBBCourse> bbCourses = null;
+		try {
+			bbCourses= template.query(sql, params, new BeanPropertyRowMapper<ICBBCourse>(ICBBCourse.class));
+
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return bbCourses;
+	}
+	
 	public List<ICSection> getSectionsByCourseId(String courseId, String username) {
 		mLog.trace("In getSectionsByCourseId ...");
 
@@ -170,6 +194,13 @@ public class InfiniteCampusDAO {
 		String linkedSQL = "select Distinct bbCourse.bbCourseID as bbCourseId, bbCourse.bbCOURSE_ID as courseId, bbCourse.bbCOURSE_NAME as courseName from SDWBlackboardSchedulerBBCourses bbCourse"
 				+ " left join SDWBlackboardSchedulerSISCourseSections bbSection on bbSection.bbCourseID = bbCourse.bbCourseID"
 				+ " where bbSection.sectionID=:sectionid";
+		
+		String countSQL = "select count(*) as studentCount from Roster "
+				+ " inner join Section on Section.sectionID = Roster.sectionID"
+				+ " inner join [Identity] on [Identity].personID = Roster.personID"
+				+ " inner join UserAccount on UserAccount.personID = Roster.personID"
+				+ " where Roster.sectionID = :section"
+				+ " and (Roster.endDate is null or Roster.endDate > GETDATE())";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		params.addValue("courseid", courseId);
@@ -215,17 +246,29 @@ public class InfiniteCampusDAO {
 				params4.addValue("sectionid", section.getSectionID());
 				List<ICBBCourse> linkedCourses= template.query(linkedSQL, params4, new BeanPropertyRowMapper<ICBBCourse>(ICBBCourse.class));
 				String linkedCourseValue = null;
+				String linkedCourseId = null;
 				for (ICBBCourse linkedCourse:linkedCourses) {
-					mLog.info("BB Course: " + linkedCourse.getCourseName());
+					mLog.info("BB Course Name: " + linkedCourse.getCourseName());
+					mLog.info("BB Course ID: " + linkedCourse.getCourseId());
 					if (linkedCourseValue == null) {
 						linkedCourseValue = linkedCourse.getCourseName();
+						linkedCourseId = linkedCourse.getCourseId();
 					} else {
 						linkedCourseValue = linkedCourseValue.concat("/");
 						linkedCourseValue = linkedCourseValue.concat(linkedCourse.getCourseName());
 					}
-
 				}
-				section.setLinkedCourseName(linkedCourseValue);
+				section.setLinkedCourseName(linkedCourseValue);	
+				section.setLinkedCourseId(linkedCourseId);
+				
+				// Get Totals
+				MapSqlParameterSource params5 = new MapSqlParameterSource();
+				params5.addValue("section", section.getSectionID());
+				Integer studentCount = (Integer)template.queryForObject(countSQL, params5, Integer.class);
+				section.setStudentNumber(studentCount);
+				Integer teacherCount =Integer.valueOf(1);
+				section.setTeacherNumber(teacherCount);
+				
 
 			}
 		} catch (DataAccessException l_ex) {
@@ -275,7 +318,7 @@ public class InfiniteCampusDAO {
 
 	public List<ICEnrollment> getEnrollmentsForSections(List<String> sectionList) {
 		mLog.trace("getEnrollments called ...");
-		String sql = "select Distinct UserAccount.username from Roster "
+		String sql = "select Distinct UserAccount.username, UserAccount.personID as personId, Section.sectionID as sectionId from Roster "
 				+ " inner join Section on Section.sectionID = Roster.sectionID"
 				+ " inner join [Identity] on [Identity].personID = Roster.personID"
 				+ " inner join UserAccount on UserAccount.personID = Roster.personID"
@@ -295,7 +338,7 @@ public class InfiniteCampusDAO {
 		}
 		return enrollments;
 	}
-
+	
 	public List<ICTemplate> getTemplates() {
 		mLog.info("getTemplates called ...");
 		String sql = "select bbMasterID as bbMasterId, bbCOURSE_ID as bbCourseId, bbCOURSE_NAME as bbCourseName, MasterLevel as masterLevel, MasterSubjectArea as masterSubjectArea from SDWBlackboardSchedulerMasterCourses ";
@@ -309,6 +352,233 @@ public class InfiniteCampusDAO {
 			return null;
 		}
 		return templates;
+	}
+	
+	public List<ICTeacher> getTeachers() {
+		mLog.info("getTeachers called ...");
+		String sql = "select Distinct  UserAccount.personID as personId, UserAccount.username as userName, [Identity].firstName+' '+[Identity].lastName as teacherName from Section"
+				+ " left join UserAccount on UserAccount.personID = Section.teacherPersonID"
+				+ " left join [Identity] on [Identity].personID = Section.teacherPersonID";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICTeacher> teachers = null;
+		try {
+			teachers = template.query(sql,params,  new BeanPropertyRowMapper<ICTeacher>(ICTeacher.class)); template.query(sql,params,  new BeanPropertyRowMapper<ICTemplate>(ICTemplate.class));
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return teachers;
+	}
+	
+	public List<ICStudent> getStudents() {
+		mLog.info("getStudents called ...");
+		String sql = "select distinct "
+				+ " prs.personID as personId,"
+				+ " UA.username as userName,"
+				+ " IsNull(LTRIM(RTRIM(REPLACE(idn.firstName,',',' '))),'')  + ' ' +"
+				+ " IsNull(LTRIM(RTRIM(REPLACE(idn.lastName,',',' '))),'')  as studentName"
+				+ " from Person prs with (nolock) "
+				+ " cross join campusVersion v with (nolock) "
+				+ " join Enrollment enr with (nolock) on prs.personID=enr.personID "
+				+ "	  and (enr.endDate Is Null or enr.endDate>GETDATE()) "
+				+ "	  and enr.startDate = ( "
+				+ "	 		select max(enr1.startDate) "
+				+ "	 		from Enrollment enr1 with (nolock) "
+				+ "			join Calendar cal1 with (nolock) on cal1.calendarID=enr1.calendarID "
+				+ "				and cal1.districtID=v.districtID \n"
+				+ "			join schoolyear sy1 with (nolock) on sy1.endyear=cal1.endyear and sy1.active=1 "
+				+ "	 		where enr1.districtID=v.districtID "
+				+ "	 		and enr1.personID=prs.personID "
+				+ "	 		and enr1.active=1 "
+				+ "	 		and (enr1.noShow=0 or enr1.noShow Is Null) "
+				+ "	 		and enr1.serviceType=enr.serviceType "
+				+ "	 		and (enr1.endDate Is Null or enr1.endDate>GETDATE()) "
+				+ "			and ((select min(trm.startDate) "
+				+ "			 from Term trm with (nolock) "
+				+ "			 join TermSchedule ts with (nolock) on ts.termScheduleID=trm.termScheduleID "
+				+ "			 join ScheduleStructure ss with (nolock) on ss.structureID=ts.structureID "
+				+ "			 and ss.calendarID=cal1.calendarID)>=GETDATE() "
+				+ "			or enr1.startDate<GETDATE()) "
+				+ "	 		) "
+				+ "	  and enr.active=1 "
+				+ " 	and (enr.noShow=0 or enr.noShow Is Null) "
+				+ " 	and enr.serviceType IN ('P','S','N') "
+				+ "	  and enr.districtID=v.districtID "
+				+ " join Calendar cal with (nolock) on enr.calendarID=cal.calendarID "
+				+ " 	and cal.districtID=v.districtID "
+				+ "	  and ((select min(trm.startDate) "
+				+ "	 from Term trm with (nolock) "
+				+ "	 join TermSchedule ts with (nolock) on ts.termScheduleID=trm.termScheduleID "
+				+ "	 join ScheduleStructure ss with (nolock) on ss.structureID=ts.structureID "
+				+ "	 and ss.calendarID=cal.calendarID)>=GETDATE() "
+				+ "	or enr.startDate<GETDATE()) "
+				+ " join schoolyear sy with (nolock) on sy.endyear=cal.endyear and sy.active=1 "
+				+ " join [Identity] idn with (nolock) on prs.currentIdentityID=idn.identityID "
+				+ " 	and v.districtID=idn.districtID "
+				+ " join Contact con with (nolock) on con.personID=prs.personID "
+				+ " left join HouseholdMember HM with (nolock) on prs.personID=HM.personID "
+				+ " 	and (HM.endDate Is Null or HM.endDate>GETDATE()) \n"
+				+ "	and (HM.[secondary]=0 or HM.[secondary] Is Null) \n"
+				+ " left join Household with (nolock) on HM.householdID=Household.householdID "
+				+ " left join HouseholdLocation HL with (nolock) on Household.householdID=HL.householdID "
+				+ " 	and (HL.endDate Is Null or HL.endDate>GETDATE()) "
+				+ " 	and HL.startDate=(select max(hlz.startDate) from HouseholdLocation hlz where hlz.householdID=HL.householdID and (HLz.endDate Is Null or HLz.endDate>GETDATE()) and HLz.mailing=1) "
+				+ " 	and HL.mailing=1 "
+				+ "	  and (HL.[secondary]=0 or HL.[secondary] Is Null) "
+				+ " left join [Address] addr with (nolock) on HL.addressID=addr.addressID "
+				+ " 	and (addr.postOfficeBox=0 or addr.postOfficeBox Is Null) "
+				+ " join School s with (nolock) on cal.schoolID=s.schoolID "
+				+ " 	and s.districtID=v.districtID "
+				+ " join CustomSchool csna with (nolock) on csna.schoolID=cal.schoolID "
+				+ " join CampusAttribute cana with (nolock) on csna.attributeID=cana.attributeID "
+				+ "	  and cana.[object]='School' "
+				+ "	  and cana.element='schoolNameAbvr' "
+				+ "	  and cana.dataType='textBox' "
+				+ "	  and cana.deprecated<>1 \n"
+				+ " join CustomSchool csCode with (nolock) on s.schoolID=csCode.schoolID "
+				+ " join CampusAttribute caCode with (nolock) on csCode.attributeID=caCode.attributeID "
+				+ " 	and caCode.[object]='School' "
+				+ " 	and caCode.element='legacySchoolc' "
+				+ " 	and caCode.dataType='textBox' "
+				+ " 	and caCode.deprecated<>1 "
+				+ " join CustomSchool csType with (nolock) on s.schoolID=csType.schoolID "
+				+ " 	and csType.value IN ('ES','MS','HS') \n"
+				+ " join CampusAttribute caType with (nolock) on csType.attributeID=caType.attributeID "
+				+ "	  and caType.[object]='School' "
+				+ " 	and caType.element='schoolType' "
+				+ " 	and caType.dataType='dropList' "
+				+ " 	and caType.deprecated<>1 "
+				+ " join CampusDictionary cdEnr on enr.serviceType=cdEnr.code "
+				+ " 	and cdEnr.active=1 "
+				+ " join campusattribute caEnr on caEnr.attributeID=cdEnr.attributeID "
+				+ " 	and caEnr.[object]='Enrollment' "
+				+ " 	and caEnr.element='serviceType' "
+				+ " 	and caEnr.dataType='dropList' "
+				+ " 	and caEnr.deprecated<>1  "
+				+ " join UserAccount UA with (nolock) on prs.personID=UA.personID "
+				+ " 	and NOT (UA.username Is Null or UA.username='') "
+				+ " 	and [UA].[disable]<>1 "
+				+ " 	and [UA].[lock]<>1 	and (UA.expiresDate Is Null or UA.expiresDate >= GETDATE()) "
+				+ " where NOT (prs.studentNumber IS Null or prs.studentNumber='') "
+				+ "  and enr.districtID=v.districtID "
+				+ " UNION "
+				+ " select distinct "
+				+ " prs.personID as personId,"
+				+ " UA.username as userName,"
+				+ " IsNull(LTRIM(RTRIM(REPLACE(idn.firstName,',',' '))),'')  + ' ' +"
+				+ " IsNull(LTRIM(RTRIM(REPLACE(idn.lastName,',',' '))),'')  as studentName"
+				+ " from Person prs with (nolock) "
+				+ " cross join campusVersion v with (nolock) "
+				+ " join Enrollment enr with (nolock) on prs.personID=enr.personID "
+				+ "	  and enr.endDate>DATEADD(day,-60,GETDATE()) "
+				+ "	  and enr.startDate = ( "
+				+ "	 		select max(enr1.startDate) "
+				+ "	 		from Enrollment enr1 with (nolock) "
+				+ "			join Calendar cal1 with (nolock) on cal1.calendarID=enr1.calendarID "
+				+ "				and cal1.districtID=v.districtID "
+				+ "				and (cal1.summerSchool=0 or cal1.summerSchool Is Null) "
+				+ "			join schoolyear sy1 with (nolock) on sy1.endyear=cal1.endyear and sy1.active=1 "
+				+ "	 		where enr1.districtID=v.districtID "
+				+ "	 		and enr1.personID=prs.personID "
+				+ "	 		and enr1.active=1 "
+				+ "	 		and (enr1.noShow=0 or enr1.noShow Is Null) "
+				+ "	 		and enr1.serviceType=enr.serviceType "
+				+ "	 		and enr1.endDate>DATEADD(day,-60,GETDATE()) "
+				+ "	 	) "
+				+ "	  and enr.active=1 "
+				+ " 	and (enr.noShow=0 or enr.noShow Is Null) "
+				+ " 	and enr.serviceType IN ('P','S','N') "
+				+ "	  and enr.districtID=v.districtID "
+				+ " join Calendar cal with (nolock) on enr.calendarID=cal.calendarID "
+				+ " 	and cal.districtID=v.districtID "
+				+ " 	and (cal.summerSchool=0 or cal.summerSchool Is Null) "
+				+ " join schoolyear sy with (nolock) on sy.endyear=cal.endyear and sy.active=1 "
+				+ " join [Identity] idn with (nolock) on prs.currentIdentityID=idn.identityID "
+				+ " 	and v.districtID=idn.districtID "
+				+ " join Contact con with (nolock) on con.personID=prs.personID "
+				+ " left join HouseholdMember HM with (nolock) on prs.personID=HM.personID "
+				+ " 	and (HM.endDate Is Null or HM.endDate>GETDATE()) "
+				+ "	  and (HM.[secondary]=0 or HM.[secondary] Is Null) "
+				+ " left join Household with (nolock) on HM.householdID=Household.householdID "
+				+ " left join HouseholdLocation HL with (nolock) on Household.householdID=HL.householdID "
+				+ " 	and (HL.endDate Is Null or HL.endDate>GETDATE()) "
+				+ " 	and HL.startDate=(select max(hlz.startDate) from HouseholdLocation hlz where hlz.householdID=HL.householdID and (HLz.endDate Is Null or HLz.endDate>GETDATE()) and HLz.mailing=1) "
+				+ " 	and HL.mailing=1 "
+				+ "	  and (HL.[secondary]=0 or HL.[secondary] Is Null) "
+				+ " left join [Address] addr with (nolock) on HL.addressID=addr.addressID "
+				+ " 	and (addr.postOfficeBox=0 or addr.postOfficeBox Is Null) "
+				+ " join School s with (nolock) on cal.schoolID=s.schoolID "
+				+ " 	and s.districtID=v.districtID "
+				+ " join CustomSchool csna with (nolock) on csna.schoolID=cal.schoolID "
+				+ " join CampusAttribute cana with (nolock) on csna.attributeID=cana.attributeID "
+				+ "	  and cana.[object]='School' "
+				+ "	  and cana.element='schoolNameAbvr' "
+				+ "	  and cana.dataType='textBox' "
+				+ "	  and cana.deprecated<>1 "
+				+ " join CustomSchool csCode with (nolock) on s.schoolID=csCode.schoolID "
+				+ " join CampusAttribute caCode with (nolock) on csCode.attributeID=caCode.attributeID "
+				+ " 	and caCode.[object]='School' "
+				+ " 	and caCode.element='legacySchoolc' "
+				+ " 	and caCode.dataType='textBox' "
+				+ " 	and caCode.deprecated<>1 "
+				+ " join CustomSchool csType with (nolock) on s.schoolID=csType.schoolID "
+				+ " 	and csType.value IN ('ES','MS','HS') "
+				+ " join CampusAttribute caType with (nolock) on csType.attributeID=caType.attributeID "
+				+ "	  and caType.[object]='School' "
+				+ " 	and caType.element='schoolType' "
+				+ " 	and caType.dataType='dropList' "
+				+ " 	and caType.deprecated<>1 "
+				+ " join CampusDictionary cdEnr on enr.serviceType=cdEnr.code "
+				+ " 	and cdEnr.active=1 "
+				+ " join campusattribute caEnr on caEnr.attributeID=cdEnr.attributeID "
+				+ " 	and caEnr.[object]='Enrollment' "
+				+ " 	and caEnr.element='serviceType' "
+				+ " 	and caEnr.dataType='dropList' "
+				+ " 	and caEnr.deprecated<>1  "
+				+ " join UserAccount UA with (nolock) on prs.personID=UA.personID "
+				+ " 	and NOT (UA.username Is Null or UA.username='') "
+				+ " 	and [UA].[disable]<>1 "
+				+ " 	and [UA].[lock]<>1 	and (UA.expiresDate Is Null or UA.expiresDate >= GETDATE()) "
+				+ " where NOT (prs.studentNumber IS Null or prs.studentNumber='') "
+				+ "  and enr.districtID=v.districtID "
+				+ "  and NOT prs.personID in ( "
+				+ "	select enrE.personID "
+				+ "	from Enrollment enrE with (nolock) "
+				+ "	join Calendar calE with (nolock) on calE.calendarID=enrE.calendarID "
+				+ "		and calE.districtID=v.districtID \n"
+				+ "		and (calE.summerSchool=0 or calE.summerSchool Is Null) "
+				+ "	join schoolyear syE with (nolock) on syE.endyear=calE.endyear and syE.active=1 "
+				+ "	where (enrE.endDate Is Null or enrE.endDate>GETDATE()) "
+				+ "	and enrE.active=1 "
+				+ "	and (enr.noShow=0 or enrE.noShow Is Null) "
+				+ "	and enrE.serviceType IN ('P','S','N') "
+				+ "	and enrE.districtID=v.districtID) "
+				+ " and IsNull( "
+				+ "	(select distinct 'Y' "
+				+ "	from enrollment enrz with (nolock) "
+				+ "	join Calendar calz with (nolock) on calz.calendarID=enrz.calendarID "
+				+ "		and calz.districtID=v.districtID \n"
+				+ "		and (calz.summerSchool=0 or calz.summerSchool Is Null) "
+				+ "		and calz.endyear=(select top 1 endyear from SchoolYear with (nolock) where active=1)+1 "
+				+ "	join School with (nolock) on School.schoolID=calz.schoolID \n"
+				+ "		and School.districtID=v.districtID \n"
+				+ "	join CustomSchool csTypez with (nolock) on csTypez.schoolID=School.schoolID "
+				+ "		and csTypez.attributeID=caType.attributeID "
+				+ "	where enrz.personID=prs.personID "
+				+ "	and enrz.active=1 "
+				+ "	and (enrz.noShow=0 or enrz.noShow Is Null) "
+				+ "	and enrz.serviceType IN ('P','S','N')),'N') = 'Y'";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICStudent> students = null;
+		try {
+			students = template.query(sql,params,  new BeanPropertyRowMapper<ICStudent>(ICStudent.class)); template.query(sql,params,  new BeanPropertyRowMapper<ICTemplate>(ICTemplate.class));
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return students;
 	}
 
 	public List<ICUser> getSISStudents() {
@@ -540,7 +810,7 @@ public class InfiniteCampusDAO {
 				+ "	join School with (nolock) on School.schoolID=calz.schoolID "
 				+ "		and School.districtID=v.districtID "
 				+ "	join CustomSchool csTypez with (nolock) on csTypez.schoolID=School.schoolID "
-				+ "		and csTypez.attributeID=caType.attributeID \n"
+				+ "		and csTypez.attributeID=caType.attributeID "
 				+ "	where enrz.personID=prs.personID "
 				+ "	and enrz.active=1 "
 				+ "	and (enrz.noShow=0 or enrz.noShow Is Null) "
@@ -672,12 +942,12 @@ public class InfiniteCampusDAO {
 	}
 	
 	public Number insertBBPersonLink (PersonInfo personInfo) {
-		mLog.info("insertBBPersonLink  called ...");
+		mLog.info("insertBBCSectionLink  called ...");
 
 		String sql = "insert into SDWBlackboardSchedulerSISCoursePersons"
 				+ " (bbCourseID, personID, personType, sourcePersonType, "
 				+ " modifiedByPersonID, modified) "
-				+ " values (:bbCourseId, :personId, :personType, :sourcePersonType,"
+				+ " values (:bbCourseId, :personId, :courseId, :sectionId, :selected,"
 				+ " :personId, GETDATE())";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
@@ -696,7 +966,6 @@ public class InfiniteCampusDAO {
 		return keyHolder.getKey();
 
 	}
-
 
 	public Number updateBBCourseLink (Number p_key, CourseInfo courseInfo) {
 		mLog.info("updateBBCourseLink  called ...");

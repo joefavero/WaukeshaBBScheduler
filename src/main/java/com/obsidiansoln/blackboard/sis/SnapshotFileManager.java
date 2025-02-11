@@ -328,7 +328,7 @@ public class SnapshotFileManager {
 			}
 
 			// Send Email
-			//sendEmail(l_configData.getSnapshotEmail(), "Snapshot Integration", l_message);
+			sendEmail(l_configData.getSnapshotEmail(), "Infinite Campus Integration", l_message);
 		} catch (Exception l_ex) {
 			mLog.error("ERROR", l_ex);
 		}

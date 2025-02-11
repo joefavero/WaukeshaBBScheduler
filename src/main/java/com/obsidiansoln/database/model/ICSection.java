@@ -10,6 +10,10 @@ public class ICSection {
     private String termName;
     private String period;
     private String linkedCourseName;
+    private String linkedCourseId;
+    private String linkedCourseURL;
+    private Integer teacherNumber;
+    private Integer studentNumber;
     
 	public Long getSectionID() {
 		return sectionID;
@@ -60,8 +64,30 @@ public class ICSection {
 	public void setLinkedCourseName(String linkedCourseName) {
 		this.linkedCourseName = linkedCourseName;
 	}
+	public String getLinkedCourseId() {
+		return linkedCourseId;
+	}
+	public void setLinkedCourseId(String linkedCourseId) {
+		this.linkedCourseId = linkedCourseId;
+	}
+	public String getLinkedCourseURL() {
+		return linkedCourseURL;
+	}
+	public void setLinkedCourseURL(String linkedCourseURL) {
+		this.linkedCourseURL = linkedCourseURL;
+	}
+	public Integer getTeacherNumber() {
+		return teacherNumber;
+	}
+	public void setTeacherNumber(Integer teacherNumber) {
+		this.teacherNumber = teacherNumber;
+	}
+	public Integer getStudentNumber() {
+		return studentNumber;
+	}
+	public void setStudentNumber(Integer studentNumber) {
+		this.studentNumber = studentNumber;
+	}
 
 
-
-    
 }

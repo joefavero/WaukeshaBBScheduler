@@ -26,6 +26,7 @@ public class RequestData {
 	private String templateId;
 	private String url;
 	private String dataSource;
+	private String groupId;
 
 	public RequestData() {
 
@@ -192,4 +193,13 @@ public class RequestData {
 		this.dataSource = dataSource;
 	}
 
+	public String getGroupId() {
+		return groupId;
+	}
+
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
+	}
+
+	
 }

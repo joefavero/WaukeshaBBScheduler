@@ -14,6 +14,8 @@ public class CourseInfo {
 	private String targetCourseDataSource;
 	private String targetCourseTerm;
 	private List<String> sections;
+	private List<String> additionalStudents;
+	private List<String> additionalTeachers;
 	
 
 	public Long getEndYear() {
@@ -76,6 +78,18 @@ public class CourseInfo {
 	}
 	public void setSections(List<String> sections) {
 		this.sections = sections;
+	}
+	public List<String> getAdditionalStudents() {
+		return additionalStudents;
+	}
+	public void setAdditionalStudents(List<String> additionalStudents) {
+		this.additionalStudents = additionalStudents;
+	}
+	public List<String> getAdditionalTeachers() {
+		return additionalTeachers;
+	}
+	public void setAdditionalTeachers(List<String> additionalTeachers) {
+		this.additionalTeachers = additionalTeachers;
 	}
 	
 }

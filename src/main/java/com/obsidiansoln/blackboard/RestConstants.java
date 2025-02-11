@@ -20,10 +20,13 @@ public abstract class RestConstants {
 	public final static String COURSE_PATH_V1 = "/learn/api/public/v2/courses/";
 	public final static String COURSE_COURSENAME_PARAMETER = "/courseId:";	
 	public final static String COURSE_CATEGORY_PARAMETER = "/categories";
+	public final static String COURSE_GROUP = "/groups/";	
+	public final static String COURSE_USER = "/users/";
 	public final static String COURSE_UUID_PARAMETER = "/uuid:";
 	public final static String COURSE_COPY = "/copy";	
 	public final static String COURSE_AVAILABLE = "Yes";
 	public final static String COURSE_COURSEID_QUERY = "?courseId=";
+	public final static String COURSE_GROUP_SET_PATH = "/groups";
 
 	public final static String CATEGORY_PATH = "/learn/api/public/v1/catalog/categories/";
 	public final static String CATEGORY_COURSE_TYPE = "Course/";	
