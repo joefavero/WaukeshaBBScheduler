@@ -40,7 +40,7 @@ public class CourseHandler implements RestHandler {
 					HttpMethod.GET, access_token, ""));
 		} else if (data != null && data.getCourseName() != null) {
 			return (RestRequest.sendRequest(
-					host,RestConstants.COURSE_PATH + RestConstants.COURSE_COURSENAME_PARAMETER + data.getCourseName() + "?availability.available=" + RestConstants.COURSE_AVAILABLE,
+					host,RestConstants.COURSE_PATH + RestConstants.COURSE_COURSENAME_PARAMETER + data.getCourseName(),
 					HttpMethod.GET, access_token, ""));
 		} else if (data != null && data.getUuid() != null) {
 			return (RestRequest.sendRequest(

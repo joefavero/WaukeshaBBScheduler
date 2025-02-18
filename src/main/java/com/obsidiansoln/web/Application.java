@@ -8,12 +8,13 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
 @Configuration
 @ComponentScan(value={"com.obsidiansoln.*"})
 @EnableScheduling
-
+@EnableTransactionManagement
 public class Application extends SpringBootServletInitializer {
 	
 	private static Logger mLog = LoggerFactory.getLogger(Application.class);

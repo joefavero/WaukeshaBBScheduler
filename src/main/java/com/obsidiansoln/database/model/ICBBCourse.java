@@ -1,10 +1,12 @@
 package com.obsidiansoln.database.model;
 
 public class ICBBCourse {
+	private Long id;
 	private String bbCourseId;
 	private String courseId;
 	private String courseName;
 	private String courseDescription;
+	private String groupSetId;
 	
 	public String getCourseId() {
 		return courseId;
@@ -35,7 +37,22 @@ public class ICBBCourse {
 	public void setCourseDescription(String courseDescription) {
 		this.courseDescription = courseDescription;
 	}
-	
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getGroupSetId() {
+		return groupSetId;
+	}
+
+	public void setGroupSetId(String groupSetId) {
+		this.groupSetId = groupSetId;
+	}
 	
 
 }

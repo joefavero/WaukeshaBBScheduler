@@ -7,7 +7,9 @@ public class SectionInfo {
 	private Long courseId;
 	private Long sectionId;
 	private Long personId;
+	private int sectionNumber;
 	private boolean selected;
+	private String groupId;
 	
 	public Long getBbCourseId() {
 		return bbCourseId;
@@ -40,11 +42,22 @@ public class SectionInfo {
 		this.personId = personId;
 	}
 	public boolean isSelected() {
-		return selected;
+		return true;
 	}
 	public void setSelected(boolean selected) {
 		this.selected = selected;
 	}
-	
+	public int getSectionNumber() {
+		return sectionNumber;
+	}
+	public void setSectionNumber(int sectionNumber) {
+		this.sectionNumber = sectionNumber;
+	}
+	public String getGroupId() {
+		return groupId;
+	}
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
+	}
 	
 }

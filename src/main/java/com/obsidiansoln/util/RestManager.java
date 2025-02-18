@@ -41,6 +41,7 @@ import com.obsidiansoln.blackboard.course.TaskHandler;
 import com.obsidiansoln.blackboard.course.TaskProxy;
 import com.obsidiansoln.blackboard.coursecopy.CourseCopyHandler;
 import com.obsidiansoln.blackboard.coursecopy.CourseInfo;
+import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
 import com.obsidiansoln.blackboard.datasource.DatasourceHandler;
 import com.obsidiansoln.blackboard.datasource.DatasourceListProxy;
 import com.obsidiansoln.blackboard.datasource.DatasourceProxy;
@@ -102,6 +103,7 @@ import com.obsidiansoln.blackboard.user.UserListProxy;
 import com.obsidiansoln.blackboard.user.UserProxy;
 import com.obsidiansoln.blackboard.user.UserResponseProxy;
 import com.obsidiansoln.database.model.ICEnrollment;
+import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.web.model.ConfigData;
 import com.obsidiansoln.web.model.LocationInfo;
 
@@ -531,6 +533,19 @@ public class RestManager implements IGradesDb {
 
 		MembershipHandler l_membershipHandler = new MembershipHandler();
 		l_membershipHandler.createObject(m_configData.getRestHost(), m_token.getToken(),l_requestData, l_enrollmentOption);
+
+	}
+
+	public void removeMembership (String p_courseId, String p_username) {
+		log.trace("In removeMembership() ...");
+		RequestData l_requestData = new RequestData();
+		l_requestData.setCourseName(p_courseId);
+		l_requestData.setUserName(p_username);
+		EnrollmentOptionProxy l_enrollmentOption = new EnrollmentOptionProxy();
+
+		checkToken();
+		MembershipHandler l_membershipHandler = new MembershipHandler();
+		HTTPStatus l_status = l_membershipHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(),l_requestData);
 
 	}
 
@@ -1263,6 +1278,52 @@ public class RestManager implements IGradesDb {
 		return l_courseList;
 	}
 
+	public List<String> getCoursesByDate(String p_date, boolean p_includeUnavailable) {
+		log.trace("In getCoursesByName()");
+		ArrayList<String> l_courseList = new ArrayList<String>();
+		CourseHandler l_courseHandler = new CourseHandler();
+		RequestData l_requestData = new RequestData();
+		//l_requestData.setDate(p_date);
+		checkToken();
+		CourseResponseProxy l_courseResponse = l_courseHandler.getClientData(m_configData.getRestHost(),
+				m_token.getToken(), null, l_requestData); // Get
+		if (l_courseResponse != null) {
+			CourseListProxy l_list = l_courseResponse.getResults();
+			PagingProxy l_page = l_courseResponse.getPaging();
+			while (l_page != null) {
+				for (CourseProxy l_course : l_list) {
+
+
+					if (p_includeUnavailable) {
+						l_courseList.add(l_course.getId());
+					} else if (l_course.getAvailability() != null
+							&& !l_course.getAvailability().getAvailable().equalsIgnoreCase("No")) {
+						l_courseList.add(l_course.getId());
+					}
+				}
+				// Now Iterate to next Page
+				checkToken();
+				l_courseResponse = l_courseHandler.getClientData(m_configData.getRestHost(), m_token.getToken(),
+						l_page.getNextPage(), null);
+				l_list = l_courseResponse.getResults();
+				l_page = l_courseResponse.getPaging();
+
+			}
+
+			// Process Last Page
+			for (CourseProxy l_course : l_list) {
+
+				if (p_includeUnavailable) {
+					l_courseList.add(l_course.getId());
+				} else if (l_course.getAvailability() != null
+						&& !l_course.getAvailability().getAvailable().equalsIgnoreCase("No")) {
+					l_courseList.add(l_course.getId());
+				}
+			}
+		}
+		return l_courseList;
+	}
+
 	public ColumnProxy getColumn(String p_courseId, String p_columnId) {
 		log.trace("In getColumn()");
 		ColumnProxy l_column = null;
@@ -1576,27 +1637,54 @@ public class RestManager implements IGradesDb {
 
 	}
 
-	public HashMap<String,GroupProxy> createCourseGroup(CourseInfo p_courseInfo) {
+	public HashMap<String,GroupProxy> createCourseGroup(String p_courseId, List<SectionInfo> p_sections) {
 		log.info("In createCourseGroup()");
 		HashMap<String,GroupProxy> l_list = new HashMap<String, GroupProxy>();
 		GroupHandler l_groupHandler = new GroupHandler();
 		RequestData l_requestData = new RequestData();
 
-		CourseProxy l_course = this.getCourseByName(p_courseInfo.getTargetCourseId());
-
+		CourseProxy l_course = this.getCourseByName(p_courseId);
 		l_requestData.setCourseId(l_course.getId());
 
-		for (String l_section: p_courseInfo.getSections()) {
-			GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_section);
-			l_list.put(l_section, l_group);
+		// First Create the Group Set IC Enrollments
+		GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC Enrollments");
+		l_list.put(p_courseId, l_groupSet);
+
+		// Now add the Groups to the Group Set, IC Enrollments
+		for (SectionInfo l_section: p_sections) {
+			GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_section, l_groupSet.getId());
+			l_list.put(String.valueOf(l_section.getSectionId()), l_group);
 			log.info("Group Created: " + l_group.getId());
 		}
 
 		return l_list;
 	}
-	public void updateGroup(String p_courseName, ICEnrollment p_enrollment, HashMap<String, GroupProxy> l_groups) {
+
+	public HashMap<String,GroupProxy> createCourseGroup(String p_course, SectionInfo p_section, String p_groupSetId) {
+		log.info("In createCourseGroup()");
+		HashMap<String,GroupProxy> l_list = new HashMap<String, GroupProxy>();
+		GroupHandler l_groupHandler = new GroupHandler();
+		RequestData l_requestData = new RequestData();
+
+		CourseProxy l_course = this.getCourseByName(p_course);
+
+		l_requestData.setCourseId(l_course.getId());
+
+		//GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, String.valueOf(sectionNumber));
+
+		l_requestData.setCourseName(p_course);
+		GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, p_section, p_groupSetId);
+		log.info("Group Created: " + l_group.getId());
+
+		l_list.put(String.valueOf(p_section.getSectionId()), l_group);
+		log.info("Group Created: " + l_group.getId());
+
+		return l_list;
+	}
+
+	public void createGroupMembership(String p_courseName, ICEnrollment p_enrollment, HashMap<String, GroupProxy> l_groups) {
 		log.info("In updateGroup()");
-		
+
 		GroupHandler l_groupHandler = new GroupHandler();
 		RequestData l_requestData = new RequestData();
 		l_requestData.setCourseName(p_courseName);

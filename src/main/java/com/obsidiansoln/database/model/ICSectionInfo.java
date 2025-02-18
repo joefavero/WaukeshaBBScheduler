@@ -5,6 +5,7 @@ public class ICSectionInfo {
 	private Long calendarID;
 	private Long sectionID;
 	private Long courseID;
+	private int sectionNumber;
 
 	public Long getCalendarID() {
 		return calendarID;
@@ -24,6 +25,13 @@ public class ICSectionInfo {
 	public void setCourseID(Long courseID) {
 		this.courseID = courseID;
 	}
+	public int getSectionNumber() {
+		return sectionNumber;
+	}
+	public void setSectionNumber(int sectionNumber) {
+		this.sectionNumber = sectionNumber;
+	}
+	
 
 
 }

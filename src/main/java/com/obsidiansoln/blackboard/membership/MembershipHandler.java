@@ -114,8 +114,8 @@ public class MembershipHandler implements RestHandler {
 	@Override
 	public HTTPStatus deleteObject(String host, String access_token, RequestData data) {
 		log.trace("In deleteObject()");
-		return (RestRequest.sendRequest(host, RestConstants.MEMBERSHIP_PATH + "/externalId:"
-				+ "/users/externalId:" + RestConstants.USER_ID, HttpMethod.DELETE,
+		return (RestRequest.sendRequest(host, RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_COURSE_EXTENSION + "courseId:"
+				+ data.getCourseName() + RestConstants.MEMBERSHIP_USER_EXTENSION + "userName:" + data.getUserName(), HttpMethod.DELETE,
 				access_token, ""));
 	}
 
@@ -157,7 +157,7 @@ public class MembershipHandler implements RestHandler {
 			e.printStackTrace();
 		}
 
-		log.info(body);
+		log.debug(body);
 
 		return (body);
 	}

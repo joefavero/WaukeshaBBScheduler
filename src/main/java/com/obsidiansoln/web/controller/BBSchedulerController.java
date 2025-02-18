@@ -100,11 +100,8 @@ public class BBSchedulerController {
 						fullUrlBuf.append('?').append(request.getQueryString());
 					}
 
-					// May need to fix this due to jakarta namespace problems
-					//LtiVerificationResult ltiResult = ltiVerifier.verify((javax.servlet.http.HttpServletRequest)request, secret);
 					LTIRequestHandler l_ltiHandler = new LTIRequestHandler(l_key, secret);
-					//ltiVerifier.verifyParameters(request.getParameterMap(), l_courseId, l_key, secret);
-					//if (!ltiResult.getSuccess()) {
+
 					if (!(l_ltiHandler.validate(request))) {
 						mLog.error("Lti verification failed! ");
 						response.setStatus(HttpStatus.FORBIDDEN.value());
@@ -139,107 +136,31 @@ public class BBSchedulerController {
 								case "Admin":
 									l_userMode.setMode("admin");
 									l_userMode.setUserId("lpotter"); // Testing
-									l_userMode.setPersonId("86379"); // Testing
-								
 									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
-								
 									mv.setViewName("bbscheduler");
 									
-									// Test Course Link Insert
-									//CourseInfo l_courseInfo = new CourseInfo();
-									//l_courseInfo.setCalendarId(Long.valueOf(2222));
-									//l_courseInfo.setCourseId("TEST COURSE ID");
-									//l_courseInfo.setPersonId(Long.valueOf(1111));
-									//l_courseInfo.setSchoolYear(Long.valueOf(2025));
-									//l_courseInfo.setTargetCourseDataSource("TEST DATA SOURCE");
-									//l_courseInfo.setTargetCourseDescription("TEST DESCRIPTION");
-									//l_courseInfo.setTargetCourseId("SIS_123");
-									//l_courseInfo.setTargetCourseName("TEST NAME");
-									//l_courseInfo.setTargetCourseTerm("TEST TERM");
-									
-									//Number l_bbCourseId = l_manager.createCourseCopy(l_courseInfo);
-									//mLog.info("Create Course Copy Key: " + l_bbCourseId);
-									
-									
-									// Test Course Copy
-									//CourseInfo l_info = new CourseInfo();
-									//l_info.setCourseTemplateId("_2787_1");
-									//l_info.setTargetCourseId("SAMPLE44");
-									//l_info.setTargetCourseName( "Test Course");
-									//l_manager.createCourseCopy(l_info);
-
-									// Test Connection to Infinite Campus
 									try {
-										
-										mLog.info("Testing Connection to Infinite Campus");
-										//List<ICCalendar> l_calendars = dao.getByYearEnd("lpotter");
-										//mLog.info("Number of Calendars Returned: " + l_calendars.size());
-										//for (ICCalendar l_calendar : l_calendars) {
-										//	mLog.info("Calendar ID: " + l_calendar.getCalendarID() + "  Calendar Name: " + l_calendar.getName()
-										//	+ " School Name: " + l_calendar.getSchoolName());
-										//}
-										
-										mLog.info("Testing getTemplates ...");
-										//List<TemplateProxy> l_templates = l_manager.getTemplates();
-										//for (TemplateProxy l_template:l_templates) {
-										//	mLog.info("TEMPLATE ID: " + l_template.getTemplateId());
-										//	mLog.info("TEMPLATE NAME: " + l_template.getTemplateName());
-										//	mLog.info("TEMPLATE CATEGORIES: " + l_template.getCategories());
-										//}
-										//List<ICTemplate> l_templates = dao.getTemplates();
-										//for (ICTemplate l_template : l_templates) {
-										//	mLog.info("BB Master ID: " + l_template.getBbMasterId());
-										//	mLog.info("BB Course ID: " + l_template.getBbCourseId());
-										//	mLog.info("BB Master Level: " + l_template.getMasterLevel());
-										//	mLog.info("BB Master Subject Area: " + l_template.getMasterSubjectArea());
-										//}
-										
-										mLog.info("Testing get Courses ...");
-										//List<ICCourse> l_courses = dao.getCoursesByUsername("lpotter");
-										//for (ICCourse l_course1 : l_courses) {
-										//	mLog.info("Course ID: " + l_course1.getCourseID() 
-										//    + "  Calendar Name: " + l_course1.getCourseName()
-										//	+ " School Name: " + l_course1.getSchoolName()
-										//	+ " Teacher: " + l_course1.getTeacherName()
-										//	+ " Linked?: " + l_course1.isLinked()
-										//	+ " End Year: " + l_course1.getEndYear());
-										//	List<ICSection> l_sections = dao.getSectionsByCourseId(String.valueOf(l_course1.getCourseID()), "lpotter");
-										//	for (ICSection l_section : l_sections) {
-										//		mLog.info("       SECTION ID: " + l_section.getSectionID());
-										//		mLog.info("       SECTION Number: " + l_section.getSectionNumber());
-										//		mLog.info("       SECTION Term Name: " + l_section.getTermName());
-										//		mLog.info("       SECTION Period: " + l_section.getPeriod());
-										//	}
-										//}
-										
-										mLog.info("Testing get Enrollments ...");
-										//List<String> l_sectionList = Arrays.asList("904461","904462","904463");
-										//List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(l_sectionList);
-										//mLog.info("Number of Enrollments Returned: " + l_enrollments.size());
-										//for (ICEnrollment l_enrollment : l_enrollments) {
-										//	mLog.info("       Username: " + l_enrollment.getUsername());
-										//}
-										
+																	
 									}
 									catch (Exception l_ex) {
 										mLog.info("Error", l_ex);
 									}
 									break;
 
-								case "User":
-									l_userMode.setMode("user");
+								case "Teacher":
+									l_userMode.setMode("teacher");
+									l_userMode.setUserId("lpotter"); // Testing
 									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
 									mv.setViewName("bbscheduler");
+									
 									break;
 							
 								default:
 									break;
 								}
 								mLog.debug("Got User:  " + l_user.getUserName());
-								mLog.debug("Got Course:  " + l_courseId);
 								mLog.debug("LTI Type:  " + l_type);
 								mv.addObject("username", l_user.getUserName());
-								mv.addObject("courseid", l_courseId);
 								mv.addObject("ltimessage", "Success");
 								mv.addObject("ltitype", l_type);
 								mv.addObject("version", RELEASE);

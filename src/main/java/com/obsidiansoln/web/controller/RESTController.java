@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -26,6 +27,8 @@ import com.obsidiansoln.blackboard.coursecopy.PersonInfo;
 import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
 import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.blackboard.model.BBRestCounts;
+import com.obsidiansoln.blackboard.model.Grades;
+import com.obsidiansoln.blackboard.model.SeparatedCourses;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.blackboard.term.TermProxy;
 import com.obsidiansoln.blackboard.user.UserProxy;
@@ -53,6 +56,7 @@ import com.obsidiansoln.web.model.PortalInfo;
 import com.obsidiansoln.web.model.RestInfo;
 import com.obsidiansoln.web.model.SearchFormData;
 import com.obsidiansoln.web.model.SemesterInfo;
+import com.obsidiansoln.web.service.AsyncService;
 import com.obsidiansoln.web.service.BBSchedulerService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,6 +68,8 @@ public class RESTController {
 	private BBSchedulerService m_service = null;
 	@Autowired
 	private InfiniteCampusDAO dao;
+	@Autowired
+	private AsyncService service;
 
 	private final String SUCCESS = "{ \"success\": true}";
 	private final String FAILURE = "{ \"success\": false}";
@@ -354,6 +360,24 @@ public class RESTController {
 		}
 	}
 
+	@RequestMapping(value = "/api/getCourses", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public String getCourses (HttpServletRequest request) {
+		mLog.info("In getCourses ...");
+		if (checkApiKey(request)) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				List<ICCourse> l_courses = dao.getCourses();
+				return mapper.writeValueAsString(l_courses);
+			} catch (Exception e) {
+				mLog.error(e.getMessage());
+				return FAILURE;
+			}
+		} else {
+			return FAILURE;
+		}
+	}
+
 	@RequestMapping(value = "/api/getBBCourses/{userName}", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getBBCourses (@PathVariable("userName") String userName,
@@ -380,7 +404,7 @@ public class RESTController {
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
-				List<ICSection> l_sections = dao.getSectionsByCourseId(courseId, userName);
+				List<ICSection> l_sections = dao.getSectionsByCourseIdUsername(courseId, userName);
 
 				//  Add in the BB URL If there is a Linked Course
 				for (ICSection l_section:l_sections) {
@@ -390,8 +414,8 @@ public class RESTController {
 						if (l_section.getLinkedCourseId() != null) {
 							CourseProxy l_course = l_manager.getCourseByName(l_section.getLinkedCourseId());
 							if (l_course != null) {
-								l_section.setLinkedCourseURL(l_configData.getRestHost()+"/ultra/courses/_" + l_course.getId() +"_1/cl/outline");
-							}
+								l_section.setLinkedCourseURL(l_configData.getRestHost()+"/ultra/courses/"+ l_course.getId() +"/outline");
+							} 
 						}
 					}
 				}
@@ -405,7 +429,37 @@ public class RESTController {
 		}
 	}
 
+	@RequestMapping(value = "/api/getSections/{courseId}", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public String getSections (@PathVariable("courseId") String courseId, HttpServletRequest request) {
+		mLog.info("In getSections ...");
+		if (checkApiKey(request)) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				List<ICSection> l_sections = dao.getSectionsByCourseId(courseId);
 
+				//  Add in the BB URL If there is a Linked Course
+				for (ICSection l_section:l_sections) {
+					if (l_section.getLinkedCourseName() != null) {
+						ConfigData l_configData = m_service.getConfigData();
+						RestManager l_manager = new RestManager(l_configData);
+						if (l_section.getLinkedCourseId() != null) {
+							CourseProxy l_course = l_manager.getCourseByName(l_section.getLinkedCourseId());
+							if (l_course != null) {
+								l_section.setLinkedCourseURL(l_configData.getRestHost()+"/ultra/courses/"+ l_course.getId() +"/cl/outline");
+							} 
+						}
+					}
+				}
+				return mapper.writeValueAsString(l_sections);
+			} catch (Exception e) {
+				mLog.error(e.getMessage());
+				return FAILURE;
+			}
+		} else {
+			return FAILURE;
+		}
+	}
 	@RequestMapping(value = "/api/createCourse", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public String createCourse(@RequestBody final CourseInfo courseInfo, HttpServletRequest request) {
@@ -445,45 +499,88 @@ public class RESTController {
 							l_configData = m_service.getConfigData();
 							RestManager l_manager = new RestManager(l_configData);
 							CourseProxy l_course = l_manager.getCourseByName(courseInfo.getCourseTemplateId());
-							courseInfo.setCourseTemplateId(l_course.getId());
-							l_manager.createCourseCopy(courseInfo);
+							if (l_course != null) {
+								courseInfo.setCourseTemplateId(l_course.getId());
+								l_manager.createCourseCopy(courseInfo);
 
 
-							// Update The Section Link Info
-							SectionInfo l_sectionInfo = new SectionInfo();
-							for (String l_section : courseInfo.getSections()) {
-								ICSectionInfo l_sectionICInfo = dao.getSectionInfo(l_section);
-								l_sectionInfo.setBbCourseId(l_key.longValue());
-								l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
-								l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
-								l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
-								l_sectionInfo.setPersonId(courseInfo.getPersonId());
-								dao.insertBBSectionLink(l_sectionInfo);
+								// Update The Section Link Info
+								List<SectionInfo> l_sectionInfoList = new ArrayList<SectionInfo>();
+								for (String l_section : courseInfo.getSections()) {
+									SectionInfo l_sectionInfo = new SectionInfo();
+									ICSectionInfo l_sectionICInfo = dao.getSectionInfo(l_section);
+									l_sectionInfo.setBbCourseId(l_key.longValue());
+									l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
+									l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
+									l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
+									l_sectionInfo.setPersonId(courseInfo.getPersonId());
+									l_sectionInfo.setSectionNumber(l_sectionICInfo.getSectionNumber());
+									l_sectionInfoList.add(l_sectionInfo);
+								}
+
+								// Add Groups to BB Course
+								HashMap<String,GroupProxy> l_list=l_manager.createCourseGroup(courseInfo.getTargetCourseId(), l_sectionInfoList);
+								
+								//Update the SDWBlackboardSchedulerBBCourses with groupSetId
+								dao.updateBBCourseGroupSet(l_key, l_list.get(courseInfo.getTargetCourseId()), String.valueOf(courseInfo.getPersonId()));
+								
+								//Update the SDWBlackboardSchedulerSISCourseSection
+								for (SectionInfo l_sec : l_sectionInfoList) {
+									l_sec.setGroupId(l_list.get(String.valueOf(l_sec.getSectionId())).getId());
+									dao.insertBBSectionLink(l_sec);
+								}
+
+
+								// Create Enrollments In New Course
+								List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(courseInfo.getSections());
+
+								// Test Async to increase Performance
+								ArrayList<CompletableFuture<List<String>>> data = new ArrayList<CompletableFuture<List<String>>>();
+								List<SeparatedCourses> l_reportList = new ArrayList<SeparatedCourses>();
+
+								for (ICEnrollment l_enrollment : l_enrollments) {
+									try {
+										data.add(service.processEnrollment(courseInfo.getTargetCourseId(), l_enrollment, l_list));
+									} catch (InterruptedException e) {
+										mLog.error(e.getMessage());
+										return FAILURE;
+									}
+								}
+								CompletableFuture.allOf(data.toArray(new CompletableFuture[0])).join();
+								mLog.info("All Data Returned");
+
+								mLog.info("Number of Enrollments Returned: " + l_enrollments.size());
+								//for (ICEnrollment l_enrollment : l_enrollments) {
+								//	l_manager.createMembership(courseInfo.getTargetCourseId(), l_enrollment.getUsername(), "Student");
+								//	l_manager.updateGroup(courseInfo.getTargetCourseId(), l_enrollment, l_list);
+								//}
+
+								// Add the Extra students
+								if (courseInfo.getAdditionalStudents() != null) {
+									for (String l_student : courseInfo.getAdditionalStudents()) {
+										mLog.info("Adding Student: " + l_student);
+										l_manager.createMembership(courseInfo.getTargetCourseId(), l_student, "Student");
+									}
+								}
+
+								// Add the Extra teachers
+								if (courseInfo.getAdditionalTeachers() != null) {
+									for (String l_teacher : courseInfo.getAdditionalTeachers()) {
+										mLog.info("Adding Teacher: " + l_teacher);
+									}
+								}
+								// Add to SDW Person Table
+								PersonInfo l_personInfo = new PersonInfo();
+								//l_personInfo.setBbCourseId(l_key.longValue());
+								//l_personInfo.setPersonId(l_enrollment.getPersonId());
+								//l_personInfo.setPersonType('S');
+								//l_personInfo.setSourcePersonType('S');
+								//dao.insertBBPersonLink(l_personInfo);
+								return SUCCESS;
+							} else {
+								mLog.error("Template Course Not Found");
+								return FAILURE;
 							}
-
-							// Add Groups to BB Course
-							HashMap<String,GroupProxy> l_list=l_manager.createCourseGroup(courseInfo);
-
-
-							// Create Enrollments In New Course
-							List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(courseInfo.getSections());
-							mLog.info("Number of Enrollments Returned: " + l_enrollments.size());
-							for (ICEnrollment l_enrollment : l_enrollments) {
-								mLog.info("       Username: " + l_enrollment.getUsername());
-								l_manager.createMembership(courseInfo.getTargetCourseId(), l_enrollment.getUsername(), "Student");
-								l_manager.updateGroup(courseInfo.getTargetCourseId(), l_enrollment, l_list);
-
-							}
-
-							// Add the Extra students and teachers
-							// Add to SDW Person Table
-							PersonInfo l_personInfo = new PersonInfo();
-							//l_personInfo.setBbCourseId(l_key.longValue());
-							//l_personInfo.setPersonId(l_enrollment.getPersonId());
-							//l_personInfo.setPersonType('S');
-							//l_personInfo.setSourcePersonType('S');
-							//dao.insertBBPersonLink(l_personInfo);
-							return SUCCESS;
 						} catch (Exception e) {
 							mLog.error(e.getMessage());
 							return FAILURE;
@@ -570,6 +667,90 @@ public class RESTController {
 		return null;
 	}
 
+	@RequestMapping(value = "/api/removeSection/{sectionId}", method = RequestMethod.DELETE, produces = "application/json")
+	@ResponseBody
+	public String removeSection(@PathVariable("sectionId") String sectionId, HttpServletRequest request) {
+		mLog.info("In removeSection ...");
+		int l_result = 0;
+		if (checkApiKey(request)) {
+			String l_course = dao.removeSection(sectionId);
+			mLog.info("Course ID: " + l_course);
+			if (l_course != null) {
+				ConfigData l_configData;
+				List<String> sections = new ArrayList<String>();
+				sections.add(sectionId);
+				List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(sections);
+				for (ICEnrollment l_enrollment:l_enrollments) {
+					try {
+						l_configData = m_service.getConfigData();
+						RestManager l_manager = new RestManager(l_configData);
+						l_manager.removeMembership(l_course, l_enrollment.getUsername());
+					} catch (Exception e) {
+						mLog.error(e.getMessage());
+						return FAILURE;
+					}
+					return SUCCESS;
+				}
+			} else {
+				mLog.error("Course Not Found for Section");
+				return FAILURE;
+			}
+		} else {
+			return FAILURE;
+		}
+
+		return FAILURE;
+	}
+
+	@RequestMapping(value = "/api/addSection/{courseId}/{sectionId}/{userName}", method = RequestMethod.POST, produces = "application/json")
+	@ResponseBody
+	public String addSection(@PathVariable("courseId") String courseId, @PathVariable("sectionId") String sectionId, @PathVariable("userName") String userName , HttpServletRequest request) {
+		mLog.info("In addSection ...");
+		mLog.info("COURSE ID: " + courseId);
+		mLog.info("SECTION ID: " + sectionId);
+		mLog.info("USERNAME: " + userName);
+		if (checkApiKey(request)) {
+			Long personId = dao.getPersonId(userName);
+			// Need to add to SDWBlackboardSchedulerSISCourseSections and Add Enrollments to Course
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+
+				// Need to Add Group and Enrollments
+				// Create Course Group
+				ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
+				SectionInfo l_sectionInfo = new SectionInfo();
+				ICSectionInfo l_sectionICInfo = dao.getSectionInfo(sectionId);
+				l_sectionInfo.setBbCourseId(Long.valueOf(l_bbCourse.getBbCourseId()));
+				l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
+				l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
+				l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
+				l_sectionInfo.setPersonId(personId);
+				l_sectionInfo.setSectionNumber(l_sectionICInfo.getSectionNumber());
+
+				HashMap<String,GroupProxy> l_list = l_manager.createCourseGroup(courseId, l_sectionInfo, l_bbCourse.getGroupSetId());
+				if (l_list != null) {
+
+					List<ICEnrollment> l_enrollments = dao.addSection(courseId, sectionId, personId, l_list.get(sectionId).getId());
+					if (l_enrollments != null) {
+						for (ICEnrollment l_enrollment:l_enrollments) {
+							mLog.info("Adding User: " + l_enrollment.getUsername());
+							l_manager.createMembership(courseId, l_enrollment.getUsername(), "Student");
+							l_manager.createGroupMembership(courseId, l_enrollment, l_list);
+						}
+						return SUCCESS;
+					}
+				}
+			} catch (Exception e) {
+				mLog.error("ERROR: ", e);
+				return FAILURE;
+			}
+		}
+		return FAILURE;
+	}
+
+
 	@RequestMapping(value = "/api/cleanupData", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String cleanupData(HttpServletRequest request) {
@@ -578,6 +759,17 @@ public class RESTController {
 
 			dao.deleteBBCourses();
 			dao.deleteBBSections();
+			
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+				//l_manager.getCoursesByDate("2025-02-01T22:22:10.002Z");
+				//l_manager.deleteBBCourses();
+			} catch (Exception ex) {
+				
+			}
+			
 		}
 		return SUCCESS;
 	}
@@ -595,106 +787,24 @@ public class RESTController {
 		return null;
 	}
 
-	@RequestMapping(value = "/api/searchFormData", method = RequestMethod.GET, produces = "application/json")
+	@RequestMapping(value = "/api/test", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
-	public String getSearchFormData(HttpServletRequest request) {
-		mLog.trace("In getSearchFormData ...");
-		ObjectMapper mapper = new ObjectMapper();
-		if (checkApiKey(request)) {
-			SearchFormData l_searchForm = new SearchFormData();
-			try {
-				ConfigData l_configData = m_service.getConfigData();
-				RestManager l_manager = new RestManager(l_configData);
-				SemesterInfo l_semester1 = new SemesterInfo();
-				l_semester1.setLabel("Semester 1");
-				l_semester1.setStartDate(l_configData.getSemester1StartDate());
-				l_semester1.setEndDate(l_configData.getSemester1EndDate());
+	public String test(HttpServletRequest request) {
+		mLog.info("In test ...");
 
-				SemesterInfo l_semester2 = new SemesterInfo();
-				l_semester2.setLabel("Semester 2");
-				l_semester2.setStartDate(l_configData.getSemester2StartDate());
-				l_semester2.setEndDate(l_configData.getSemester2EndDate());
-				ArrayList<SemesterInfo> l_semesters = new ArrayList<SemesterInfo>();
-				l_semesters.add(l_semester1);
-				l_semesters.add(l_semester2);
-				l_searchForm.setSemesters(l_semesters);
+		ConfigData l_configData;
+		try {
+			l_configData = m_service.getConfigData();
+			RestManager l_manager = new RestManager(l_configData);
 
-				// Add Default Semester
-				if (l_configData.getDefaultSemester().equalsIgnoreCase("Semester 1")) {
-					l_searchForm.setDefaultSemesterIndex(0);
-				} else {
-					l_searchForm.setDefaultSemesterIndex(1);
-				}
+			//l_manager.createCourseGroup("SIS_2425NorthHighSchool_000008298", 123);
 
-				// Add Terms
-				List<TermProxy> l_terms = l_manager.getTerms();
-				ArrayList<String> l_termList = new ArrayList<String>();
-				for (TermProxy l_term : l_terms) {
-					if (l_term.getName().contains("LT")) {
-						l_termList.add(l_term.getName());
-					}
-				}
-				l_searchForm.setTerms(l_termList);
-
-				// Add Filters
-				FilterInfo l_courseIdFilter = new FilterInfo();
-				l_courseIdFilter.setName("courseid");
-				l_courseIdFilter.setDisableContains(false);
-				FilterInfo l_userIdFilter = new FilterInfo();
-				l_userIdFilter.setName("userid");
-				l_userIdFilter.setDisableContains(false);
-				FilterInfo l_studentIdFilter = new FilterInfo();
-				l_studentIdFilter.setName("studentid");
-				l_studentIdFilter.setDisableContains(false);
-				FilterInfo l_teacherIdFilter = new FilterInfo();
-				l_teacherIdFilter.setName("teacher");
-				l_teacherIdFilter.setDisableContains(false);
-				// Removed Filters Per Tulsa Tech Meeting - testing
-				// FilterInfo l_studentNameFilter = new FilterInfo();
-				// l_studentNameFilter.setName("studentname");
-				// l_studentNameFilter.setDisableContains(false);
-				// FilterInfo l_classNameFilter = new FilterInfo();
-				// l_classNameFilter.setName("classname");
-				// l_classNameFilter.setDisableContains(false);
-				FilterInfo l_termFilter = new FilterInfo();
-				l_termFilter.setName("term");
-				l_termFilter.setDisableContains(true);
-				FilterInfo l_locationFilter = new FilterInfo();
-				l_locationFilter.setName("location");
-				l_locationFilter.setDisableContains(true);
-
-				List<LocationInfo> l_locations = l_manager.getLocations();
-				mLog.info("Number of Locations: " + l_locations.size());
-				List<String> l_options = new ArrayList<String>();
-				for (LocationInfo l_location : l_locations) {
-					l_options.add(l_location.getLocation());
-				}
-				l_locationFilter.setOptions(l_options);
-				ArrayList<FilterInfo> l_filters = new ArrayList<FilterInfo>();
-				l_filters.add(l_courseIdFilter);
-				l_filters.add(l_userIdFilter);
-				l_filters.add(l_studentIdFilter);
-				l_filters.add(l_teacherIdFilter);
-				// l_filters.add(l_studentNameFilter);
-				// l_filters.add(l_classNameFilter);
-				l_filters.add(l_termFilter);
-				l_filters.add(l_locationFilter);
-				l_searchForm.setFilters(l_filters);
-
-				// Set Default Term
-				l_searchForm.setDefaultTerm(l_configData.getDefaultTerm());
-
-				return mapper.writeValueAsString(l_searchForm);
-			} catch (JsonProcessingException e) {
-				mLog.error("Error: ", e);
-				return FAILURE;
-			} catch (Exception e) {
-				mLog.error("Error: ", e);
-				return FAILURE;
-			}
-		} else {
+		} catch (Exception e) {
 			return FAILURE;
 		}
+
+
+		return SUCCESS;
 	}
 
 	private boolean checkApiKey(HttpServletRequest request) {

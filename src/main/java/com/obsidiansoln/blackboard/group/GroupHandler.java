@@ -10,9 +10,11 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.obsidiansoln.blackboard.RestConstants;
 import com.obsidiansoln.blackboard.RestHandler;
 import com.obsidiansoln.blackboard.RestRequest;
+import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
 import com.obsidiansoln.blackboard.model.HTTPStatus;
 import com.obsidiansoln.blackboard.model.RequestData;
 
@@ -30,7 +32,6 @@ public class GroupHandler implements RestHandler {
 		log.trace("In createObject()");
 		HTTPStatus l_response = RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP_SET_PATH, HttpMethod.POST, access_token, getBody(name));
 
-		
 		ObjectMapper mapper = new ObjectMapper();
 
 		GroupProxy obj = null;
@@ -49,6 +50,30 @@ public class GroupHandler implements RestHandler {
 		}
 		return obj;
 	}
+	
+	public GroupProxy createObject(String host, String access_token, RequestData data, SectionInfo section, String groupSet) {
+		log.trace("In createObject()");
+		HTTPStatus l_response = RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2+data.getCourseId()+ RestConstants.COURSE_GROUP_SET_PATH + "/" + groupSet +"/groups", HttpMethod.POST, access_token, getBody(section));
+
+		ObjectMapper mapper = new ObjectMapper();
+
+		GroupProxy obj = null;
+
+		if (l_response.getData() != null) {
+			// JSON file to Java object
+			try {
+				obj = mapper.readValue(l_response.getData(),GroupProxy.class);
+			} catch (JsonParseException e) {
+				log.error("Json Parser Error: ", e);
+			} catch (JsonMappingException e) {
+				log.error("Json Mapping Error: ", e);
+			} catch (IOException e) {
+				log.error("IO Error: ", e);
+			}
+		}
+		return obj;
+	}
+
 
 	@Override
 	public HTTPStatus readObject(String host, String access_token, RequestData data) {
@@ -71,7 +96,7 @@ public class GroupHandler implements RestHandler {
 	@Override
 	public HTTPStatus updateObject(String host, String access_token, RequestData data) {
 		log.trace("In updateObject()");
-		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + "courseId:" + data.getCourseName() + RestConstants.COURSE_GROUP + data.getGroupId() + RestConstants.COURSE_USER + "userName:" + data.getUserName(), HttpMethod.PUT, access_token, getBody("")));
+		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + "courseId:" + data.getCourseName() + RestConstants.COURSE_GROUP + data.getGroupId() + RestConstants.COURSE_USER + "userName:" + data.getUserName(), HttpMethod.PUT, access_token,null));
 	}
 	
 
@@ -137,25 +162,21 @@ public class GroupHandler implements RestHandler {
 		}
 		return obj;
 	}
-
-	private String getBody(String p_name) {
+	
+	private String getBody(SectionInfo section) {
 		log.trace("In getBody()");
-		/*
-		 * 
-		 * { "externalId": "string", "dataSourceId": "string", "name": "string",
-		 * "description": "string", "availability": { "available": "Yes", "duration": {
-		 * "type": "Continuous", "start": "2016-02-24T19:53:21.448Z", "end":
-		 * "2016-02-24T19:53:21.448Z", "daysOfUse": 0 } } }
-		 * 
-		 * { "externalId" : "BBDN-TERM-JAVA", "dataSourceId" : "BBDN-DSK-JAVA", "name" :
-		 * "REST Demo Term - Java", "description" : "Term Used For REST Demo - Java",
-		 * "availability" : { "available" : "Yes", "duration" : { "type" : "continuous"
-		 * } } }
-		 */
 
 		ObjectMapper objMapper = new ObjectMapper();
 		GroupProxy l_group = new GroupProxy();
-		l_group.setName(p_name);
+		l_group.setName(String.valueOf("SECTION " + section.getSectionNumber()));
+		l_group.setExternalId(String.valueOf(section.getSectionId()));
+		l_group.setDescription("Auto generated groups synced to IC roster.  Do not modify manually.");
+		Availability l_avail = new Availability();
+		l_avail.setAvailable("Yes");
+		l_group.setAvailablity(l_avail);
+		Enrollment l_enroll = new Enrollment();
+		l_enroll.setType("InstructorOnly");
+		l_group.setEnrollment(l_enroll);
 				
 		String body = "";
 		try {
@@ -166,6 +187,52 @@ public class GroupHandler implements RestHandler {
 		}
 
 		log.debug(body);
+
+		return (body);
+	}
+
+	private String getBody(String p_name) {
+		log.trace("In getBody()");
+
+		ObjectMapper objMapper = new ObjectMapper();
+		GroupProxy l_group = new GroupProxy();
+		l_group.setName(p_name);
+		Availability l_avail = new Availability();
+		l_avail.setAvailable("Yes");
+		l_group.setAvailablity(l_avail);
+		Enrollment l_enroll = new Enrollment();
+		l_enroll.setType("SelfEnrollment");
+		l_group.setEnrollment(l_enroll);
+				
+		String body = "";
+		try {
+			body = objMapper.writeValueAsString(l_group);
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		log.debug(body);
+
+		return (body);
+	}
+	
+	private String getBody() {
+		log.trace("In getBody()");
+
+		ObjectMapper objMapper = new ObjectMapper();
+		ObjectNode course = objMapper.createObjectNode();
+		course.put("contentId", "_34038_1");
+		course.put("groupId","_272_1");
+		String body = "";
+		try {
+			body = objMapper.writeValueAsString(course);
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		log.info(body);
 
 		return (body);
 	}

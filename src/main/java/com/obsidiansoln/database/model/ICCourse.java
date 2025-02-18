@@ -11,6 +11,12 @@ public class ICCourse {
     private String endYear;
     private String teacherName;
     private List<String> linkedCourses;
+    private Long sectionCount;
+	private String bbCourseId;
+	private String blackboardId;
+	private String blackboardName;
+	private String blackboardDescription;
+    
 	public Long getCourseID() {
 		return courseID;
 	}
@@ -58,6 +64,36 @@ public class ICCourse {
 	}
 	public void setLinkedCourses(List<String> linkedCourses) {
 		this.linkedCourses = linkedCourses;
+	}
+	public Long getSectionCount() {
+		return sectionCount;
+	}
+	public void setSectionCount(Long sectionCount) {
+		this.sectionCount = sectionCount;
+	}
+	public String getBbCourseId() {
+		return bbCourseId;
+	}
+	public void setBbCourseId(String bbCourseId) {
+		this.bbCourseId = bbCourseId;
+	}
+	public String getBlackboardId() {
+		return blackboardId;
+	}
+	public void setBlackboardId(String blackboardId) {
+		this.blackboardId = blackboardId;
+	}
+	public String getBlackboardName() {
+		return blackboardName;
+	}
+	public void setBlackboardName(String blackboardName) {
+		this.blackboardName = blackboardName;
+	}
+	public String getBlackboardDescription() {
+		return blackboardDescription;
+	}
+	public void setBlackboardDescription(String blackboardDescription) {
+		this.blackboardDescription = blackboardDescription;
 	}
 	
 }

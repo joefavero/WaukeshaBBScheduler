@@ -91,9 +91,32 @@ public class GroupProxy {
 		return modified;
 	}
 
-	public void setModifiedn (Date modified) {
+	public void setModified (Date modified) {
 		this.modified = modified;
 	}
+	
+	@JsonProperty("availability")
+	private Availability availablity;
+
+	public Availability getAvailablity() {
+		return availablity;
+	}
+
+	public void setAvailablity(Availability availablity) {
+		this.availablity = availablity;
+	}
+	
+	@JsonProperty("enrollment")
+	private Enrollment enrollment;
+
+	public Enrollment getEnrollment() {
+		return enrollment;
+	}
+
+	public void setEnrollment(Enrollment enrollment) {
+		this.enrollment = enrollment;
+	}
+	
 	
 }
 	
