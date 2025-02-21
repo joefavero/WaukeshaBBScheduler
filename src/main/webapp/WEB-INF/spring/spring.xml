@@ -47,6 +47,8 @@
 	<task:scheduled-tasks scheduler="myScheduler">
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncUsers" cron="0 0 6,20 * * *" />
+		<task:scheduled ref="BBSchedulerTasks"
+			method="syncEnrollments" cron="0 0 7,22 * * *" />
 	</task:scheduled-tasks>
 
 	<task:scheduler id="myScheduler" />

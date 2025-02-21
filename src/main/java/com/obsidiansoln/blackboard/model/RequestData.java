@@ -27,6 +27,7 @@ public class RequestData {
 	private String url;
 	private String dataSource;
 	private String groupId;
+	private String date;
 
 	public RequestData() {
 
@@ -199,6 +200,14 @@ public class RequestData {
 
 	public void setGroupId(String groupId) {
 		this.groupId = groupId;
+	}
+
+	public String getDate() {
+		return date;
+	}
+
+	public void setDate(String date) {
+		this.date = date;
 	}
 
 	

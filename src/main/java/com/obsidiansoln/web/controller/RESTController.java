@@ -27,13 +27,14 @@ import com.obsidiansoln.blackboard.coursecopy.PersonInfo;
 import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
 import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.blackboard.model.BBRestCounts;
-import com.obsidiansoln.blackboard.model.Grades;
 import com.obsidiansoln.blackboard.model.SeparatedCourses;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.blackboard.term.TermProxy;
 import com.obsidiansoln.blackboard.user.UserProxy;
 import com.obsidiansoln.database.dao.InfiniteCampusDAO;
 import com.obsidiansoln.database.model.ICBBCourse;
+import com.obsidiansoln.database.model.ICBBEnrollment;
+import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICCalendar;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
@@ -49,13 +50,9 @@ import com.obsidiansoln.util.RestManager;
 import com.obsidiansoln.web.model.AdminInfo;
 import com.obsidiansoln.web.model.ConfigData;
 import com.obsidiansoln.web.model.ContactModel;
-import com.obsidiansoln.web.model.FilterInfo;
-import com.obsidiansoln.web.model.LocationInfo;
 import com.obsidiansoln.web.model.LtiInfo;
 import com.obsidiansoln.web.model.PortalInfo;
 import com.obsidiansoln.web.model.RestInfo;
-import com.obsidiansoln.web.model.SearchFormData;
-import com.obsidiansoln.web.model.SemesterInfo;
 import com.obsidiansoln.web.service.AsyncService;
 import com.obsidiansoln.web.service.BBSchedulerService;
 
@@ -520,10 +517,10 @@ public class RESTController {
 
 								// Add Groups to BB Course
 								HashMap<String,GroupProxy> l_list=l_manager.createCourseGroup(courseInfo.getTargetCourseId(), l_sectionInfoList);
-								
+
 								//Update the SDWBlackboardSchedulerBBCourses with groupSetId
 								dao.updateBBCourseGroupSet(l_key, l_list.get(courseInfo.getTargetCourseId()), String.valueOf(courseInfo.getPersonId()));
-								
+
 								//Update the SDWBlackboardSchedulerSISCourseSection
 								for (SectionInfo l_sec : l_sectionInfoList) {
 									l_sec.setGroupId(l_list.get(String.valueOf(l_sec.getSectionId())).getId());
@@ -550,16 +547,21 @@ public class RESTController {
 								mLog.info("All Data Returned");
 
 								mLog.info("Number of Enrollments Returned: " + l_enrollments.size());
-								//for (ICEnrollment l_enrollment : l_enrollments) {
-								//	l_manager.createMembership(courseInfo.getTargetCourseId(), l_enrollment.getUsername(), "Student");
-								//	l_manager.updateGroup(courseInfo.getTargetCourseId(), l_enrollment, l_list);
-								//}
 
 								// Add the Extra students
 								if (courseInfo.getAdditionalStudents() != null) {
 									for (String l_student : courseInfo.getAdditionalStudents()) {
 										mLog.info("Adding Student: " + l_student);
 										l_manager.createMembership(courseInfo.getTargetCourseId(), l_student, "Student");
+										// Add to SDW Person Table
+										Long l_personId = dao.getPersonId(l_student);
+										PersonInfo l_personInfo = new PersonInfo();
+										l_personInfo.setBbCourseId(l_key.longValue());
+										l_personInfo.setPersonId(l_personId);
+										l_personInfo.setPersonType("S");
+										l_personInfo.setSourcePersonType("S");
+										l_personInfo.setModifiedByPersonId(courseInfo.getPersonId());
+										dao.insertBBPersonLink(l_personInfo);
 									}
 								}
 
@@ -567,15 +569,19 @@ public class RESTController {
 								if (courseInfo.getAdditionalTeachers() != null) {
 									for (String l_teacher : courseInfo.getAdditionalTeachers()) {
 										mLog.info("Adding Teacher: " + l_teacher);
+										l_manager.createMembership(courseInfo.getTargetCourseId(), l_teacher, "Instructor");
+										// Add to SDW Person Table
+										Long l_personId = dao.getPersonId(l_teacher);
+										PersonInfo l_personInfo = new PersonInfo();
+										l_personInfo.setBbCourseId(l_key.longValue());
+										l_personInfo.setPersonId(l_personId);
+										l_personInfo.setPersonType("T");
+										l_personInfo.setSourcePersonType("T");
+										l_personInfo.setModifiedByPersonId(courseInfo.getPersonId());
+										dao.insertBBPersonLink(l_personInfo);
 									}
 								}
-								// Add to SDW Person Table
-								PersonInfo l_personInfo = new PersonInfo();
-								//l_personInfo.setBbCourseId(l_key.longValue());
-								//l_personInfo.setPersonId(l_enrollment.getPersonId());
-								//l_personInfo.setPersonType('S');
-								//l_personInfo.setSourcePersonType('S');
-								//dao.insertBBPersonLink(l_personInfo);
+								
 								return SUCCESS;
 							} else {
 								mLog.error("Template Course Not Found");
@@ -626,7 +632,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/syncUsers", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String syncUsers (HttpServletRequest request) {
-		mLog.info("In syncSUsers() ...");
+		mLog.info("In syncUsers() ...");
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Users between Infinite Campus and Blackboard");
 			SnapshotFileManager l_manager = new SnapshotFileManager();
@@ -635,15 +641,14 @@ public class RESTController {
 			List<ICUser> l_students = dao.getSISStudents();
 			mLog.info("Number of Students: " + l_students.size());
 
-			// Get Staff
 
-			// Add Staff
+			// Get Staff
 			List<ICStaff> l_staffs = dao.getSISStaff();
 			mLog.info("Number of Staff: " + l_staffs.size());
 
 			String l_file = l_manager.createFile(l_students, l_staffs);
 			if (l_file != null) {
-				l_manager.sendFile(l_file);
+				l_manager.sendFile(l_file, "person");
 				return SUCCESS;
 			} else {
 				mLog.error("Error: " + "Unable to create Snapshot File");
@@ -652,6 +657,56 @@ public class RESTController {
 		} else {
 			return FAILURE;
 		}
+	}
+
+	@RequestMapping(value = "/api/syncEnrollments", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public String syncEnrollments (HttpServletRequest request) {
+		mLog.info("In syncEnrollments() ...");
+		if (checkApiKey(request)) {
+			mLog.info ("Starting to Sync the Enrollments between Infinite Campus and Blackboard");
+			SnapshotFileManager l_manager = new SnapshotFileManager();
+
+			List<ICBBEnrollment> l_enrollments = dao.getBBEnrollments();
+
+			String l_file = l_manager.createEnrollmentFile(l_enrollments);
+			if (l_file != null) {
+				l_manager.sendFile(l_file, "membership");
+				return SUCCESS;
+			} else {
+				mLog.error("Error: " + "Unable to create Snapshot File");
+				return FAILURE;
+			}
+		} else {
+			return FAILURE;
+		}
+	}
+
+	@RequestMapping(value = "/api/syncGroups", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public String syncGroups (HttpServletRequest request) {
+		mLog.info("In syncGroups() ...");
+		if (checkApiKey(request)) {
+			mLog.info ("Starting to Sync the Groups between Infinite Campus and Blackboard");
+
+			List<ICBBGroup> l_groups = dao.getBBGroups();
+			ConfigData l_configData;
+			for (ICBBGroup l_group:l_groups) {
+				try {
+					l_configData = m_service.getConfigData();
+					RestManager l_manager = new RestManager(l_configData);
+					l_manager.createGroupMembership(l_group);
+				} catch (Exception e) {
+					mLog.error("ERROR: ", e);
+					return FAILURE;
+				}
+
+
+			}
+		} else {
+			return FAILURE;
+		}
+		return FAILURE;
 	}
 
 	@RequestMapping(value = "/api/getStudents", method = RequestMethod.GET, produces = "application/json")
@@ -671,7 +726,6 @@ public class RESTController {
 	@ResponseBody
 	public String removeSection(@PathVariable("sectionId") String sectionId, HttpServletRequest request) {
 		mLog.info("In removeSection ...");
-		int l_result = 0;
 		if (checkApiKey(request)) {
 			String l_course = dao.removeSection(sectionId);
 			mLog.info("Course ID: " + l_course);
@@ -680,25 +734,24 @@ public class RESTController {
 				List<String> sections = new ArrayList<String>();
 				sections.add(sectionId);
 				List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(sections);
-				for (ICEnrollment l_enrollment:l_enrollments) {
-					try {
-						l_configData = m_service.getConfigData();
-						RestManager l_manager = new RestManager(l_configData);
-						l_manager.removeMembership(l_course, l_enrollment.getUsername());
-					} catch (Exception e) {
-						mLog.error(e.getMessage());
-						return FAILURE;
-					}
-					return SUCCESS;
+				RestManager l_manager=null;
+				try {
+					l_configData = m_service.getConfigData();
+					l_manager = new RestManager(l_configData);
+				} catch (Exception e) {
+					mLog.error(e.getMessage());
+					return FAILURE;
 				}
+				for (ICEnrollment l_enrollment:l_enrollments) {
+					if (l_enrollment.getRole().equals("Student")) {
+						l_manager.removeMembership(l_course, l_enrollment.getUsername());
+					}
+				} 
+				return SUCCESS;
 			} else {
-				mLog.error("Course Not Found for Section");
 				return FAILURE;
 			}
-		} else {
-			return FAILURE;
 		}
-
 		return FAILURE;
 	}
 
@@ -736,7 +789,7 @@ public class RESTController {
 					if (l_enrollments != null) {
 						for (ICEnrollment l_enrollment:l_enrollments) {
 							mLog.info("Adding User: " + l_enrollment.getUsername());
-							l_manager.createMembership(courseId, l_enrollment.getUsername(), "Student");
+							l_manager.createMembership(courseId, l_enrollment.getUsername(), l_enrollment.getRole());
 							l_manager.createGroupMembership(courseId, l_enrollment, l_list);
 						}
 						return SUCCESS;
@@ -759,17 +812,21 @@ public class RESTController {
 
 			dao.deleteBBCourses();
 			dao.deleteBBSections();
-			
+
 			ConfigData l_configData;
 			try {
 				l_configData = m_service.getConfigData();
 				RestManager l_manager = new RestManager(l_configData);
-				//l_manager.getCoursesByDate("2025-02-01T22:22:10.002Z");
-				//l_manager.deleteBBCourses();
+				List<String> l_courses = l_manager.getCoursesByDate("2025-02-01T22:22:10.002Z", true);
+				mLog.info(" Number of Courses: " + l_courses.size());
+				for (String l_course:l_courses) {
+					mLog.info("Deleting Course: " + l_course);
+					l_manager.deleteCourse(l_course);
+				}
 			} catch (Exception ex) {
-				
+
 			}
-			
+
 		}
 		return SUCCESS;
 	}

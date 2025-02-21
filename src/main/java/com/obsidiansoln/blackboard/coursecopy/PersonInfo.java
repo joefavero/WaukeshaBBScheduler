@@ -4,8 +4,9 @@ public class PersonInfo {
 	
 	private Long bbCourseId;
 	private Long personId;
-	private char personType;
-	private char sourcePersonType;
+	private String personType;
+	private String sourcePersonType;
+	private Long modifiedByPersonId;
 	
 	public Long getBbCourseId() {
 		return bbCourseId;
@@ -19,17 +20,24 @@ public class PersonInfo {
 	public void setPersonId(Long personId) {
 		this.personId = personId;
 	}
-	public char getPersonType() {
+
+	public String getPersonType() {
 		return personType;
 	}
-	public void setPersonType(char personType) {
+	public void setPersonType(String personType) {
 		this.personType = personType;
 	}
-	public char getSourcePersonType() {
+	public String getSourcePersonType() {
 		return sourcePersonType;
 	}
-	public void setSourcePersonType(char sourcePersonType) {
+	public void setSourcePersonType(String sourcePersonType) {
 		this.sourcePersonType = sourcePersonType;
+	}
+	public Long getModifiedByPersonId() {
+		return modifiedByPersonId;
+	}
+	public void setModifiedByPersonId(Long modifiedByPersonId) {
+		this.modifiedByPersonId = modifiedByPersonId;
 	}
 	
 }

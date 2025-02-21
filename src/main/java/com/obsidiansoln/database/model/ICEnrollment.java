@@ -5,6 +5,7 @@ public class ICEnrollment {
 	private String username;
 	private Long personId;
 	private String sectionId;
+	private String role;
 
 	public String getUsername() {
 		return username;
@@ -28,6 +29,14 @@ public class ICEnrollment {
 
 	public void setSectionId(String sectionId) {
 		this.sectionId = sectionId;
+	}
+
+	public String getRole() {
+		return role;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
 	}
 
 }

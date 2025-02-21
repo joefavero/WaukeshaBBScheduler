@@ -9,19 +9,26 @@ import org.springframework.stereotype.Component;
 
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.database.dao.InfiniteCampusDAO;
+import com.obsidiansoln.database.model.ICBBEnrollment;
+import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICStaff;
 import com.obsidiansoln.database.model.ICUser;
+import com.obsidiansoln.util.RestManager;
+import com.obsidiansoln.web.model.ConfigData;
+import com.obsidiansoln.web.service.BBSchedulerService;
 
 
 @Component("BBSchedulerTasks")
 public class SyncLMS {
 
 	private static Logger mLog = LoggerFactory.getLogger(SyncLMS.class);
+	private BBSchedulerService m_service = null;
 	@Autowired
 	private InfiniteCampusDAO dao;
 
 	public SyncLMS() {
 		super();
+		m_service = new BBSchedulerService();
 	}
 
 	public void syncUsers() {
@@ -42,11 +49,42 @@ public class SyncLMS {
 		
 		String l_file = l_manager.createFile(l_students, l_staffs);
 		if (l_file != null) {
-			l_manager.sendFile(l_file);
+			l_manager.sendFile(l_file, "person");
 		} else {
 			mLog.error("Error: " + "Unable to create Snapshot File");
 		}
+	}
+	
+	public void syncEnrollments() {
+		mLog.trace("In syncEnrollments() ...");
 
+		mLog.info ("Starting to Sync the Enrollments between Infinite Campus and Blackboard");
+		SnapshotFileManager l_manager = new SnapshotFileManager();
+		
+		List<ICBBEnrollment> l_enrollments = dao.getBBEnrollments();
 
+		String l_file = l_manager.createEnrollmentFile(l_enrollments);
+		if (l_file != null) {
+			l_manager.sendFile(l_file, "membership");
+		} else {
+			mLog.error("Error: " + "Unable to create Snapshot File");
+		}
+	}
+	
+	public void syncGroups() {
+		mLog.trace("In syncGroups() ...");
+
+		mLog.info ("Starting to Sync the Groups between Infinite Campus and Blackboard");
+		List<ICBBGroup> l_groups = dao.getBBGroups();
+		ConfigData l_configData;
+		for (ICBBGroup l_group:l_groups) {
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+				l_manager.createGroupMembership(l_group);
+			} catch (Exception e) {
+				mLog.error("ERROR: ", e);
+			}
+		}
 	}
 }

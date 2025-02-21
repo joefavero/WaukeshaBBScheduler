@@ -112,61 +112,65 @@ public class BBSchedulerController {
 						try {
 							l_manager = new RestManager(m_service.getConfigData());
 							l_user = l_manager.getUserUUID(result.getUser().getId());
+							String l_mode = "teacher";
 							if (l_user != null) {
-								
+								// Check for User System Role
+								String[] l_systemRoles = l_user.getSystemRoleIds();
+								for (String l_systemRole:l_systemRoles) {
+									if (l_systemRole.equals("CourseCreator")) {
+										l_mode = "admin";
+									}
+								}
+
 								// Get The Infinite Campus Person ID
+								//Long l_personId = dao.getPersonId(l_user.getUserName());
 								Long l_personId = dao.getPersonId("lpotter");
 								mLog.info("Person ID: " + l_personId);
-								
-								ObjectMapper mapper = new ObjectMapper();
-								UserMode l_userMode = new UserMode();
-								l_userMode.setUserId(l_user.getUserName());
-								l_userMode.setApiKey(m_service.getConfigData().getApiKey());
 
-								for (Object param : Collections.list(request.getParameterNames())) {
-									mLog.debug("PARAM: " + param + "  VALUE: " + request.getParameter((String) param));
-									if (param.equals("context_label")) {
-										l_courseId = request.getParameter((String) param);
-									} else if (param.equals("custom_tt_type")) {
-										l_type = request.getParameter((String) param);
-									}
-								}
-								
-								switch (l_type) {
-								case "Admin":
-									l_userMode.setMode("admin");
-									l_userMode.setUserId("lpotter"); // Testing
-									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
-									mv.setViewName("bbscheduler");
-									
-									try {
-																	
-									}
-									catch (Exception l_ex) {
-										mLog.info("Error", l_ex);
-									}
-									break;
+								if (l_personId != null) {
 
-								case "Teacher":
+									ObjectMapper mapper = new ObjectMapper();
+									UserMode l_userMode = new UserMode();
+									l_userMode.setUserId(l_user.getUserName());
+									l_userMode.setApiKey(m_service.getConfigData().getApiKey());
+
+									for (Object param : Collections.list(request.getParameterNames())) {
+										mLog.debug("PARAM: " + param + "  VALUE: " + request.getParameter((String) param));
+										if (param.equals("context_label")) {
+											l_courseId = request.getParameter((String) param);
+										} else if (param.equals("custom_tt_type")) {
+											l_type = request.getParameter((String) param);
+										}
+									}
+
+
+									//l_userMode.setMode(l_mode);
+									//l_userMode.setUserId(l_user.getUserName()); // Testing
+									//mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
+									//mv.setViewName("bbscheduler");
+
+
+									// Testing
 									l_userMode.setMode("teacher");
-									l_userMode.setUserId("lpotter"); // Testing
+									l_userMode.setUserId("lpotter"); 
 									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
 									mv.setViewName("bbscheduler");
-									
-									break;
-							
-								default:
-									break;
+
+
+
+									mLog.debug("Got User:  " + l_user.getUserName());
+									mLog.debug("LTI Type:  " + l_type);
+									mv.addObject("username", l_user.getUserName());
+									mv.addObject("ltimessage", "Success");
+									mv.addObject("ltitype", l_type);
+									mv.addObject("version", RELEASE);
+								} else {
+									mLog.error("Invalid IC User: " + l_user.getUserName());
+									mv.addObject("ltimessage", "Invalid User");
 								}
-								mLog.debug("Got User:  " + l_user.getUserName());
-								mLog.debug("LTI Type:  " + l_type);
-								mv.addObject("username", l_user.getUserName());
-								mv.addObject("ltimessage", "Success");
-								mv.addObject("ltitype", l_type);
-								mv.addObject("version", RELEASE);
 
 							} else {
-								mLog.error("Invalid User" + result.getUser().getId());
+								mLog.error("Invalid User: " + result.getUser().getId());
 								mv.addObject("ltimessage", "Invalid User");
 							}
 						} catch (Exception e) {

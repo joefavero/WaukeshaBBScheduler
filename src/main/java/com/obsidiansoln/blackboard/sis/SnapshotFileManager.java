@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.obsidiansoln.blackboard.model.DataSetStatus;
 import com.obsidiansoln.blackboard.model.SnapshotJobDetails;
+import com.obsidiansoln.database.model.ICBBEnrollment;
 import com.obsidiansoln.database.model.ICStaff;
 import com.obsidiansoln.database.model.ICUser;
 import com.obsidiansoln.util.EmailManager;
@@ -191,8 +192,58 @@ public class SnapshotFileManager {
 
 		return l_snapshotFilename;
 	}
+	
+	public String createEnrollmentFile(List<ICBBEnrollment>p_enrollments) {
+		mLog.trace("In createEnrollmentFile() ...");
 
-	public DataSetStatus sendFile(String p_file) {
+		// Create File;
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-hhmmss");
+		LocalDateTime now = LocalDateTime.now();
+		String fileName = "SIS_CLASS_ASSOCIATION_STUDENTS_" + dtf.format(now) + ".txt";
+		String l_snapshotFilename = null;
+
+		FileWriter fileWriter = null;
+		PrintWriter p = null;
+		try {
+			l_snapshotFilename = m_service.getConfigData().getWorkingDirectory() + "/" + fileName;
+			fileWriter = new FileWriter(l_snapshotFilename);
+			p = new PrintWriter(fileWriter);
+			p.write("data_source_key|external_course_key|external_person_key|role|row_status|available_ind");
+			p.write("\r\n");
+
+			for (ICBBEnrollment l_enrollment:p_enrollments) {
+				p.write("SIS.Enrollment"+"|"					//data_source
+						+ l_enrollment.getCourseId() + "|"		//external_course_key
+						+ l_enrollment.getStudentNumber() + "|" //external_person_key
+						+ l_enrollment.getRole() + "|" 			//role
+						+ l_enrollment.getRowStatus() + "|"		//row_status
+						+ l_enrollment.getAvailableInd());		//available_ind
+		
+				p.write("\r\n");
+			}
+			
+			p.flush();
+			p.close();
+			fileWriter.close();
+
+
+		} catch (Exception l_ex) {
+			mLog.error("Error: ", l_ex);
+		} finally  {
+			p.flush();
+			p.close();
+			try {
+				fileWriter.close();
+			} catch (IOException e) {
+				mLog.error("Error: ", e);
+			}
+		}
+
+		return l_snapshotFilename;
+	}
+
+
+	public DataSetStatus sendFile(String p_file, String p_endpoint) {
 		mLog.trace("In sendFile() ...");
 
 		DataSetStatus status = null;
@@ -211,8 +262,6 @@ public class SnapshotFileManager {
 			}
 			AuthScope scope = new AuthScope(host, port);
 
-			mLog.info("Shared Username: " + l_configData.getSnapshotSharedUsername());
-			mLog.info("Shared Password: " + l_configData.getSnapshotSharedPassword());
 			Credentials credentials = new UsernamePasswordCredentials(l_configData.getSnapshotSharedUsername(),
 					l_configData.getSnapshotSharedPassword());
 			credentialsPovider.setCredentials(scope, credentials);
@@ -231,7 +280,7 @@ public class SnapshotFileManager {
 				// Parse the Filename to determine the endpoints
 				//SnapshotJobDetails details = SnapshotJobDetails.fromFileName(p_file);
 				SnapshotJobDetails details = new SnapshotJobDetails();
-				details.setEndpoint("person");
+				details.setEndpoint(p_endpoint);
 				details.setOperation("refresh");
 				details.setJobTitle("Infinite Campus Integration");
 				mLog.info("Endpoint: " + details.getEndpoint());
@@ -268,11 +317,14 @@ public class SnapshotFileManager {
 											+ code;
 
 									HttpPost httppost1 = new HttpPost(resultURL);
+									mLog.info("executing request " + resultURL);
 									CloseableHttpResponse response1 = httpclient.execute(httppost1);
 									mLog.info("Code: " + code);
+									mLog.info("Status: " + response1.getStatusLine().getStatusCode());
 									HttpEntity resEntity1 = response1.getEntity();
 									if (response1.getStatusLine().getStatusCode() == 200) {
 
+										int l_retry=0;
 										do {
 											response1 = httpclient.execute(httppost1);
 											resEntity1 = response1.getEntity();
@@ -288,8 +340,11 @@ public class SnapshotFileManager {
 											mLog.info("Error Count: " + status.getErrorCount());
 											mLog.info("Queued Count: " + status.getQueuedCount());
 											mLog.info("Warning Count: " + status.getWarningCount());
+											if (status.getQueuedCount()==0) {
+												l_retry++;
+											}
 											Thread.sleep(3000);
-										} while (status.getQueuedCount() > 0);
+										} while (status.getQueuedCount() > 0 && l_retry < 2);
 
 										l_message = "Snapshot Integration Completed" + "<br>"
 												+ "    File Processsed: " + p_file + "<br>"

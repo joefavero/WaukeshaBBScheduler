@@ -47,13 +47,14 @@ public class AsyncService {
 
 		RestManager l_manager = null;
 		try {
-	
 			l_manager = new RestManager(m_service.getConfigData());
-			//mLog.info("Adding Course Enrollment: " + p_enrollment.getUsername());
-		    l_manager.createMembership(p_courseId, p_enrollment.getUsername(), "Student");
-		    //mLog.info("Adding Group Enrollment: " + p_enrollment.getUsername());
-			l_manager.createGroupMembership(p_courseId, p_enrollment, p_list);
-			
+			if (p_enrollment != null && p_enrollment.getRole().equals("Student")) {
+				l_manager.createMembership(p_courseId, p_enrollment.getUsername(), p_enrollment.getRole());
+				l_manager.createGroupMembership(p_courseId, p_enrollment, p_list);
+			} else {
+				l_manager.createMembership(p_courseId, p_enrollment.getUsername(), p_enrollment.getRole());
+			}
+		
 		} catch (Exception e) {
 			mLog.error("An error occurred generating admin results", e);
 		}

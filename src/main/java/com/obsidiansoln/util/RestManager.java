@@ -22,8 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.obsidiansoln.blackboard.Authorizer;
 import com.obsidiansoln.blackboard.IGradesDb;
 import com.obsidiansoln.blackboard.PagingProxy;
@@ -71,7 +69,6 @@ import com.obsidiansoln.blackboard.group.GroupHandler;
 import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.blackboard.membership.Available;
 import com.obsidiansoln.blackboard.membership.EnrollmentOptionProxy;
-import com.obsidiansoln.blackboard.membership.EnrollmentProxy;
 import com.obsidiansoln.blackboard.membership.MembershipHandler;
 import com.obsidiansoln.blackboard.membership.MembershipListProxy;
 import com.obsidiansoln.blackboard.membership.MembershipProxy;
@@ -91,19 +88,13 @@ import com.obsidiansoln.blackboard.term.TermHandler;
 import com.obsidiansoln.blackboard.term.TermListProxy;
 import com.obsidiansoln.blackboard.term.TermProxy;
 import com.obsidiansoln.blackboard.term.TermResponseProxy;
-import com.obsidiansoln.blackboard.user.ContactProxy;
-import com.obsidiansoln.blackboard.user.NameProxy;
-import com.obsidiansoln.blackboard.user.NewUserProxy;
 import com.obsidiansoln.blackboard.user.ParentHandler;
-import com.obsidiansoln.blackboard.user.ParentListProxy;
-import com.obsidiansoln.blackboard.user.ParentProxy;
-import com.obsidiansoln.blackboard.user.ParentResponseProxy;
 import com.obsidiansoln.blackboard.user.UserHandler;
 import com.obsidiansoln.blackboard.user.UserListProxy;
 import com.obsidiansoln.blackboard.user.UserProxy;
 import com.obsidiansoln.blackboard.user.UserResponseProxy;
+import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICEnrollment;
-import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.web.model.ConfigData;
 import com.obsidiansoln.web.model.LocationInfo;
 
@@ -529,6 +520,7 @@ public class RestManager implements IGradesDb {
 		l_requestData.setUserName(p_username);
 		EnrollmentOptionProxy l_enrollmentOption = new EnrollmentOptionProxy();
 		l_enrollmentOption.setCourseRoleId(p_type);
+		l_enrollmentOption.setDataSourceId("externalId:SIS.Enrollment");
 		//l_enrollmentOption.setavailabilityd(null);
 
 		MembershipHandler l_membershipHandler = new MembershipHandler();
@@ -1165,6 +1157,20 @@ public class RestManager implements IGradesDb {
 		}
 		return l_course;
 	}
+	
+	public void deleteCourse(String p_courseId) {
+		log.trace("In deleteCourse()");
+
+		CourseHandler l_courseHandler = new CourseHandler();
+		RequestData l_requestData = new RequestData();
+		l_requestData.setCourseId(p_courseId);
+		checkToken();
+		HTTPStatus l_status = l_courseHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
+		log.info("Status: " + l_status.getStatus());
+
+		return;
+	}
+	
 	public List<String> getCourses(String p_termId, boolean p_includeUnavailable) {
 		log.trace("In getCourses()");
 		ArrayList<String> l_courseList = new ArrayList<String>();
@@ -1279,11 +1285,11 @@ public class RestManager implements IGradesDb {
 	}
 
 	public List<String> getCoursesByDate(String p_date, boolean p_includeUnavailable) {
-		log.trace("In getCoursesByName()");
+		log.trace("In getCoursesByDate()");
 		ArrayList<String> l_courseList = new ArrayList<String>();
 		CourseHandler l_courseHandler = new CourseHandler();
 		RequestData l_requestData = new RequestData();
-		//l_requestData.setDate(p_date);
+		l_requestData.setDate(p_date);
 		checkToken();
 		CourseResponseProxy l_courseResponse = l_courseHandler.getClientData(m_configData.getRestHost(),
 				m_token.getToken(), null, l_requestData); // Get
@@ -1691,6 +1697,17 @@ public class RestManager implements IGradesDb {
 		l_requestData.setUserName(p_enrollment.getUsername());
 		GroupProxy l_groupProxy = l_groups.get(p_enrollment.getSectionId());
 		l_requestData.setGroupId(l_groupProxy.getId());
+		l_groupHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
+	}
+	
+	public void createGroupMembership(ICBBGroup p_group) {
+		log.info("In updateGroup()");
+
+		GroupHandler l_groupHandler = new GroupHandler();
+		RequestData l_requestData = new RequestData();
+		l_requestData.setCourseName(p_group.getCourseId());
+		l_requestData.setUserName(p_group.getUserName());
+		l_requestData.setGroupId(p_group.getGroupId());
 		l_groupHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 	}
 
@@ -2483,17 +2500,9 @@ public class RestManager implements IGradesDb {
 			l_task.getCourse().setName(p_info.getTargetCourseName());
 			CourseHandler l_courseHandler = new CourseHandler();
 			l_requestData.setCourseId(l_task.getCourse().getId());
+			l_task.getCourse().getAvailability().setAvailable("Yes");
 			l_courseHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_task.getCourse());
 
-			//  Add An Enrollment
-			MembershipHandler l_membership = new MembershipHandler();
-			EnrollmentOptionProxy l_enrollment = new EnrollmentOptionProxy();
-			Available l_available = new Available();
-			l_available.setAvailable("Yes");
-			l_enrollment.setCourseRoleId("Student");
-			l_enrollment.setavailabilityd(l_available);
-			l_requestData.setUserId("_221_1");
-			//l_membership.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_enrollment);
 		}
 
 		return l_response.getStatus();

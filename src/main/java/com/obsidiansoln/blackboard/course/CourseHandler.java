@@ -46,6 +46,10 @@ public class CourseHandler implements RestHandler {
 			return (RestRequest.sendRequest(
 					host,RestConstants.COURSE_PATH + RestConstants.COURSE_UUID_PARAMETER + data.getUuid() + "?availability.available=" + RestConstants.COURSE_AVAILABLE,
 					HttpMethod.GET, access_token, ""));
+		} else if (data != null && data.getDate() != null) {
+			return (RestRequest.sendRequest(
+					host,RestConstants.COURSE_PATH + "?created="+data.getDate(),
+					HttpMethod.GET, access_token, ""));
 		} else {
 			return (RestRequest.sendRequest(
 					host, RestConstants.COURSE_PATH  + "?termId=" + data.getTermId(),
@@ -80,7 +84,7 @@ public class CourseHandler implements RestHandler {
 	@Override
 	public HTTPStatus deleteObject(String host, String access_token, RequestData data) {
 		log.trace("In deleteObject()");
-		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH, HttpMethod.DELETE, access_token, ""));
+		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH+data.getCourseId(), HttpMethod.DELETE, access_token, ""));
 	}
 
 	public CourseResponseProxy getClientData(String host, String access_token, String p_nextPage, RequestData p_data) {
