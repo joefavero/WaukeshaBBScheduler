@@ -117,7 +117,7 @@ public class BBSchedulerController {
 								// Check for User System Role
 								String[] l_systemRoles = l_user.getSystemRoleIds();
 								for (String l_systemRole:l_systemRoles) {
-									if (l_systemRole.equals("CourseCreator")) {
+									if (l_systemRole.equals("Course Administrator")) {
 										l_mode = "admin";
 									}
 								}
@@ -131,8 +131,13 @@ public class BBSchedulerController {
 
 									ObjectMapper mapper = new ObjectMapper();
 									UserMode l_userMode = new UserMode();
-									l_userMode.setUserId(l_user.getUserName());
+									if (l_mode.equals("admin")) {
+										l_userMode.setUserId("admin");
+									} else {
+										l_userMode.setUserId(l_user.getUserName());
+									}
 									l_userMode.setApiKey(m_service.getConfigData().getApiKey());
+									l_userMode.setPersonId(String.valueOf(l_personId));
 
 									for (Object param : Collections.list(request.getParameterNames())) {
 										mLog.debug("PARAM: " + param + "  VALUE: " + request.getParameter((String) param));
@@ -144,17 +149,16 @@ public class BBSchedulerController {
 									}
 
 
-									//l_userMode.setMode(l_mode);
-									//l_userMode.setUserId(l_user.getUserName()); // Testing
-									//mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
-									//mv.setViewName("bbscheduler");
+			
+									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
+									mv.setViewName("bbscheduler");
 
 
 									// Testing
-									l_userMode.setMode("teacher");
-									l_userMode.setUserId("lpotter"); 
-									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
-									mv.setViewName("bbscheduler");
+									//l_userMode.setMode("teacher");
+									//l_userMode.setUserId("lpotter"); 
+									//mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
+									//mv.setViewName("bbscheduler");
 
 
 

@@ -103,7 +103,7 @@ public class GroupHandler implements RestHandler {
 	@Override
 	public HTTPStatus deleteObject(String host, String access_token, RequestData data) {
 		log.trace("In deleteObject()");
-		return (RestRequest.sendRequest(host, RestConstants.GRADEBOOK_PATH_V1 + data.getCourseId() + RestConstants.GRADEBOOK_SCHEMAS + data.getSchemaId(), HttpMethod.DELETE, access_token, ""));
+		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP + "externalId:" + data.getGroupId(), HttpMethod.DELETE, access_token, ""));
 	}
 
 	public GroupResponseProxy getClientData(String host, String access_token, String p_nextPage,

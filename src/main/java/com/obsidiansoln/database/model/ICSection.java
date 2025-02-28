@@ -9,6 +9,7 @@ public class ICSection {
     private Long teacherPersonID;
     private String termName;
     private String period;
+    private String periodDay;
     private String linkedCourseName;
     private String linkedCourseId;
     private String linkedCourseURL;
@@ -57,6 +58,12 @@ public class ICSection {
 	}
 	public void setPeriod(String period) {
 		this.period = period;
+	}
+	public String getPeriodDay() {
+		return periodDay;
+	}
+	public void setPeriodDay(String periodDay) {
+		this.periodDay = periodDay;
 	}
 	public String getLinkedCourseName() {
 		return linkedCourseName;

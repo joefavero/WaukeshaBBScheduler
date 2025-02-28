@@ -81,7 +81,7 @@ public class SnapshotFileManager {
 						+ l_student.getFirstName() + "|"		//firstname
 						+ l_student.getLastName() + "|"			//lastname
 						+ "N" + "|"								//system_role
-						+ "WTA" + "|"							//institution_role
+						+ l_student.getInstitutionRole() + "|"	//institution_role
 						+ "enabled" + "|"						//row_status
 						+ l_student.getStudentNumber() + "|"	//student_id
 						+ l_student.getMiddleName() + "|"		//middlename
@@ -242,7 +242,153 @@ public class SnapshotFileManager {
 		return l_snapshotFilename;
 	}
 
+	public DataSetStatus sendFile(String p_file, String p_endpoint, int p_count) {
+		mLog.trace("In sendFile() ...");
 
+		DataSetStatus status = null;
+		String l_message = null;
+		try {
+			// Create an object of credentialsProvider
+			CredentialsProvider credentialsPovider = new BasicCredentialsProvider();
+
+			ConfigData l_configData = m_service.getConfigData();
+
+			// Set the credentials
+			String host = l_configData.getRestHost().substring(l_configData.getRestHost().indexOf("//") + 2);
+			int port = 80;
+			if (l_configData.getRestHost().toLowerCase().contains("https")) {
+				port = 443;
+			}
+			AuthScope scope = new AuthScope(host, port);
+
+			Credentials credentials = new UsernamePasswordCredentials(l_configData.getSnapshotSharedUsername(),
+					l_configData.getSnapshotSharedPassword());
+			credentialsPovider.setCredentials(scope, credentials);
+
+			// Creating the HttpClientBuilder
+			HttpClientBuilder clientbuilder = HttpClients.custom();
+
+			// Setting the credentials
+			clientbuilder = clientbuilder.setDefaultCredentialsProvider(credentialsPovider);
+
+			// Building the CloseableHttpClient object
+			CloseableHttpClient httpclient = clientbuilder.build();
+
+			if (httpclient != null) {
+
+				// Parse the Filename to determine the endpoints
+				//SnapshotJobDetails details = SnapshotJobDetails.fromFileName(p_file);
+				SnapshotJobDetails details = new SnapshotJobDetails();
+				details.setEndpoint(p_endpoint);
+				details.setOperation("refresh");
+				details.setJobTitle("Infinite Campus Integration");
+				mLog.info("Endpoint: " + details.getEndpoint());
+				mLog.info("Operation: " + details.getOperation());
+				mLog.info("Job Title: " + details.getJobTitle());
+				mLog.info("Timestamp: " + details.getTimestamp());
+
+				try {
+					HttpPost httppost = new HttpPost(l_configData.getRestHost()
+							+ "/webapps/bb-data-integration-flatfile-" + l_configData.getSnapshotBbInstanceId()
+							+ "/endpoint/" + details.getEndpoint() + "/" + details.getOperation());
+					FileEntity tmp = new FileEntity(new File(p_file), ContentType.create("text/plain", "UTF-8"));
+					httppost.setEntity(tmp);
+					mLog.info("executing request " + details.getOperation());
+					mLog.info("executing request " + httppost.getRequestLine());
+					CloseableHttpResponse response = httpclient.execute(httppost);
+					try {
+						if (response.getStatusLine().getStatusCode() == 200) {
+							mLog.info("----------------------------------------");
+							mLog.info("Status Line: " + response.getStatusLine());
+							HttpEntity resEntity = response.getEntity();
+							if (resEntity != null) {
+								InputStream data = resEntity.getContent();
+								byte[] text = data.readAllBytes();
+								String s = new String(text, StandardCharsets.UTF_8);
+								if (s.contains("code") && s.contains("to")) {
+									String code = s.substring(s.indexOf("code") + 4, s.indexOf("to"));
+									code = code.trim();
+									mLog.info("Code: " + code);
+
+									String resultURL = l_configData.getRestHost()
+											+ "/webapps/bb-data-integration-flatfile-"
+											+ l_configData.getSnapshotBbInstanceId() + "/endpoint/dataSetStatus/"
+											+ code;
+
+									HttpPost httppost1 = new HttpPost(resultURL);
+									mLog.info("executing request " + resultURL);
+									CloseableHttpResponse response1 = httpclient.execute(httppost1);
+									mLog.info("Code: " + code);
+									mLog.info("Status: " + response1.getStatusLine().getStatusCode());
+									HttpEntity resEntity1 = response1.getEntity();
+									if (response1.getStatusLine().getStatusCode() == 200) {
+
+										int l_retry=0;
+										do {
+											response1 = httpclient.execute(httppost1);
+											resEntity1 = response1.getEntity();
+											mLog.info("Status Line: " + response1.getStatusLine());
+
+											InputStream data1 = resEntity1.getContent();
+											text = data1.readAllBytes();
+											s = new String(text, StandardCharsets.UTF_8);
+											XmlMapper xmlMapper = new XmlMapper();
+											status = xmlMapper.readValue(s, DataSetStatus.class);
+											mLog.info("Code: " + s);
+											mLog.info("Completed Count: " + status.getCompletedCount());
+											mLog.info("Error Count: " + status.getErrorCount());
+											mLog.info("Queued Count: " + status.getQueuedCount());
+											mLog.info("Warning Count: " + status.getWarningCount());
+											if (status.getQueuedCount() == 0) {
+												l_retry++;
+											}
+											Thread.sleep(3000);
+										} while (status.getQueuedCount() > 0 || (status.getCompletedCount() < p_count && l_retry < 5));
+
+										l_message = "Snapshot Integration Completed" + "<br>"
+												+ "    File Processsed: " + p_file + "<br>"
+												+ "    Completed Count: " + status.getCompletedCount() + "<br>"
+												+ "    Error Count: " + status.getErrorCount() + "<br>"
+												+ "    Queued Count: " + status.getQueuedCount() + "<br>"
+												+ "    Warning Count: " + status.getWarningCount() + "<br>"
+												+ "    BB Learn URL: " + resultURL + "<br>";
+									} else {
+										l_message = response1.getStatusLine().getReasonPhrase();
+									}
+								} else {
+									mLog.info("Unable to processs Status Response");
+								}
+							}
+
+							EntityUtils.consume(resEntity);
+						} else {
+							l_message = "Snapshot Integration Error for File: " + p_file + "<br>"
+									+ "    HTTP Status Code: " + response.getStatusLine().getStatusCode() + "<br>";
+						}
+					} catch(Exception ex) {
+						mLog.error("Error: ", ex);
+					} finally {
+						response.close();
+					}
+				} catch(Exception ex) {
+					mLog.error("Error: ", ex);
+				} finally {
+					httpclient.close();
+				}
+			} else {
+				l_message = "Snapshot Integration Error for File: " + p_file + "<br>"
+						+ "    File Format Incorrect: " + "<br>";
+
+			}
+
+			// Send Email
+			sendEmail(l_configData.getSnapshotEmail(), "Infinite Campus Integration", l_message);
+		} catch (Exception l_ex) {
+			mLog.error("ERROR", l_ex);
+		}
+		return status;
+	}
+	
 	public DataSetStatus sendFile(String p_file, String p_endpoint) {
 		mLog.trace("In sendFile() ...");
 
@@ -344,7 +490,7 @@ public class SnapshotFileManager {
 												l_retry++;
 											}
 											Thread.sleep(3000);
-										} while (status.getQueuedCount() > 0 && l_retry < 2);
+										} while (status.getQueuedCount() > 0 || l_retry < 2);
 
 										l_message = "Snapshot Integration Completed" + "<br>"
 												+ "    File Processsed: " + p_file + "<br>"

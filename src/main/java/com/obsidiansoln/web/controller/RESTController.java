@@ -53,6 +53,8 @@ import com.obsidiansoln.web.model.ContactModel;
 import com.obsidiansoln.web.model.LtiInfo;
 import com.obsidiansoln.web.model.PortalInfo;
 import com.obsidiansoln.web.model.RestInfo;
+import com.obsidiansoln.web.model.RestResponse;
+import com.obsidiansoln.web.model.ToastMessage;
 import com.obsidiansoln.web.service.AsyncService;
 import com.obsidiansoln.web.service.BBSchedulerService;
 
@@ -111,8 +113,9 @@ public class RESTController {
 
 	@RequestMapping(value = "/api/restData", method = RequestMethod.PUT, produces = "application/json")
 	@ResponseBody
-	public String putRestData(@RequestBody final RestInfo restData, HttpServletRequest request) {
+	public RestResponse putRestData(@RequestBody final RestInfo restData, HttpServletRequest request) {
 		mLog.trace("In putRestData ...");
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {
 				ConfigData l_configData = m_service.getConfigData();
@@ -120,13 +123,28 @@ public class RESTController {
 				l_configData.setRestKey(restData.getKey());
 				l_configData.setRestSecret(restData.getSecret());
 				m_service.saveConfigData(l_configData);
+				
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("REST Data Updated");
+				l_restResponse.setToast(l_toast);
 			} catch (Exception l_ex) {
 				mLog.error(l_ex.getMessage());
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("ERROR on REST API");
+				l_restResponse.setToast(l_toast);
 			}
 		} else {
-			return FAILURE;
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
-		return SUCCESS;
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/ltiData", method = RequestMethod.GET, produces = "application/json")
@@ -156,8 +174,9 @@ public class RESTController {
 
 	@RequestMapping(value = "/api/ltiData", method = RequestMethod.PUT, produces = "application/json")
 	@ResponseBody
-	public String putLtiData(@RequestBody final LtiInfo ltiData, HttpServletRequest request) {
+	public RestResponse putLtiData(@RequestBody final LtiInfo ltiData, HttpServletRequest request) {
 		mLog.info("In putLtiData ..." + ltiData.getKey());
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {
 				ConfigData l_configData = m_service.getConfigData();
@@ -165,14 +184,28 @@ public class RESTController {
 				l_configData.setLtiSecret(ltiData.getSecret());
 
 				m_service.saveConfigData(l_configData);
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("LTI Data Updated");
+				l_restResponse.setToast(l_toast);
 
 			} catch (Exception l_ex) {
 				mLog.error(l_ex.getMessage());
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("ERROR on REST API");
+				l_restResponse.setToast(l_toast);
 			}
 		} else {
-			return FAILURE;
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
-		return SUCCESS;
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/portalData", method = RequestMethod.GET, produces = "application/json")
@@ -219,8 +252,9 @@ public class RESTController {
 
 	@RequestMapping(value = "/api/portalData", method = RequestMethod.PUT, produces = "application/json")
 	@ResponseBody
-	public String putPortalData(@RequestBody final PortalInfo portalData, HttpServletRequest request) {
+	public RestResponse putPortalData(@RequestBody final PortalInfo portalData, HttpServletRequest request) {
 		mLog.trace("In putPortalData ...");
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {
 				ConfigData l_configData = m_service.getConfigData();
@@ -235,14 +269,27 @@ public class RESTController {
 				l_configData.setAdminReportInstructor(portalData.getAdminInstructor());
 				l_configData.setAdminReportPhone(portalData.getAdminPhone());
 				m_service.saveConfigData(l_configData);
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("PORTAL Data Updated");
+				l_restResponse.setToast(l_toast);
 			} catch (Exception l_ex) {
 				mLog.error(l_ex.getMessage());
-				return FAILURE;
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("ERROR on REST API");
+				l_restResponse.setToast(l_toast);
 			}
 		} else {
-			return FAILURE;
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
-		return SUCCESS;
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/adminData", method = RequestMethod.GET, produces = "application/json")
@@ -278,8 +325,9 @@ public class RESTController {
 
 	@RequestMapping(value = "/api/adminData", method = RequestMethod.PUT, produces = "application/json")
 	@ResponseBody
-	public String putAdminData(@RequestBody final AdminInfo adminData, HttpServletRequest request) {
+	public RestResponse putAdminData(@RequestBody final AdminInfo adminData, HttpServletRequest request) {
 		mLog.trace("In putAdminData ...");
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {
 				ConfigData l_configData = m_service.getConfigData();
@@ -292,13 +340,28 @@ public class RESTController {
 				l_configData.setEmailUseSSL(adminData.isSsl());
 				l_configData.setEmailDebug(adminData.isDebug());
 				m_service.saveConfigData(l_configData);
+				
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("ADMIN Data Updated");
+				l_restResponse.setToast(l_toast);
 			} catch (Exception l_ex) {
 				mLog.error("Error: ", l_ex);
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("ERROR on REST API");
+				l_restResponse.setToast(l_toast);
 			}
 		} else {
-			return FAILURE;
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
-		return SUCCESS;
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/getTemplates", method = RequestMethod.GET, produces = "application/json")
@@ -347,24 +410,6 @@ public class RESTController {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
 				List<ICCourse> l_courses = dao.getCoursesByUsername(userName);
-				return mapper.writeValueAsString(l_courses);
-			} catch (Exception e) {
-				mLog.error(e.getMessage());
-				return FAILURE;
-			}
-		} else {
-			return FAILURE;
-		}
-	}
-
-	@RequestMapping(value = "/api/getCourses", method = RequestMethod.GET, produces = "application/json")
-	@ResponseBody
-	public String getCourses (HttpServletRequest request) {
-		mLog.info("In getCourses ...");
-		if (checkApiKey(request)) {
-			ObjectMapper mapper = new ObjectMapper();
-			try {
-				List<ICCourse> l_courses = dao.getCourses();
 				return mapper.writeValueAsString(l_courses);
 			} catch (Exception e) {
 				mLog.error(e.getMessage());
@@ -426,42 +471,11 @@ public class RESTController {
 		}
 	}
 
-	@RequestMapping(value = "/api/getSections/{courseId}", method = RequestMethod.GET, produces = "application/json")
-	@ResponseBody
-	public String getSections (@PathVariable("courseId") String courseId, HttpServletRequest request) {
-		mLog.info("In getSections ...");
-		if (checkApiKey(request)) {
-			ObjectMapper mapper = new ObjectMapper();
-			try {
-				List<ICSection> l_sections = dao.getSectionsByCourseId(courseId);
-
-				//  Add in the BB URL If there is a Linked Course
-				for (ICSection l_section:l_sections) {
-					if (l_section.getLinkedCourseName() != null) {
-						ConfigData l_configData = m_service.getConfigData();
-						RestManager l_manager = new RestManager(l_configData);
-						if (l_section.getLinkedCourseId() != null) {
-							CourseProxy l_course = l_manager.getCourseByName(l_section.getLinkedCourseId());
-							if (l_course != null) {
-								l_section.setLinkedCourseURL(l_configData.getRestHost()+"/ultra/courses/"+ l_course.getId() +"/cl/outline");
-							} 
-						}
-					}
-				}
-				return mapper.writeValueAsString(l_sections);
-			} catch (Exception e) {
-				mLog.error(e.getMessage());
-				return FAILURE;
-			}
-		} else {
-			return FAILURE;
-		}
-	}
 	@RequestMapping(value = "/api/createCourse", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
-	public String createCourse(@RequestBody final CourseInfo courseInfo, HttpServletRequest request) {
+	public RestResponse createCourse(@RequestBody final CourseInfo courseInfo, HttpServletRequest request) {
 		mLog.info("In createCourse ...");
-
+		RestResponse l_restResponse = new RestResponse();
 		mLog.info(" Course ID: " + courseInfo.getCourseTemplateId());
 		mLog.info(" Target Course ID: " + courseInfo.getTargetCourseId());
 		mLog.info(" Target Course Name: " + courseInfo.getTargetCourseName());
@@ -540,7 +554,11 @@ public class RESTController {
 										data.add(service.processEnrollment(courseInfo.getTargetCourseId(), l_enrollment, l_list));
 									} catch (InterruptedException e) {
 										mLog.error(e.getMessage());
-										return FAILURE;
+										l_restResponse.setSuccess(false);
+										ToastMessage l_toast = new ToastMessage();
+										l_toast.setType("error");
+										l_toast.setMessage("Error Async Enrollments");
+										l_restResponse.setToast(l_toast);
 									}
 								}
 								CompletableFuture.allOf(data.toArray(new CompletableFuture[0])).join();
@@ -581,33 +599,62 @@ public class RESTController {
 										dao.insertBBPersonLink(l_personInfo);
 									}
 								}
-								
-								return SUCCESS;
+
+								l_restResponse.setSuccess(true);
+								ToastMessage l_toast = new ToastMessage();
+								l_toast.setType("success");
+								l_toast.setMessage("BB Course Successfully copied/created");
+								l_restResponse.setToast(l_toast);
 							} else {
 								mLog.error("Template Course Not Found");
-								return FAILURE;
+								l_restResponse.setSuccess(false);
+								ToastMessage l_toast = new ToastMessage();
+								l_toast.setType("error");
+								l_toast.setMessage("Template Course Not Found");
+								l_restResponse.setToast(l_toast);
 							}
 						} catch (Exception e) {
 							mLog.error(e.getMessage());
-							return FAILURE;
+							l_restResponse.setSuccess(false);
+							ToastMessage l_toast = new ToastMessage();
+							l_toast.setType("error");
+							l_toast.setMessage("Error On REST API");
+							l_restResponse.setToast(l_toast);
 						}
 
 					} else {
 						mLog.error ("SDW BB Course Update Failed");
-						return FAILURE;
+						l_restResponse.setSuccess(false);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("error");
+						l_toast.setMessage("SDW BB Course Update Failed");
+						l_restResponse.setToast(l_toast);
 					}
 				} else {
 					mLog.error ("SDW BB Course Insert Failed");
-					return FAILURE;
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("SDW BB Course Insert Failed");
+					l_restResponse.setToast(l_toast);
 				}
 			} else {
 				mLog.error ("No Sections Detected");
-				return FAILURE;
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("No Sections Detected");
+				l_restResponse.setToast(l_toast);
 			}
 		} else {
 			mLog.error ("API KEY Incorrect");
-			return FAILURE;
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/getEnrollments/{sections}", method = RequestMethod.GET, produces = "application/json")
@@ -631,8 +678,9 @@ public class RESTController {
 
 	@RequestMapping(value = "/api/syncUsers", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
-	public String syncUsers (HttpServletRequest request) {
+	public RestResponse syncUsers (HttpServletRequest request) {
 		mLog.info("In syncUsers() ...");
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Users between Infinite Campus and Blackboard");
 			SnapshotFileManager l_manager = new SnapshotFileManager();
@@ -648,44 +696,73 @@ public class RESTController {
 
 			String l_file = l_manager.createFile(l_students, l_staffs);
 			if (l_file != null) {
-				l_manager.sendFile(l_file, "person");
-				return SUCCESS;
+				l_manager.sendFile(l_file, "person", l_students.size()+l_staffs.size());
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("Sync Users Successfull");
+				l_restResponse.setToast(l_toast);
 			} else {
 				mLog.error("Error: " + "Unable to create Snapshot File");
-				return FAILURE;
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Unable to create Snapshot File");
+				l_restResponse.setToast(l_toast);
 			}
 		} else {
-			return FAILURE;
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/syncEnrollments", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
-	public String syncEnrollments (HttpServletRequest request) {
+	public RestResponse syncEnrollments (HttpServletRequest request) {
 		mLog.info("In syncEnrollments() ...");
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Enrollments between Infinite Campus and Blackboard");
 			SnapshotFileManager l_manager = new SnapshotFileManager();
 
 			List<ICBBEnrollment> l_enrollments = dao.getBBEnrollments();
+			mLog.info("Number of Enrollments: " + l_enrollments.size());
 
 			String l_file = l_manager.createEnrollmentFile(l_enrollments);
 			if (l_file != null) {
-				l_manager.sendFile(l_file, "membership");
-				return SUCCESS;
+				l_manager.sendFile(l_file, "membership", l_enrollments.size());
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("Sync Groups Successfull");
+				l_restResponse.setToast(l_toast);
 			} else {
 				mLog.error("Error: " + "Unable to create Snapshot File");
-				return FAILURE;
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Unable to create Snapshot File");
+				l_restResponse.setToast(l_toast);
 			}
 		} else {
-			return FAILURE;
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/syncGroups", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
-	public String syncGroups (HttpServletRequest request) {
+	public RestResponse syncGroups (HttpServletRequest request) {
 		mLog.info("In syncGroups() ...");
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Groups between Infinite Campus and Blackboard");
 
@@ -696,17 +773,27 @@ public class RESTController {
 					l_configData = m_service.getConfigData();
 					RestManager l_manager = new RestManager(l_configData);
 					l_manager.createGroupMembership(l_group);
+					l_restResponse.setSuccess(true);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("success");
+					l_toast.setMessage("Sync Groups Successfull");
+					l_restResponse.setToast(l_toast);
 				} catch (Exception e) {
-					mLog.error("ERROR: ", e);
-					return FAILURE;
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("Error On REST API");
+					l_restResponse.setToast(l_toast);
 				}
-
-
 			}
 		} else {
-			return FAILURE;
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
-		return FAILURE;
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/getStudents", method = RequestMethod.GET, produces = "application/json")
@@ -724,8 +811,9 @@ public class RESTController {
 
 	@RequestMapping(value = "/api/removeSection/{sectionId}", method = RequestMethod.DELETE, produces = "application/json")
 	@ResponseBody
-	public String removeSection(@PathVariable("sectionId") String sectionId, HttpServletRequest request) {
+	public RestResponse removeSection(@PathVariable("sectionId") String sectionId, HttpServletRequest request) {
 		mLog.info("In removeSection ...");
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			String l_course = dao.removeSection(sectionId);
 			mLog.info("Course ID: " + l_course);
@@ -738,32 +826,64 @@ public class RESTController {
 				try {
 					l_configData = m_service.getConfigData();
 					l_manager = new RestManager(l_configData);
+					CourseProxy l_courseProxy = l_manager.getCourseByName(l_course);
+					if (l_courseProxy != null) {
+						for (ICEnrollment l_enrollment:l_enrollments) {
+							if (l_enrollment.getRole().equals("Student")) {
+								l_manager.removeMembership(l_course, l_enrollment.getUsername());
+							}
+						} 
+						
+						// Remove the Group associated with this Section
+						l_manager.deleteCourseGroup (l_courseProxy.getId(), sectionId);
+						
+						l_restResponse.setSuccess(true);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("success");
+						l_toast.setMessage("Section Successfully Removed");
+						l_restResponse.setToast(l_toast);
+					} else {
+						mLog.error("Blackboard Course Not Found");
+						l_restResponse.setSuccess(true);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("success");
+						l_toast.setMessage("Blackboard Course Not Found");
+						l_restResponse.setToast(l_toast);
+					}
 				} catch (Exception e) {
 					mLog.error(e.getMessage());
-					return FAILURE;
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("Error On REST API");
+					l_restResponse.setToast(l_toast);
 				}
-				for (ICEnrollment l_enrollment:l_enrollments) {
-					if (l_enrollment.getRole().equals("Student")) {
-						l_manager.removeMembership(l_course, l_enrollment.getUsername());
-					}
-				} 
-				return SUCCESS;
 			} else {
-				return FAILURE;
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Provided Course ID Empty");
+				l_restResponse.setToast(l_toast);
 			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
-		return FAILURE;
+		return l_restResponse;
 	}
 
-	@RequestMapping(value = "/api/addSection/{courseId}/{sectionId}/{userName}", method = RequestMethod.POST, produces = "application/json")
+	@RequestMapping(value = "/api/addSection/{courseId}/{sectionId}/{personId}", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
-	public String addSection(@PathVariable("courseId") String courseId, @PathVariable("sectionId") String sectionId, @PathVariable("userName") String userName , HttpServletRequest request) {
+	public RestResponse addSection(@PathVariable("courseId") String courseId, @PathVariable("sectionId") String sectionId, @PathVariable("personId") String personId , HttpServletRequest request) {
 		mLog.info("In addSection ...");
 		mLog.info("COURSE ID: " + courseId);
 		mLog.info("SECTION ID: " + sectionId);
-		mLog.info("USERNAME: " + userName);
+		mLog.info("PERSON ID: " + personId);
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
-			Long personId = dao.getPersonId(userName);
 			// Need to add to SDWBlackboardSchedulerSISCourseSections and Add Enrollments to Course
 			ConfigData l_configData;
 			try {
@@ -773,41 +893,82 @@ public class RESTController {
 				// Need to Add Group and Enrollments
 				// Create Course Group
 				ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
-				SectionInfo l_sectionInfo = new SectionInfo();
-				ICSectionInfo l_sectionICInfo = dao.getSectionInfo(sectionId);
-				l_sectionInfo.setBbCourseId(Long.valueOf(l_bbCourse.getBbCourseId()));
-				l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
-				l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
-				l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
-				l_sectionInfo.setPersonId(personId);
-				l_sectionInfo.setSectionNumber(l_sectionICInfo.getSectionNumber());
-
-				HashMap<String,GroupProxy> l_list = l_manager.createCourseGroup(courseId, l_sectionInfo, l_bbCourse.getGroupSetId());
-				if (l_list != null) {
-
-					List<ICEnrollment> l_enrollments = dao.addSection(courseId, sectionId, personId, l_list.get(sectionId).getId());
-					if (l_enrollments != null) {
-						for (ICEnrollment l_enrollment:l_enrollments) {
-							mLog.info("Adding User: " + l_enrollment.getUsername());
-							l_manager.createMembership(courseId, l_enrollment.getUsername(), l_enrollment.getRole());
-							l_manager.createGroupMembership(courseId, l_enrollment, l_list);
-						}
-						return SUCCESS;
+				if (l_bbCourse != null) {
+					
+					// If this is a BB Course Created before BB Scheduler, need to add in Group Set
+					if (l_bbCourse.getGroupSetId() == null) {
+						HashMap<String,GroupProxy> l_groups =l_manager.createCourseGroup(courseId, null);
+						// Update SDWBlackboardSchedulerBbCourse with GroupSetId
+						dao.updateBBCourseGroupSet(l_bbCourse.getId(), l_groups.get(l_bbCourse.getBbCourseId()), personId);
 					}
+					
+					SectionInfo l_sectionInfo = new SectionInfo();
+					ICSectionInfo l_sectionICInfo = dao.getSectionInfo(sectionId);
+					if (l_sectionICInfo != null) {
+						l_sectionInfo.setBbCourseId(Long.valueOf(l_bbCourse.getBbCourseId()));
+						l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
+						l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
+						l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
+						l_sectionInfo.setPersonId(Long.valueOf(personId));
+						l_sectionInfo.setSectionNumber(l_sectionICInfo.getSectionNumber());
+
+						HashMap<String,GroupProxy> l_list = l_manager.createCourseGroup(courseId, l_sectionInfo, l_bbCourse.getGroupSetId());
+						if (l_list != null) {
+
+							List<ICEnrollment> l_enrollments = dao.addSection(courseId, sectionId, Long.valueOf(personId), l_list.get(sectionId).getId());
+							if (l_enrollments != null) {
+								for (ICEnrollment l_enrollment:l_enrollments) {
+									mLog.info("Adding User: " + l_enrollment.getUsername());
+									l_manager.createMembership(courseId, l_enrollment.getUsername(), l_enrollment.getRole());
+									l_manager.createGroupMembership(courseId, l_enrollment, l_list);
+								}
+								l_restResponse.setSuccess(true);
+								ToastMessage l_toast = new ToastMessage();
+								l_toast.setType("success");
+								l_toast.setMessage("Section Successfully Added");
+								l_restResponse.setToast(l_toast);
+							}
+						}
+					} else {
+						mLog.error("ERROR: Unable to find IC Section");
+						l_restResponse.setSuccess(false);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("error");
+						l_toast.setMessage("Unable to find IC Section");
+						l_restResponse.setToast(l_toast);
+					}
+				} else {
+					mLog.error("ERROR: Unable to find Blackboard Course");
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("Unable to find Blackboard Course");
+					l_restResponse.setToast(l_toast);
 				}
 			} catch (Exception e) {
 				mLog.error("ERROR: ", e);
-				return FAILURE;
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On REST API");
+				l_restResponse.setToast(l_toast);
 			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
-		return FAILURE;
+		return l_restResponse;
 	}
 
 
 	@RequestMapping(value = "/api/cleanupData", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
-	public String cleanupData(HttpServletRequest request) {
+	public RestResponse cleanupData(HttpServletRequest request) {
 		mLog.info("In cleanUpData ...");
+		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 
 			dao.deleteBBCourses();
@@ -823,12 +984,28 @@ public class RESTController {
 					mLog.info("Deleting Course: " + l_course);
 					l_manager.deleteCourse(l_course);
 				}
+				
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("Cleanup Data Successfull");
+				l_restResponse.setToast(l_toast);
 			} catch (Exception ex) {
-
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On REST API");
+				l_restResponse.setToast(l_toast);
 			}
 
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
-		return SUCCESS;
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/getTeachers", method = RequestMethod.GET, produces = "application/json")

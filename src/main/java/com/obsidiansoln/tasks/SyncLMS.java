@@ -49,7 +49,7 @@ public class SyncLMS {
 		
 		String l_file = l_manager.createFile(l_students, l_staffs);
 		if (l_file != null) {
-			l_manager.sendFile(l_file, "person");
+			l_manager.sendFile(l_file, "person", l_students.size()+l_staffs.size());
 		} else {
 			mLog.error("Error: " + "Unable to create Snapshot File");
 		}
@@ -65,7 +65,7 @@ public class SyncLMS {
 
 		String l_file = l_manager.createEnrollmentFile(l_enrollments);
 		if (l_file != null) {
-			l_manager.sendFile(l_file, "membership");
+			l_manager.sendFile(l_file, "membership", l_enrollments.size());
 		} else {
 			mLog.error("Error: " + "Unable to create Snapshot File");
 		}

@@ -16,6 +16,7 @@ public class ICUser {
 	private String email2;
 	private String gradeLevel;
 	private String serviceType;
+	private String institutionRole;
 	private String schoolNumber;
 	private String calendarName;
 	private String address;
@@ -128,6 +129,12 @@ public class ICUser {
 	}
 	public void setServiceType(String serviceType) {
 		this.serviceType = serviceType;
+	}
+	public String getInstitutionRole() {
+		return institutionRole;
+	}
+	public void setInstitutionRole(String institutionRole) {
+		this.institutionRole = institutionRole;
 	}
 	public void setBirthDate(String birthDate) {
 		this.birthDate = birthDate;

@@ -104,66 +104,12 @@ public class InfiniteCampusDAO {
 				+ " left join Teacher with (nolock) on Teacher.sectionID = Section.sectionID"
 				+ " left join UserAccount with (nolock) on UserAccount.personID = Teacher.personID "
 				+ " left join SDWBlackboardSchedulerSISCourseSections b on b.sectionID = Section.sectionID"
-				+ " left join SDWBlackboardSchedulerBBCourses a on a.bbCourseId = b.bbCourseID\n"
+				+ " left join SDWBlackboardSchedulerBBCourses a on a.bbCourseId = b.bbCourseID"
 				+ " where Section.teacherPersonID = (select personId from UserAccount where username = :username)"
 				+ " and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)"
 				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0";
-
-		MapSqlParameterSource params = new MapSqlParameterSource();
-		params.addValue("username", username);
-		List<ICCourse> courses = null;
-		try {
-
-			courses= template.query(userSQL, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
-
-			// Now remove duplicates and add configure Linked Courses
-			HashMap<Long, ICCourse> l_courseList = new HashMap<Long, ICCourse>();
-			for (ICCourse course : courses) {
-
-				ICCourse l_temp = l_courseList.get(course.getCourseID());
-
-				if (l_temp != null) {
-					if (course.getBbCourseId() != null) {
-						if (l_temp.getLinkedCourses() != null) {
-							l_temp.getLinkedCourses().add(course.getBlackboardName());
-						} else {
-							List<String> l_linkedCourses = new ArrayList<String>();
-							l_linkedCourses.add(course.getBlackboardName());
-							l_temp.setLinkedCourses(l_linkedCourses);
-						}
-					}
-					l_courseList.put(l_temp.getCourseID(), l_temp);
-				} else {
-					if (course.getBbCourseId() != null) {
-						if (course.getLinkedCourses() != null) {
-							course.getLinkedCourses().add(course.getBlackboardName());
-						} else {
-							List<String> l_linkedCourses = new ArrayList<String>();
-							l_linkedCourses.add(course.getBlackboardName());
-							course.setLinkedCourses(l_linkedCourses);
-						}
-					}
-					l_courseList.put(course.getCourseID(), course);
-				}
-			}
-
-			// Iterating HashMap through for loop
-			for (Map.Entry<Long, ICCourse> set : l_courseList.entrySet()) {
-				l_returnList.add(set.getValue());
-			}
-
-		} catch (DataAccessException l_ex) {
-			mLog.error("Database Access Error", l_ex);
-			return null;
-		}
-		return l_returnList;
-	}
-
-	@Transactional(readOnly=true)
-	public List<ICCourse> getCourses() {
-		mLog.info("In getCourses ...");
-		List<ICCourse> l_returnList = new ArrayList<ICCourse>();
-		String noUserSQL = "select distinct Course.courseID,"
+		
+		String userSQLAdmin = "select distinct Course.courseID,"
 				+ " Course.calendarID, "
 				+ " Course.name as courseName, "
 				+ " Course.number as courseNumber,"
@@ -187,15 +133,20 @@ public class InfiniteCampusDAO {
 				+ " left join Teacher with (nolock) on Teacher.sectionID = Section.sectionID"
 				+ " left join UserAccount with (nolock) on UserAccount.personID = Teacher.personID "
 				+ " left join SDWBlackboardSchedulerSISCourseSections b on b.sectionID = Section.sectionID"
-				+ " left join SDWBlackboardSchedulerBBCourses a on a.bbCourseId = b.bbCourseID\n"
+				+ " left join SDWBlackboardSchedulerBBCourses a on a.bbCourseId = b.bbCourseID"
 				+ " where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)"
 				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
+		
 		List<ICCourse> courses = null;
 		try {
-
-			courses= template.query(noUserSQL, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
+			if (username.equals("admin")) {
+				courses= template.query(userSQLAdmin, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
+			} else {
+				params.addValue("username", username);
+				courses= template.query(userSQL, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
+			}
 
 			// Now remove duplicates and add configure Linked Courses
 			HashMap<Long, ICCourse> l_courseList = new HashMap<Long, ICCourse>();
@@ -232,6 +183,7 @@ public class InfiniteCampusDAO {
 			for (Map.Entry<Long, ICCourse> set : l_courseList.entrySet()) {
 				l_returnList.add(set.getValue());
 			}
+
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
 			return null;
@@ -255,12 +207,28 @@ public class InfiniteCampusDAO {
 				+ " where UserAccount.username=:username"
 				+ " and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
 
+		String sqlAdmin = "select distinct sdw.bbCourseID as id, sdw.bbCOURSE_ID as bbCourseId,  Calendar.name as calendarName,"
+				+ " UserAccount.username as userName, "
+				+ " sdw.schoolYear,"
+				+ " sdw.bbCOURSE_NAME as bbCourseName, "
+				+ " sdw.bbDESCRIPTION as bbCourseDescription, "
+				+ " sdw.groupSetId as groupSetId "
+				+ " from SDWBlackboardSchedulerBbCourses sdw"
+				+ " left join SDWBlackboardSchedulerSISCourseSections on SDWBlackboardSchedulerSISCourseSections.bbCourseID=sdw.bbCourseID"
+				+ " left join UserAccount on UserAccount.personID=sdw.createdByPersonID"
+				+ " left join Calendar on Calendar.calendarID=sdw.calendarID"
+				+ " where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		params.addValue("username", username);
+		
 		List<ICBBCourse> bbCourses = null;
 		try {
-			bbCourses= template.query(sql, params, new BeanPropertyRowMapper<ICBBCourse>(ICBBCourse.class));
+			if (username.equals("admin")) {
+				bbCourses= template.query(sqlAdmin, params, new BeanPropertyRowMapper<ICBBCourse>(ICBBCourse.class));
+			} else {
+				params.addValue("username", username);
+				bbCourses= template.query(sql, params, new BeanPropertyRowMapper<ICBBCourse>(ICBBCourse.class));
+			}
 
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
@@ -302,7 +270,10 @@ public class InfiniteCampusDAO {
 				+ "     left join Person on Person.personID = [Identity].personID"
 				+ "		left join UserAccount on UserAccount.personID = Roster.personID"
 				+ "		Inner join Calendar cal on sdw.calendarID = cal.calendarID"
-				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) and (sdws.sectionID is not null) and (Cal.endDate is null or Cal.endDate >= GETDATE())";
+				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) and "
+				+ "             (sdws.sectionID is not null) and "
+				+ "             (Cal.endDate is null or Cal.endDate >= GETDATE()) and "
+				+ "             UserAccount.userName is not null";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICBBEnrollment> bbEnrollments = null;
@@ -348,7 +319,8 @@ public class InfiniteCampusDAO {
 	@Transactional(readOnly=true)
 	public ICBBCourse getBBCourseById(String courseId) {
 		mLog.info("In getBBCoursesByUsername ...");
-		String sql = "select sdw.bbCourseID as bbCourseId, sdw.bbCOURSE_ID as courseId, sdw.bbCOURSE_NAME as courseName, sdw.bbDESCRIPTION as courseDescription from SDWBlackboardSchedulerBbCourses sdw"
+		mLog.info("COURSE ID: " + courseId);
+		String sql = "select sdw.bbCourseID as bbCourseId, sdw.bbCOURSE_ID as courseId, sdw.bbCOURSE_NAME as courseName, sdw.bbDESCRIPTION as courseDescription, sdw.groupSetId from SDWBlackboardSchedulerBbCourses sdw"
 				+ " where sdw.bbCOURSE_ID=:courseid";
 
 
@@ -356,7 +328,7 @@ public class InfiniteCampusDAO {
 		params.addValue("courseid", courseId);
 		ICBBCourse bbCourse = null;
 		try {
-			bbCourse= template.queryForObject(sql, params, ICBBCourse.class);
+			bbCourse= (ICBBCourse) template.queryForObject(sql, params, new BeanPropertyRowMapper(ICBBCourse.class));
 
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
@@ -366,79 +338,11 @@ public class InfiniteCampusDAO {
 	}
 
 	@Transactional(readOnly=true)
-	public List<ICSection> getSectionsByCourseId(String courseId) {
-		mLog.trace("In getSectionsByCourseId ...");
-		List<ICSection> l_returnList = new ArrayList<ICSection>();
-
-		String sql1 = "select Distinct"
-				+ " Section.sectionID, "
-				+ " Section.number as sectionNumber,"
-				+ " Section.courseID,"
-				+ " Section.roomID,"
-				+ " Section.teacherPersonID,"
-				+ " Term.name as termName,"
-				+ " [Period].name as period,"
-				+ " a.bbCourse_ID as linkedCourseId,"
-				+ " a.bbCourse_NAME as linkedCourseName,"
-				+ " (select count(*) as studentCount from Roster "
-				+ " inner join [Identity] on [Identity].personID = Roster.personID"
-				+ " inner join UserAccount on UserAccount.personID = Roster.personID"
-				+ " where Roster.sectionID = Section.sectionID"
-				+ " and (Roster.endDate is null or Roster.endDate > GETDATE())) as studentNumber, "
-				+ " 1 as teacherNumber"
-				+ " From Course"
-				+ " left Join Calendar on calendar.calendarID=course.calendarID"
-				+ " left Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID"
-				+ " left Join Section on section.courseID=course.courseID"
-				+ " left join SDWBlackboardSchedulerSISCourseSections b on b.sectionID = Section.sectionID"
-				+ " left join SDWBlackboardSchedulerBBCourses a on a.bbCourseId = b.bbCourseID"
-				+ " left Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1"
-				+ " left Join SectionPlacement on SectionPlacement.sectionID=section.sectionID  and SectionPlacement.trialID=trial.trialID"
-				+ " left Join Term on Term.termID=sectionplacement.termID"
-				+ " left Join [Period] on [Period].periodID=sectionplacement.periodID"
-				+ " left Join SchoolYear on SchoolYear.endYear=calendar.endYear"
-				+ " where Section.courseID = :courseid "
-				+ " and Trial.active = 1 and schoolyear.active=1";
-
-		MapSqlParameterSource params = new MapSqlParameterSource();
-		params.addValue("courseid", courseId);
-		List<ICSection> sections = null;
-		HashMap<Long, ICSection> l_sectionList = new HashMap<Long, ICSection>();
-		try {
-			sections= template.query(sql1, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
-			for (ICSection section : sections) {
-				ICSection l_temp = l_sectionList.get(section.getSectionID());
-
-				if (l_temp != null) {
-					if (l_temp.getTermName() != null) {
-						l_temp.setTermName (l_temp.getTermName().concat("/"+section.getTermName()));
-					}
-					if (l_temp.getPeriod() != null) {
-						l_temp.setPeriod (l_temp.getPeriod().concat("/"+section.getPeriod()));
-					}
-					l_sectionList.put(l_temp.getSectionID(), l_temp);
-				} else {
-					l_sectionList.put(section.getSectionID(), section);
-				}
-			}
-
-			// Iterating HashMap through for loop
-			for (Map.Entry<Long, ICSection> set : l_sectionList.entrySet()) {
-				l_returnList.add(set.getValue());
-			}
-		} catch (DataAccessException l_ex) {
-			mLog.error("Database Access Error", l_ex);
-			return null;
-		}
-		return l_returnList;
-	}
-
-	@Transactional(readOnly=true)
 	public List<ICSection> getSectionsByCourseIdUsername(String courseId, String username) {
 		mLog.trace("In getSectionsByCourseIdUsername ...");
 		List<ICSection> l_returnList = new ArrayList<ICSection>();
 
-		String sql1 = "select Distinct"
+		String sql = "select Distinct"
 				+ " Section.sectionID, "
 				+ " Section.number as sectionNumber,"
 				+ " Section.courseID,"
@@ -446,6 +350,7 @@ public class InfiniteCampusDAO {
 				+ " Section.teacherPersonID,"
 				+ " Term.name as termName,"
 				+ " [Period].name as period,"
+				+ " Periodschedule.name as periodDay,"
 				+ " a.bbCourse_ID as linkedCourseId,"
 				+ " a.bbCourse_NAME as linkedCourseName,"
 				+ " (select count(*) as studentCount from Roster "
@@ -465,16 +370,57 @@ public class InfiniteCampusDAO {
 				+ " left Join Term on Term.termID=sectionplacement.termID"
 				+ " left Join [Period] on [Period].periodID=sectionplacement.periodID"
 				+ " left Join SchoolYear on SchoolYear.endYear=calendar.endYear"
+				+ " left join PeriodSchedule on PeriodSchedule.periodScheduleID = Period.periodScheduleID"
 				+ " where Section.courseID = :courseid and Section.teacherPersonId = (select personId from UserAccount where username = :username)"
+				+ " and Trial.active = 1 and schoolyear.active=1";
+		
+		String sqlAdmin = "select Distinct"
+				+ " Section.sectionID, "
+				+ " Section.number as sectionNumber,"
+				+ " Section.courseID,"
+				+ " Section.roomID,"
+				+ " Section.teacherPersonID,"
+				+ " Term.name as termName,"
+				+ " [Period].name as period,"
+				+ " Periodschedule.name as periodDay,"
+				+ " a.bbCourse_ID as linkedCourseId,"
+				+ " a.bbCourse_NAME as linkedCourseName,"
+				+ " (select count(*) as studentCount from Roster "
+				+ " inner join [Identity] on [Identity].personID = Roster.personID"
+				+ " inner join UserAccount on UserAccount.personID = Roster.personID"
+				+ " where Roster.sectionID = Section.sectionID"
+				+ " and (Roster.endDate is null or Roster.endDate > GETDATE())) as studentNumber, "
+				+ " 1 as teacherNumber"
+				+ " From Course"
+				+ " left Join Calendar on calendar.calendarID=course.calendarID"
+				+ " left Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID"
+				+ " left Join Section on section.courseID=course.courseID"
+				+ " left join SDWBlackboardSchedulerSISCourseSections b on b.sectionID = Section.sectionID"
+				+ " left join SDWBlackboardSchedulerBBCourses a on a.bbCourseId = b.bbCourseID"
+				+ " left Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1"
+				+ " left Join SectionPlacement on SectionPlacement.sectionID=section.sectionID  and SectionPlacement.trialID=trial.trialID"
+				+ " left Join Term on Term.termID=sectionplacement.termID"
+				+ " left Join [Period] on [Period].periodID=sectionplacement.periodID"
+				+ " left Join SchoolYear on SchoolYear.endYear=calendar.endYear"
+				+ " left join PeriodSchedule on PeriodSchedule.periodScheduleID = Period.periodScheduleID"
+				+ " where Section.courseID = :courseid "
 				+ " and Trial.active = 1 and schoolyear.active=1";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		params.addValue("courseid", courseId);
-		params.addValue("username", username);
+		
 		List<ICSection> sections = null;
 		HashMap<Long, ICSection> l_sectionList = new HashMap<Long, ICSection>();
 		try {
-			sections= template.query(sql1, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
+			if (username.equals("admin")) {
+				mLog.info("Admin Query");
+				params.addValue("courseid", courseId);
+				sections= template.query(sqlAdmin, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
+			} else {
+				params.addValue("courseid", courseId);
+				params.addValue("username", username);
+				sections= template.query(sql, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
+			}
+	
 			for (ICSection section : sections) {
 				ICSection l_temp = l_sectionList.get(section.getSectionID());
 
@@ -482,9 +428,7 @@ public class InfiniteCampusDAO {
 					if (l_temp.getTermName() != null) {
 						l_temp.setTermName (l_temp.getTermName().concat("/"+section.getTermName()));
 					}
-					if (l_temp.getPeriod() != null) {
-						l_temp.setPeriod (l_temp.getPeriod().concat("/"+section.getPeriod()));
-					}
+
 					l_sectionList.put(l_temp.getSectionID(), l_temp);
 				} else {
 					l_sectionList.put(section.getSectionID(), section);
@@ -594,18 +538,40 @@ public class InfiniteCampusDAO {
 	@Transactional(readOnly=true)
 	public List<ICTeacher> getTeachers() {
 		mLog.info("getTeachers called ...");
-		String sql = "select Distinct  UserAccount.personID as personId, UserAccount.username as userName, [Identity].firstName+' '+[Identity].lastName as teacherName from Section"
-				+ " left join UserAccount on UserAccount.personID = Section.teacherPersonID"
-				+ " left join [Identity] on [Identity].personID = Section.teacherPersonID";
+		String sql = "select distinct UA.personID as personId, "
+				+ "					UA.username as username, "
+				+ "					idn.firstName+ ' '+idn.lastName as teacherName "
+				+ "				 from UserAccount UA with (nolock)  "
+				+ "				 cross join campusVersion v with (nolock)  "
+				+ "				 join Person prs with (nolock) on UA.personID=prs.personID  "
+				+ "					  and NOT (prs.staffNumber Is Null OR prs.staffNumber='')  "
+				+ "				 join [Identity] idn with (nolock) on UA.personID=idn.personID  "
+				+ "					  and prs.currentIdentityID=idn.identityID  "
+				+ "					  and idn.districtID=v.districtID  "
+				+ "				 join Contact con with (nolock) on prs.personID=con.personID  "
+				+ "				 join Employment with (nolock) on Employment.personID=UA.personID  "
+				+ "					  and (Employment.endDate>GETDATE() or Employment.endDate Is Null)  "
+				+ "					  and Employment.districtID=v.districtID  "
+				+ "				 join EmploymentAssignment ea with (nolock) on ea.personID=Employment.personID  "
+				+ "					  and (ea.endDate>GETDATE() or ea.endDate Is Null)  "
+				+ "				 join EmploymentAssignmentLocation eal with (nolock) on eal.assignmentID=ea.assignmentID  "
+				+ "				 left join Department with (nolock) on ea.departmentID=Department.departmentID  "
+				+ "					  and ea.schoolID=eal.schoolID  "
+				+ "				 join School with (nolock) on eal.schoolID=School.schoolID  "
+				+ "				 where (UA.[disable] Is Null OR UA.[disable]=0)  "
+				+ "				  and (UA.lock Is Null OR UA.lock=0)  "
+				+ "				  and NOT (UA.username Is Null OR UA.username='')  "
+				+ "				  and NOT ((UA.LDAPDN Is Null or UA.LDAPDN='') and UA.isSAMLAccount = 0) "
+				+ "				  and (UA.expiresDate Is Null or UA.expiresDate>=GETDATE())";
 
-		String sql2 = "select [identity].personID as personId, UserAccount.username as userName, firstname+' '+lastname as teacherName "
-				+ " Inner Join (select userAccount.personID, max(id.IdentityID)max_id  from UserAccount"
-				+ " Inner join EmploymentAssignment on userAccount.PersonID = employmentAssignment.personID"
-				+ " Inner Join [Identity]id on UserAccount.personID = id.personID"
-				+ " where employmentAssignment.endDate is null or employmentAssignment.endDate >= GETDATE()"
-				+ "  group by UserAccount.personID)id on id.max_id = [Identity].identityID"
-				+ "  Inner Join UserAccount on [identity].personID = userAccount.personID"
-				+ " where UserAccount.email like '%@waukesha.k12.wi.us'";
+		String sql2 = "select [identity].personID, firstname, lastname, UserAccount.username, UserAccount.email from [Identity] "
+				+ "Inner Join (select userAccount.personID, max(id.IdentityID)max_id  from UserAccount "
+				+ "Inner join EmploymentAssignment on userAccount.PersonID = employmentAssignment.personID "
+				+ "Inner Join [Identity]id on UserAccount.personID = id.personID "
+				+ "where employmentAssignment.endDate is null or employmentAssignment.endDate >= GETDATE() "
+				+ "group by UserAccount.personID)id on id.max_id = [Identity].identityID "
+				+ "Inner Join UserAccount on [identity].personID = userAccount.personID "
+				+ "where UserAccount.email like '%@waukesha.k12.wi.us'";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICTeacher> teachers = null;
@@ -847,6 +813,7 @@ public class InfiniteCampusDAO {
 				+ " (CASE WHEN con.secondaryEmail Is Null THEN '' ELSE LTRIM(RTRIM(REPLACE(con.secondaryEmail,',','.'))) END) as email2,"
 				+ " IsNull(enr.grade,'') as gradeLevel,"
 				+ " enr.serviceType as serviceType,"
+				+ " customSchool.value as institutionRole,"
 				+ " s.number as schoolNumber,"
 				+ " cal.name as calendarName,"
 				+ " LTRIM(RTRIM(REPLACE((CASE WHEN addr.number Is Null THEN '' ELSE LTRIM(RTRIM(addr.number)) END)+(CASE WHEN addr.prefix Is Null THEN '' ELSE ' '+LTRIM(RTRIM(addr.prefix)) END)+(CASE WHEN addr.street Is Null THEN '' ELSE ' '+LTRIM(RTRIM(REPLACE(addr.street,',',' '))) END)+(CASE WHEN addr.tag Is Null THEN '' ELSE ' '+LTRIM(RTRIM(addr.tag)) END)+(CASE WHEN addr.dir Is Null THEN '' ELSE ' '+LTRIM(RTRIM(addr.dir)) END),',',' '))) as address,"
@@ -904,6 +871,7 @@ public class InfiniteCampusDAO {
 				+ " (CASE WHEN con.secondaryEmail Is Null THEN '' ELSE LTRIM(RTRIM(REPLACE(con.secondaryEmail,',','.'))) END) as email2,"
 				+ " IsNull(enr.grade,'') as gradeLevel,"
 				+ " enr.serviceType as serviceType,"
+				+ " csCode.value as institutionRole, "
 				+ " s.number as schoolNumber,"
 				+ " cal.name as calendarName,"
 				+ " LTRIM(RTRIM(REPLACE((CASE WHEN addr.number Is Null THEN '' ELSE LTRIM(RTRIM(addr.number)) END)+(CASE WHEN addr.prefix Is Null THEN '' ELSE ' '+LTRIM(RTRIM(addr.prefix)) END)+(CASE WHEN addr.street Is Null THEN '' ELSE ' '+LTRIM(RTRIM(REPLACE(addr.street,',',' '))) END)+(CASE WHEN addr.tag Is Null THEN '' ELSE ' '+LTRIM(RTRIM(addr.tag)) END)+(CASE WHEN addr.dir Is Null THEN '' ELSE ' '+LTRIM(RTRIM(addr.dir)) END),',',' '))) as address,"

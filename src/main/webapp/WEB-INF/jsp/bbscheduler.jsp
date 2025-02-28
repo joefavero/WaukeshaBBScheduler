@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -7,8 +8,8 @@
     <title>BB Scheduler</title>
   	<base href="/WaukeshaBBScheduler/static/BBSCHEDULER/">
   	<script>window.sessionStorage.clear(); window.sessionStorage.setItem('userMode', '${userMode}');</script>
-    <script type="module" crossorigin src="./assets/index-BjSeayBt.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-mZPnnKvz.css">
+    <script type="module" crossorigin src="./assets/index-BCkuqki_.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DMNg91NS.css">
   </head>
   <body>
     <div id="root"></div>
