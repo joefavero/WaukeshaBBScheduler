@@ -95,6 +95,7 @@ import com.obsidiansoln.blackboard.user.UserProxy;
 import com.obsidiansoln.blackboard.user.UserResponseProxy;
 import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICEnrollment;
+import com.obsidiansoln.database.model.UpdateCourseInfo;
 import com.obsidiansoln.web.model.ConfigData;
 import com.obsidiansoln.web.model.LocationInfo;
 
@@ -2482,7 +2483,7 @@ public class RestManager implements IGradesDb {
 	}
 
 
-	public int createCourseCopy(CourseInfo p_info) {
+	public HTTPStatus createCourseCopy(CourseInfo p_info) {
 		log.info("In createCourseCopy()");
 
 		CourseCopyHandler l_copyHandler = new CourseCopyHandler();
@@ -2519,6 +2520,32 @@ public class RestManager implements IGradesDb {
 			l_task.getCourse().getAvailability().setAvailable("Yes");
 			l_courseHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_task.getCourse());
 
+		}
+
+		return l_response;
+	}
+
+
+	public int updateCourse(UpdateCourseInfo p_info) {
+		log.info("In updateCourse()");
+
+
+		RequestData l_requestData = new RequestData();
+		HTTPStatus l_response = null;
+
+		checkToken();
+
+		// Now update the Course Name and Description
+		CourseHandler l_courseHandler = new CourseHandler();
+
+		// Get the Course
+		l_requestData.setCourseName(p_info.getBbCourseId());
+		CourseProxy l_course = l_courseHandler.getClientData2(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
+		if (l_course != null) {
+			l_course.setName(p_info.getBbCourseName());
+			l_course.setDescription(p_info.getBbCourseDescription());
+			l_requestData.setCourseId(l_course.getId());
+			l_response = l_courseHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_course);
 		}
 
 		return l_response.getStatus();

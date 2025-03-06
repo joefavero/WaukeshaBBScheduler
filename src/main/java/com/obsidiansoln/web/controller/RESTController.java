@@ -35,6 +35,7 @@ import com.obsidiansoln.database.dao.InfiniteCampusDAO;
 import com.obsidiansoln.database.model.ICBBCourse;
 import com.obsidiansoln.database.model.ICBBEnrollment;
 import com.obsidiansoln.database.model.ICBBGroup;
+import com.obsidiansoln.database.model.ICBBSection;
 import com.obsidiansoln.database.model.ICCalendar;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
@@ -45,6 +46,7 @@ import com.obsidiansoln.database.model.ICStudent;
 import com.obsidiansoln.database.model.ICTeacher;
 import com.obsidiansoln.database.model.ICTemplate;
 import com.obsidiansoln.database.model.ICUser;
+import com.obsidiansoln.database.model.UpdateCourseInfo;
 import com.obsidiansoln.util.EmailManager;
 import com.obsidiansoln.util.RestManager;
 import com.obsidiansoln.web.model.AdminInfo;
@@ -424,12 +426,66 @@ public class RESTController {
 	@ResponseBody
 	public String getBBCourses (@PathVariable("userName") String userName,
 			HttpServletRequest request) {
-		mLog.info("In getCourses ...");
+		mLog.info("In getBBCourses ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
 				List<ICBBCourse> l_courses = dao.getBBCoursesByUsername(userName);
 				return mapper.writeValueAsString(l_courses);
+			} catch (Exception e) {
+				mLog.error(e.getMessage());
+				return FAILURE;
+			}
+		} else {
+			return FAILURE;
+		}
+	}
+	
+	@RequestMapping(value = "/api/updateBBCourse", method = RequestMethod.PATCH, produces = "application/json")
+	@ResponseBody
+	public RestResponse updateBBCourse (@RequestBody final UpdateCourseInfo courseInfo, HttpServletRequest request) {
+		mLog.info("In updateBBCourse ...");
+		mLog.info("Course ID: " + courseInfo.getBbCourseId());
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				ConfigData l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+				l_manager.updateCourse(courseInfo);
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("Course Successfully Updated");
+				l_restResponse.setToast(l_toast);
+			} catch (Exception e) {
+				mLog.error(e.getMessage());
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On REST API");
+				l_restResponse.setToast(l_toast);
+			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+		return l_restResponse;
+	}
+	
+	@RequestMapping(value = "/api/getBBSections/{bbCourseId}/{userName}", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public String getBBSections (@PathVariable("bbCourseId") String bbCourseId, @PathVariable("userName") String userName,
+			HttpServletRequest request) {
+		mLog.info("In getBBSections ...");
+		if (checkApiKey(request)) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				List<ICBBSection> l_sections = dao.getBBSectionsByCourseIdUsername(bbCourseId, userName);
+				return mapper.writeValueAsString(l_sections);
 			} catch (Exception e) {
 				mLog.error(e.getMessage());
 				return FAILURE;

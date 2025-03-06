@@ -117,7 +117,7 @@ public class BBSchedulerController {
 								// Check for User System Role
 								String[] l_systemRoles = l_user.getSystemRoleIds();
 								for (String l_systemRole:l_systemRoles) {
-									if (l_systemRole.equals("Course Administrator")) {
+									if (l_systemRole.equals("CourseCreator")) {
 										l_mode = "admin";
 									}
 								}

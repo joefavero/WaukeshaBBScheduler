@@ -22,6 +22,7 @@ import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.database.model.ICBBCourse;
 import com.obsidiansoln.database.model.ICBBEnrollment;
 import com.obsidiansoln.database.model.ICBBGroup;
+import com.obsidiansoln.database.model.ICBBSection;
 import com.obsidiansoln.database.model.ICCalendar;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
@@ -97,14 +98,14 @@ public class InfiniteCampusDAO {
 				+ " a.bbCourseID as bbCourseId, "
 				+ " a.bbCOURSE_ID as blackboardId, "
 				+ " a.bbCOURSE_NAME as blackboardName "
-				+ " from Section"
+				+ " from Section with (nolock)"
 				+ " left join Course with (nolock) on Course.courseID = Section.courseID"
 				+ " left join Calendar with (nolock) on Calendar.calendarID = Course.calendarID"
 				+ " left join School with (nolock) on School.schoolID = Calendar.schoolID "
 				+ " left join Teacher with (nolock) on Teacher.sectionID = Section.sectionID"
 				+ " left join UserAccount with (nolock) on UserAccount.personID = Teacher.personID "
-				+ " left join SDWBlackboardSchedulerSISCourseSections b on b.sectionID = Section.sectionID"
-				+ " left join SDWBlackboardSchedulerBBCourses a on a.bbCourseId = b.bbCourseID"
+				+ " left join SDWBlackboardSchedulerSISCourseSections b with (nolock) on b.sectionID = Section.sectionID"
+				+ " left join SDWBlackboardSchedulerBBCourses a with (nolock) on a.bbCourseId = b.bbCourseID"
 				+ " where Section.teacherPersonID = (select personId from UserAccount where username = :username)"
 				+ " and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)"
 				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0";
@@ -126,14 +127,14 @@ public class InfiniteCampusDAO {
 				+ " a.bbCourseID as bbCourseId, "
 				+ " a.bbCOURSE_ID as blackboardId, "
 				+ " a.bbCOURSE_NAME as blackboardName "
-				+ " from Section"
+				+ " from Section with (nolock) "
 				+ " left join Course with (nolock) on Course.courseID = Section.courseID"
 				+ " left join Calendar with (nolock) on Calendar.calendarID = Course.calendarID"
 				+ " left join School with (nolock) on School.schoolID = Calendar.schoolID "
 				+ " left join Teacher with (nolock) on Teacher.sectionID = Section.sectionID"
 				+ " left join UserAccount with (nolock) on UserAccount.personID = Teacher.personID "
-				+ " left join SDWBlackboardSchedulerSISCourseSections b on b.sectionID = Section.sectionID"
-				+ " left join SDWBlackboardSchedulerBBCourses a on a.bbCourseId = b.bbCourseID"
+				+ " left join SDWBlackboardSchedulerSISCourseSections b with (nolock) on b.sectionID = Section.sectionID"
+				+ " left join SDWBlackboardSchedulerBBCourses a with (nolock) on a.bbCourseId = b.bbCourseID"
 				+ " where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)"
 				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0";
 
@@ -235,6 +236,67 @@ public class InfiniteCampusDAO {
 			return null;
 		}
 		return bbCourses;
+	}
+	
+	@Transactional(readOnly=true)
+	public List<ICBBSection> getBBSectionsByCourseIdUsername(String courseId, String username) {
+		mLog.info("In getBBCoursesByUsername ...");
+		String sql = "select distinct sdws.sectionID as sectionId, "
+				+ "					Course.name as courseName, "
+				+ "          Section.number as sectionNumber, "
+				+ "          UserAccount.username as teacherName, "
+				+ "          (select count(*) as studentCount from Roster "
+				+ "				 inner join [Identity] on [Identity].personID = Roster.personID "
+				+ "				 inner join UserAccount on UserAccount.personID = Roster.personID "
+				+ "				 where Roster.sectionID = Section.sectionID "
+				+ "				 and (Roster.endDate is null or Roster.endDate > GETDATE())) as studentNumber, "
+				+ "         1 as teacherNumber "
+				+ "				 from SDWBlackboardSchedulerSISCourseSections sdws\n"
+				+ "				 left join SDWBlackboardSchedulerBBCourses sdw on sdw.bbCourseID = sdws.bbCourseID "
+				+ "         left join Section on section.sectionID= sdws.sectionID "
+				+ "         left join Course on course.courseID=Section.courseID "
+				+ "         left join UserAccount on UserAccount.personID=Section.teacherPersonID "
+				+ "         left join Calendar on Calendar.calendarID=sdw.calendarID "
+				+ "				 where UserAccount.username=:username and sdw.bbCOURSE_ID = :courseid "
+				+ "         and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
+
+		String sqlAdmin = "select distinct sdws.sectionID as sectionId, "
+				+ "					Course.name as courseName, "
+				+ "          Section.number as sectionNumber, "
+				+ "          UserAccount.username as teacherName, "
+				+ "          (select count(*) as studentCount from Roster "
+				+ "				 inner join [Identity] on [Identity].personID = Roster.personID "
+				+ "				 inner join UserAccount on UserAccount.personID = Roster.personID "
+				+ "				 where Roster.sectionID = Section.sectionID "
+				+ "				 and (Roster.endDate is null or Roster.endDate > GETDATE())) as studentNumber, "
+				+ "         1 as teacherNumber "
+				+ "				 from SDWBlackboardSchedulerSISCourseSections sdws "
+				+ "				 left join SDWBlackboardSchedulerBBCourses sdw on sdw.bbCourseID = sdws.bbCourseID "
+				+ "         left join Section on section.sectionID= sdws.sectionID "
+				+ "         left join Course on course.courseID=Section.courseID "
+				+ "         left join UserAccount on UserAccount.personID=Section.teacherPersonID "
+				+ "         left join Calendar on Calendar.calendarID=sdw.calendarID "
+				+ "				 where sdw.bbCOURSE_ID = :courseid "
+				+ "         and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		
+		List<ICBBSection> bbSections = null;
+		try {
+			if (username.equals("admin")) {
+				params.addValue("courseid", courseId);
+				bbSections= template.query(sqlAdmin, params, new BeanPropertyRowMapper<ICBBSection>(ICBBSection.class));
+			} else {
+				params.addValue("courseid", courseId);
+				params.addValue("username", username);
+				bbSections= template.query(sql, params, new BeanPropertyRowMapper<ICBBSection>(ICBBSection.class));
+			}
+
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return bbSections;
 	}
 	
 	@Transactional(readOnly=true)
@@ -358,9 +420,11 @@ public class InfiniteCampusDAO {
 				+ " inner join UserAccount on UserAccount.personID = Roster.personID"
 				+ " where Roster.sectionID = Section.sectionID"
 				+ " and (Roster.endDate is null or Roster.endDate > GETDATE())) as studentNumber, "
-				+ " 1 as teacherNumber"
+				+ " 1 as teacherNumber, "
+				+ " School.name as schoolName"
 				+ " From Course"
 				+ " left Join Calendar on calendar.calendarID=course.calendarID"
+				+ " left join School with (nolock) on School.schoolID = Calendar.schoolID"
 				+ " left Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID"
 				+ " left Join Section on section.courseID=course.courseID"
 				+ " left join SDWBlackboardSchedulerSISCourseSections b on b.sectionID = Section.sectionID"
@@ -390,9 +454,11 @@ public class InfiniteCampusDAO {
 				+ " inner join UserAccount on UserAccount.personID = Roster.personID"
 				+ " where Roster.sectionID = Section.sectionID"
 				+ " and (Roster.endDate is null or Roster.endDate > GETDATE())) as studentNumber, "
-				+ " 1 as teacherNumber"
+				+ " 1 as teacherNumber, "
+				+ " School.name as schoolName"
 				+ " From Course"
 				+ " left Join Calendar on calendar.calendarID=course.calendarID"
+				+ " left join School with (nolock) on School.schoolID = Calendar.schoolID"
 				+ " left Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID"
 				+ " left Join Section on section.courseID=course.courseID"
 				+ " left join SDWBlackboardSchedulerSISCourseSections b on b.sectionID = Section.sectionID"

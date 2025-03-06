@@ -15,6 +15,7 @@ public class ICSection {
     private String linkedCourseURL;
     private Integer teacherNumber;
     private Integer studentNumber;
+    private String schoolName;
     
 	public Long getSectionID() {
 		return sectionID;
@@ -94,6 +95,12 @@ public class ICSection {
 	}
 	public void setStudentNumber(Integer studentNumber) {
 		this.studentNumber = studentNumber;
+	}
+	public String getSchoolName() {
+		return schoolName;
+	}
+	public void setSchoolName(String schoolName) {
+		this.schoolName = schoolName;
 	}
 
 
