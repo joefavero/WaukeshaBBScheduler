@@ -73,7 +73,12 @@ public class BBSchedulerController {
 		return mv;
 	}
 
-
+	@RequestMapping(value = "/lti", method = RequestMethod.GET)
+	public ModelAndView bbscheduler(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		mLog.info("In BBScheduler()");
+		ModelAndView mv = new ModelAndView("bbscheduler2");
+		return mv;
+	}
 
 	@RequestMapping(value = "/lti", method = RequestMethod.POST)
 	public ModelAndView processLti(HttpServletRequest request, HttpServletResponse response) {
@@ -136,6 +141,7 @@ public class BBSchedulerController {
 									} else {
 										l_userMode.setUserId(l_user.getUserName());
 									}
+									l_userMode.setMode(l_mode);
 									l_userMode.setApiKey(m_service.getConfigData().getApiKey());
 									l_userMode.setPersonId(String.valueOf(l_personId));
 
@@ -148,19 +154,11 @@ public class BBSchedulerController {
 										}
 									}
 
-
-			
+									// Testing
+									l_userMode.setMode("teacher");
+									l_userMode.setUserId("lpotter"); 
 									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
 									mv.setViewName("bbscheduler");
-
-
-									// Testing
-									//l_userMode.setMode("teacher");
-									//l_userMode.setUserId("lpotter"); 
-									//mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
-									//mv.setViewName("bbscheduler");
-
-
 
 									mLog.debug("Got User:  " + l_user.getUserName());
 									mLog.debug("LTI Type:  " + l_type);

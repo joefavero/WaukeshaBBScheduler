@@ -26,7 +26,6 @@ import com.obsidiansoln.database.model.ICBBSection;
 import com.obsidiansoln.database.model.ICCalendar;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
-import com.obsidiansoln.database.model.ICPeriod;
 import com.obsidiansoln.database.model.ICPerson;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
@@ -34,8 +33,8 @@ import com.obsidiansoln.database.model.ICStaff;
 import com.obsidiansoln.database.model.ICStudent;
 import com.obsidiansoln.database.model.ICTeacher;
 import com.obsidiansoln.database.model.ICTemplate;
-import com.obsidiansoln.database.model.ICTerm;
 import com.obsidiansoln.database.model.ICUser;
+import com.obsidiansoln.database.model.UpdateCourseInfo;
 
 public class InfiniteCampusDAO {
 
@@ -88,6 +87,9 @@ public class InfiniteCampusDAO {
 				+ " Calendar.endYear, "
 				+ " School.name as schoolName, "
 				+ " UserAccount.username as teacherName, "
+				+ " (select distinct count(*) "
+				+ " From SDWBlackboardSchedulerSISCourseSections "
+				+ " where SDWBlackboardSchedulerSISCourseSections.courseID = Course.courseID) as linkedCount, "
 				+ " (select distinct count(*)"
 				+ " From Section"
 				+ " Inner Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID"
@@ -108,7 +110,14 @@ public class InfiniteCampusDAO {
 				+ " left join SDWBlackboardSchedulerBBCourses a with (nolock) on a.bbCourseId = b.bbCourseID"
 				+ " where Section.teacherPersonID = (select personId from UserAccount where username = :username)"
 				+ " and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)"
-				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0";
+				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0"
+				+ " and (select distinct count(*) "
+				+ " From Section "
+				+ " Inner Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID "
+				+ " Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
+				+ " Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear "
+				+ " where Section.courseID = Course.courseID and Section.teacherPersonId = (select personId from UserAccount where username = :username) "
+				+ " and Trial.active = 1 and schoolyear.active=1) > 0";
 		
 		String userSQLAdmin = "select distinct Course.courseID,"
 				+ " Course.calendarID, "
@@ -117,6 +126,9 @@ public class InfiniteCampusDAO {
 				+ " Calendar.endYear, "
 				+ " School.name as schoolName, "
 				+ " UserAccount.username as teacherName, "
+				+ " (select distinct count(*) "
+				+ " From SDWBlackboardSchedulerSISCourseSections "
+				+ " where SDWBlackboardSchedulerSISCourseSections.courseID = Course.courseID) as linkedCount, "
 				+ " (select distinct count(*)"
 				+ " From Section"
 				+ " Inner Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID"
@@ -136,7 +148,14 @@ public class InfiniteCampusDAO {
 				+ " left join SDWBlackboardSchedulerSISCourseSections b with (nolock) on b.sectionID = Section.sectionID"
 				+ " left join SDWBlackboardSchedulerBBCourses a with (nolock) on a.bbCourseId = b.bbCourseID"
 				+ " where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)"
-				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0";
+				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0"
+				+ " and (select distinct count(*)"
+				+ "				 From Section"
+				+ "				 Inner Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID"
+				+ "				 Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1"
+				+ "				 Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear"
+				+ "				 where Section.courseID = Course.courseID "
+				+ "				 and Trial.active = 1 and schoolyear.active=1) > 0";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		
@@ -196,17 +215,19 @@ public class InfiniteCampusDAO {
 	public List<ICBBCourse> getBBCoursesByUsername(String username) {
 		mLog.info("In getBBCoursesByUsername ...");
 		String sql = "select distinct sdw.bbCourseID as id, sdw.bbCOURSE_ID as bbCourseId,  Calendar.name as calendarName,"
-				+ " UserAccount.username as userName, "
-				+ " sdw.schoolYear,"
-				+ " sdw.bbCOURSE_NAME as bbCourseName, "
-				+ " sdw.bbDESCRIPTION as bbCourseDescription, "
-				+ " sdw.groupSetId as groupSetId "
-				+ " from SDWBlackboardSchedulerBbCourses sdw"
-				+ " left join SDWBlackboardSchedulerSISCourseSections on SDWBlackboardSchedulerSISCourseSections.bbCourseID=sdw.bbCourseID"
-				+ " left join UserAccount on UserAccount.personID=sdw.createdByPersonID"
-				+ " left join Calendar on Calendar.calendarID=sdw.calendarID"
-				+ " where UserAccount.username=:username"
-				+ " and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
+				+ "	 UserAccount.username as userName,"
+				+ "	 sdw.schoolYear,"
+				+ "	 sdw.bbCOURSE_NAME as bbCourseName, "
+				+ "	 sdw.bbDESCRIPTION as bbCourseDescription, "
+				+ "	 sdw.groupSetId as groupSetId "
+				+ "	 from SDWBlackboardSchedulerBbCourses sdw"
+				+ "	 left join SDWBlackboardSchedulerSISCourseSections on SDWBlackboardSchedulerSISCourseSections.bbCourseID=sdw.bbCourseID"
+				+ "  left join SDWBlackboardSchedulerSISCoursePersons sdwp on sdwp.bbCourseID =sdw.bbCourseID"
+				+ "	 left join UserAccount on UserAccount.personID=sdw.createdByPersonID or UserAccount.personID=sdwp.personID"
+				+ "	 left join Calendar on Calendar.calendarID=sdw.calendarID "
+				+ "	 where (UserAccount.username=:username"
+				+ "	 and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1))"
+				+ "  or (UserAccount.username=:username and sdwp.personType='T' and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1))";
 
 		String sqlAdmin = "select distinct sdw.bbCourseID as id, sdw.bbCOURSE_ID as bbCourseId,  Calendar.name as calendarName,"
 				+ " UserAccount.username as userName, "
@@ -380,7 +401,7 @@ public class InfiniteCampusDAO {
 	}
 	@Transactional(readOnly=true)
 	public ICBBCourse getBBCourseById(String courseId) {
-		mLog.info("In getBBCoursesByUsername ...");
+		mLog.info("In getBBCoursesById ...");
 		mLog.info("COURSE ID: " + courseId);
 		String sql = "select sdw.bbCourseID as bbCourseId, sdw.bbCOURSE_ID as courseId, sdw.bbCOURSE_NAME as courseName, sdw.bbDESCRIPTION as courseDescription, sdw.groupSetId from SDWBlackboardSchedulerBbCourses sdw"
 				+ " where sdw.bbCOURSE_ID=:courseid";
@@ -1206,6 +1227,29 @@ public class InfiniteCampusDAO {
 		return keyHolder.getKey();
 
 	}
+	
+	public Number deleteBBPersonLink (Long key, Long personId) {
+		mLog.info("deleteBBPersonLink called ...");
+
+		String sql = "delete from SDWBlackboardSchedulerSISCoursePersons"
+				+ " where bbCourseId =:bbCourseId, and personId=:personId";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		Number rows = null;
+		mLog.info ("BB Course ID: " + key);
+		mLog.info ("Person ID: " + personId);
+		
+		params.addValue("bbCourseId", key);
+		params.addValue("personId", personId);
+		try {
+			rows = template.update(sql, params);
+			mLog.info("Number of rows deleted: " + rows);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return rows;
+	}
 
 	public Number updateBBCourseLink (Number p_key, CourseInfo courseInfo) {
 		mLog.info("updateBBCourseLink  called ...");
@@ -1218,6 +1262,31 @@ public class InfiniteCampusDAO {
 		params.addValue("bbCourseId", courseInfo.getTargetCourseId());
 		params.addValue("key", p_key);
 		params.addValue("personId", courseInfo.getPersonId());
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		Number id = null;
+
+		try {
+			id = template.update(sql, params, keyHolder);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+
+		return id;
+
+	}
+	
+	public Number updateBBCourseInfo (UpdateCourseInfo courseInfo) {
+		mLog.info("updateBBCourseInfo  called ...");
+
+		String sql = "update SDWBlackboardSchedulerBBCourses"
+				+ " set bbCOURSE_NAME = :bbCourseName, bbDESCRIPTION=:bbCourseDescription, modified=GETDATE()"
+				+ " where  bbCOURSE_ID = :bbCourseId";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("bbCourseName", courseInfo.getBbCourseName());
+		params.addValue("bbCourseDescription", courseInfo.getBbCourseDescription());
+		params.addValue("bbCourseId", courseInfo.getBbCourseId());
 		KeyHolder keyHolder = new GeneratedKeyHolder();
 		Number id = null;
 
@@ -1374,4 +1443,53 @@ public class InfiniteCampusDAO {
 
 		return rows;
 	}
+	
+	public List<ICStudent> getBBStudents (String p_courseId) {
+		mLog.info("getBBStudents  called ...");
+		mLog.info("COURSE ID: " + p_courseId);
+		String sql = "select distinct sdwp.personID as personId, "
+				+ "  UserAccount.username as userName, "
+				+ "  [Identity].firstName + ' ' + [Identity].lastName as studentName from SDWBlackboardSchedulerSISCoursePersons sdwp "
+				+ "  left join SDWBlackboardSchedulerBBCourses sdwc on sdwc.bbCourseId=sdwp.bbCourseID "
+				+ "  left join UserAccount on UserAccount.personID = sdwp.personID "
+				+ "  left join [Identity] on [Identity].personID = sdwp.personID "
+				+ "  where sdwp.personType='S' and sdwc.bbCOURSE_ID=:courseId"
+				+ "  and  UserAccount.isSAMLAccount=1";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICStudent> l_students = null;
+		try {
+			params.addValue("courseId", p_courseId);
+			l_students = template.query(sql,params,  new BeanPropertyRowMapper<ICStudent>(ICStudent.class));
+			mLog.info("Student Number: " + l_students.size());
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return l_students;
+	}
+	
+	public List<ICTeacher> getBBTeachers (String p_courseId) {
+		mLog.info("getBBTeachers  called ...");
+		String sql = "select distinct sdwp.personID as personId, "
+				+ "  UserAccount.username as userName, "
+				+ "  [Identity].firstName + ' ' + [Identity].lastName as teacherName from SDWBlackboardSchedulerSISCoursePersons sdwp "
+				+ "  left join SDWBlackboardSchedulerBBCourses sdwc on sdwc.bbCourseId=sdwp.bbCourseID "
+				+ "  left join UserAccount on UserAccount.personID = sdwp.personID"
+				+ "  left join [Identity] on [Identity].personID = sdwp.personID"
+				+ "  where sdwp.personType='T' and sdwc.bbCOURSE_ID=:courseId"
+				+ "  and  UserAccount.isSAMLAccount=1";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICTeacher> l_teachers = null;
+		try {
+			params.addValue("courseId", p_courseId);
+			l_teachers = template.query(sql,params,  new BeanPropertyRowMapper<ICTeacher>(ICTeacher.class));
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return l_teachers;
+	}
+	
 }

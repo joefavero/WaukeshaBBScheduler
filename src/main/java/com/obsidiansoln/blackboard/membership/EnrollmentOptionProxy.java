@@ -6,16 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class EnrollmentOptionProxy {
 	
-	@JsonProperty("childCourseId")
-	private String childCourseId;
-
-	public String getChildCourseId() {
-		return childCourseId;
-	}
-
-	public void setChildCourseId(String childCourseId) {
-		this.childCourseId = childCourseId;
-	}
 	
 	@JsonProperty("dataSourceId")
 	private String dataSourceId;

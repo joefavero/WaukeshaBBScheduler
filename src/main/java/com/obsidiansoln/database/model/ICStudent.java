@@ -5,6 +5,7 @@ public class ICStudent {
 	private Long personId;
 	private String userName;
 	private String studentName;
+
 	public Long getPersonId() {
 		return personId;
 	}

@@ -5,6 +5,7 @@ public class UpdateCourseInfo {
 	private String bbCourseId;
 	private String bbCourseName;
 	private String bbCourseDescription;
+	
 	public String getBbCourseId() {
 		return bbCourseId;
 	}

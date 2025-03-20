@@ -515,30 +515,39 @@ public class RestManager implements IGradesDb {
 	}
 
 	public void createMembership (String p_courseId, String p_username, String p_type) {
-		log.trace("In createMembership() ...");
+		log.info("In createMembership() ...");
 		RequestData l_requestData = new RequestData();
 		l_requestData.setCourseName(p_courseId);
 		l_requestData.setUserName(p_username);
 		EnrollmentOptionProxy l_enrollmentOption = new EnrollmentOptionProxy();
 		l_enrollmentOption.setCourseRoleId(p_type);
 		l_enrollmentOption.setDataSourceId("externalId:SIS.Enrollment");
-		//l_enrollmentOption.setavailabilityd(null);
+		Available l_available = new Available();
+		l_available.setAvailable("Yes");
+		l_enrollmentOption.setavailabilityd(l_available);
 
 		MembershipHandler l_membershipHandler = new MembershipHandler();
-		l_membershipHandler.createObject(m_configData.getRestHost(), m_token.getToken(),l_requestData, l_enrollmentOption);
+		HTTPStatus l_response =l_membershipHandler.createObject(m_configData.getRestHost(), m_token.getToken(),l_requestData, l_enrollmentOption);
 
+		//  If Enrollment Already Exists .. just Set Available
+		if (l_response.getStatus() == 409) {
+			l_membershipHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_enrollmentOption);
+		}
 	}
 
 	public void removeMembership (String p_courseId, String p_username) {
-		log.trace("In removeMembership() ...");
+		log.info("In removeMembership() ...");
 		RequestData l_requestData = new RequestData();
 		l_requestData.setCourseName(p_courseId);
 		l_requestData.setUserName(p_username);
 		EnrollmentOptionProxy l_enrollmentOption = new EnrollmentOptionProxy();
+		Available l_available = new Available();
+		l_available.setAvailable("No");
+		l_enrollmentOption.setavailabilityd(l_available);
 
 		checkToken();
 		MembershipHandler l_membershipHandler = new MembershipHandler();
-		HTTPStatus l_status = l_membershipHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(),l_requestData);
+		HTTPStatus l_status = l_membershipHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(),l_requestData, l_enrollmentOption);
 
 	}
 

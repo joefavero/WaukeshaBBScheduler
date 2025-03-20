@@ -28,6 +28,7 @@ import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
 import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.blackboard.model.BBRestCounts;
 import com.obsidiansoln.blackboard.model.SeparatedCourses;
+import com.obsidiansoln.blackboard.model.StudentData;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.blackboard.term.TermProxy;
 import com.obsidiansoln.blackboard.user.UserProxy;
@@ -125,7 +126,7 @@ public class RESTController {
 				l_configData.setRestKey(restData.getKey());
 				l_configData.setRestSecret(restData.getSecret());
 				m_service.saveConfigData(l_configData);
-				
+
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");
@@ -342,7 +343,7 @@ public class RESTController {
 				l_configData.setEmailUseSSL(adminData.isSsl());
 				l_configData.setEmailDebug(adminData.isDebug());
 				m_service.saveConfigData(l_configData);
-				
+
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");
@@ -440,16 +441,16 @@ public class RESTController {
 			return FAILURE;
 		}
 	}
-	
-	@RequestMapping(value = "/api/updateBBCourse", method = RequestMethod.PATCH, produces = "application/json")
+
+	@RequestMapping(value = "/api/updateBBCourse", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse updateBBCourse (@RequestBody final UpdateCourseInfo courseInfo, HttpServletRequest request) {
 		mLog.info("In updateBBCourse ...");
 		mLog.info("Course ID: " + courseInfo.getBbCourseId());
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
-			ObjectMapper mapper = new ObjectMapper();
 			try {
+				dao.updateBBCourseInfo(courseInfo);
 				ConfigData l_configData = m_service.getConfigData();
 				RestManager l_manager = new RestManager(l_configData);
 				l_manager.updateCourse(courseInfo);
@@ -475,7 +476,7 @@ public class RESTController {
 		}
 		return l_restResponse;
 	}
-	
+
 	@RequestMapping(value = "/api/getBBSections/{bbCourseId}/{userName}", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getBBSections (@PathVariable("bbCourseId") String bbCourseId, @PathVariable("userName") String userName,
@@ -638,6 +639,7 @@ public class RESTController {
 										dao.insertBBPersonLink(l_personInfo);
 									}
 								}
+
 
 								// Add the Extra teachers
 								if (courseInfo.getAdditionalTeachers() != null) {
@@ -865,6 +867,277 @@ public class RESTController {
 		return null;
 	}
 
+	@RequestMapping(value = "/api/getBBStudents/{courseId}", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public List<ICStudent> getBBStudents(@PathVariable("courseId") String courseId, HttpServletRequest request) {
+		mLog.info("In getBBStudents ...");
+		List<ICStudent> l_students = null;
+		if (checkApiKey(request)) {
+			try {
+				l_students = dao.getBBStudents(courseId);
+			} catch (Exception ex) {
+
+			}
+
+		} else {
+
+		}
+
+		return l_students;
+	}
+
+	@RequestMapping(value = "/api/getBBTeachers/{courseId}", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public List<ICTeacher> getBBTeachers(@PathVariable("courseId") String courseId, HttpServletRequest request) {
+		mLog.info("In getBBTeachers ...");
+		List<ICTeacher> l_teachers = null;
+		if (checkApiKey(request)) {
+
+			try {
+				l_teachers= dao.getBBTeachers(courseId);
+			} catch (Exception ex) {
+
+			}
+
+		} else {
+
+		}
+
+		return l_teachers;
+	}
+	
+	@RequestMapping(value = "/api/removeBBStudent/{courseId}/{student}", method = RequestMethod.DELETE, produces = "application/json")
+	@ResponseBody
+	public RestResponse removeBBStudent(@PathVariable("courseId") String courseId,
+			@PathVariable("student") String student, HttpServletRequest request) {
+		mLog.info("In removeBBStudent ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+				l_manager.removeMembership(courseId, student);
+				
+				// Remove From SDWBlackboaardSchedulerSISPersons Table
+				Long l_personId = dao.getPersonId(student);
+				ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
+				dao.deleteBBPersonLink(Long.valueOf(l_bbCourse.getBbCourseId()), l_personId);
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("Remove Student Successfull");
+				l_restResponse.setToast(l_toast);
+
+			} catch (Exception ex) {
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On REST API");
+				l_restResponse.setToast(l_toast);
+			}
+
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+
+		return l_restResponse;
+	}
+
+
+	@RequestMapping(value = "/api/addBBStudent/{courseId}/{students}/{personId}", method = RequestMethod.POST, produces = "application/json")
+	@ResponseBody
+	public RestResponse addBBStudent(@PathVariable("courseId") String courseId, 
+			@PathVariable("students") String[] students, @PathVariable("personId") String personId, HttpServletRequest request) {
+		mLog.info("In addBBStudent ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+
+				// Add the Extra teachers
+				if (students != null) {
+					ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
+					if (l_bbCourse != null) {
+						for (String l_student : students) {
+							mLog.info("Adding Student: " + l_student);
+
+							l_manager.createMembership(courseId, l_student, "Student");
+							// Add to SDW Person Table
+							Long l_personId = dao.getPersonId(l_student);
+							PersonInfo l_personInfo = new PersonInfo();
+							l_personInfo.setBbCourseId(Long.valueOf(l_bbCourse.getBbCourseId()));
+							l_personInfo.setPersonId(l_personId);
+							l_personInfo.setPersonType("S");
+							l_personInfo.setSourcePersonType("S");
+							l_personInfo.setModifiedByPersonId(Long.valueOf(personId));
+							Number rows = dao.insertBBPersonLink(l_personInfo);
+							if (rows == null) {
+								mLog.error("Error Updating Persons Link Table");
+							}
+						}
+						l_restResponse.setSuccess(true);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("success");
+						l_toast.setMessage("Add Students Successfull");
+						l_restResponse.setToast(l_toast);
+					} else {
+						l_restResponse.setSuccess(false);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("error");
+						l_toast.setMessage("No BB Course Found");
+						l_restResponse.setToast(l_toast);
+					}
+					
+				} else {
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("No Teachers Found");
+					l_restResponse.setToast(l_toast);
+				}
+
+			} catch (Exception ex) {
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On REST API");
+				l_restResponse.setToast(l_toast);
+			}
+
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+
+		return l_restResponse;
+	}
+
+	@RequestMapping(value = "/api/removeBBTeacher/{courseId}/{teacher}", method = RequestMethod.DELETE, produces = "application/json")
+	@ResponseBody
+	public RestResponse removeBBTeacher(@PathVariable("courseId") String courseId,
+			@PathVariable("teacher") String teacher, HttpServletRequest request) {
+		mLog.info("In removeBBTeacher ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+				l_manager.removeMembership(courseId, teacher);
+				
+				// Remove From SDWBlackboaardSchedulerSISPersons Table
+				Long l_personId = dao.getPersonId(teacher);
+				ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
+				dao.deleteBBPersonLink(Long.valueOf(l_bbCourse.getBbCourseId()), l_personId);
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("Remove Teacher Successfull");
+				l_restResponse.setToast(l_toast);
+
+			} catch (Exception ex) {
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On REST API");
+				l_restResponse.setToast(l_toast);
+			}
+
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+
+		return l_restResponse;
+	}
+
+
+	@RequestMapping(value = "/api/addBBTeacher/{courseId}/{teachers}/{personId}", method = RequestMethod.POST, produces = "application/json")
+	@ResponseBody
+	public RestResponse addBBTeacher(@PathVariable("courseId") String courseId, 
+			@PathVariable("teachers") String[] teachers, @PathVariable("personId") String personId, HttpServletRequest request) {
+		mLog.info("In addBBTeacher ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+
+				// Add the Extra teachers
+				if (teachers != null) {
+					ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
+					if (l_bbCourse != null) {
+						for (String l_teacher : teachers) {
+							mLog.info("Adding Teacher: " + l_teacher);
+
+							l_manager.createMembership(courseId, l_teacher, "Instructor");
+							// Add to SDW Person Table
+							Long l_personId = dao.getPersonId(l_teacher);
+							PersonInfo l_personInfo = new PersonInfo();
+							l_personInfo.setBbCourseId(Long.valueOf(l_bbCourse.getBbCourseId()));
+							l_personInfo.setPersonId(l_personId);
+							l_personInfo.setPersonType("T");
+							l_personInfo.setSourcePersonType("T");
+							l_personInfo.setModifiedByPersonId(Long.valueOf(personId));
+							Number rows = dao.insertBBPersonLink(l_personInfo);
+							if (rows == null) {
+								mLog.error("Error Updating Persons Link Table");
+							}
+						}
+						l_restResponse.setSuccess(true);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("success");
+						l_toast.setMessage("Add Teachers Successfull");
+						l_restResponse.setToast(l_toast);
+					} else {
+						l_restResponse.setSuccess(false);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("error");
+						l_toast.setMessage("No BB Course Found");
+						l_restResponse.setToast(l_toast);
+					}
+					
+				} else {
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("No Teachers Found");
+					l_restResponse.setToast(l_toast);
+				}
+
+			} catch (Exception ex) {
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On REST API");
+				l_restResponse.setToast(l_toast);
+			}
+
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+
+		return l_restResponse;
+	}
+
 	@RequestMapping(value = "/api/removeSection/{sectionId}", method = RequestMethod.DELETE, produces = "application/json")
 	@ResponseBody
 	public RestResponse removeSection(@PathVariable("sectionId") String sectionId, HttpServletRequest request) {
@@ -889,10 +1162,10 @@ public class RESTController {
 								l_manager.removeMembership(l_course, l_enrollment.getUsername());
 							}
 						} 
-						
+
 						// Remove the Group associated with this Section
 						l_manager.deleteCourseGroup (l_courseProxy.getId(), sectionId);
-						
+
 						l_restResponse.setSuccess(true);
 						ToastMessage l_toast = new ToastMessage();
 						l_toast.setType("success");
@@ -950,14 +1223,14 @@ public class RESTController {
 				// Create Course Group
 				ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
 				if (l_bbCourse != null) {
-					
+
 					// If this is a BB Course Created before BB Scheduler, need to add in Group Set
 					if (l_bbCourse.getGroupSetId() == null) {
 						HashMap<String,GroupProxy> l_groups =l_manager.createCourseGroup(courseId, null);
 						// Update SDWBlackboardSchedulerBbCourse with GroupSetId
 						dao.updateBBCourseGroupSet(l_bbCourse.getId(), l_groups.get(l_bbCourse.getBbCourseId()), personId);
 					}
-					
+
 					SectionInfo l_sectionInfo = new SectionInfo();
 					ICSectionInfo l_sectionICInfo = dao.getSectionInfo(sectionId);
 					if (l_sectionICInfo != null) {
@@ -1034,13 +1307,13 @@ public class RESTController {
 			try {
 				l_configData = m_service.getConfigData();
 				RestManager l_manager = new RestManager(l_configData);
-				List<String> l_courses = l_manager.getCoursesByDate("2025-02-01T22:22:10.002Z", true);
+				List<String> l_courses = l_manager.getCoursesByDate("2025-03-15T22:22:10.002Z", true);
 				mLog.info(" Number of Courses: " + l_courses.size());
 				for (String l_course:l_courses) {
 					mLog.info("Deleting Course: " + l_course);
 					l_manager.deleteCourse(l_course);
 				}
-				
+
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");

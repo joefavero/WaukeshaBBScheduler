@@ -11,6 +11,7 @@ public class ICCourse {
     private String endYear;
     private String teacherName;
     private List<String> linkedCourses;
+    private Long linkedCount;
     private Long sectionCount;
 	private String bbCourseId;
 	private String blackboardId;
@@ -64,6 +65,12 @@ public class ICCourse {
 	}
 	public void setLinkedCourses(List<String> linkedCourses) {
 		this.linkedCourses = linkedCourses;
+	}
+	public Long getLinkedCount() {
+		return linkedCount;
+	}
+	public void setLinkedCount(Long linkedCount) {
+		this.linkedCount = linkedCount;
 	}
 	public Long getSectionCount() {
 		return sectionCount;

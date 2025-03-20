@@ -119,6 +119,13 @@ public class MembershipHandler implements RestHandler {
 				access_token, ""));
 	}
 
+	public HTTPStatus deleteObject(String host, String access_token, RequestData data, EnrollmentOptionProxy enrollment) {
+		log.trace("In deleteObject()");
+		return (RestRequest.sendRequest(host, RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_COURSE_EXTENSION + "courseId:"
+				+ data.getCourseName() + RestConstants.MEMBERSHIP_USER_EXTENSION + "userName:" + data.getUserName(), HttpMethod.PATCH,
+				access_token, getBody(enrollment)));
+	}
+
 	public MembershipResponseProxy getClientData(String host, String access_token, String p_nextPage,
 			RequestData p_data) {
 		log.trace("In getClientData()");

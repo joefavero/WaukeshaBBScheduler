@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   	<title>BB Scheduler</title>
   	<base href="/WaukeshaBBScheduler/static/BBSCHEDULER/">
-  	<script>window.sessionStorage.clear(); window.sessionStorage.setItem('userMode', '${userMode}');</script>
     <script type="module" crossorigin src="./assets/index-DG0O6Tp8.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-etg7sU8v.css">
   </head>
@@ -15,5 +14,3 @@
     <div id="root"></div>
   </body>
 </html>
-
-
