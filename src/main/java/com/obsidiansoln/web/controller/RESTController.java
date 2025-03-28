@@ -28,7 +28,8 @@ import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
 import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.blackboard.model.BBRestCounts;
 import com.obsidiansoln.blackboard.model.SeparatedCourses;
-import com.obsidiansoln.blackboard.model.StudentData;
+import com.obsidiansoln.blackboard.model.StudentInfo;
+import com.obsidiansoln.blackboard.model.TeacherInfo;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.blackboard.term.TermProxy;
 import com.obsidiansoln.blackboard.user.UserProxy;
@@ -40,6 +41,7 @@ import com.obsidiansoln.database.model.ICBBSection;
 import com.obsidiansoln.database.model.ICCalendar;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
+import com.obsidiansoln.database.model.ICGuardian;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
@@ -57,6 +59,7 @@ import com.obsidiansoln.web.model.LtiInfo;
 import com.obsidiansoln.web.model.PortalInfo;
 import com.obsidiansoln.web.model.RestInfo;
 import com.obsidiansoln.web.model.RestResponse;
+import com.obsidiansoln.web.model.SnapshotInfo;
 import com.obsidiansoln.web.model.ToastMessage;
 import com.obsidiansoln.web.service.AsyncService;
 import com.obsidiansoln.web.service.BBSchedulerService;
@@ -70,6 +73,7 @@ public class RESTController {
 	private BBSchedulerService m_service = null;
 	@Autowired
 	private InfiniteCampusDAO dao;
+	
 	@Autowired
 	private AsyncService service;
 
@@ -114,7 +118,7 @@ public class RESTController {
 		}
 	}
 
-	@RequestMapping(value = "/api/restData", method = RequestMethod.PUT, produces = "application/json")
+	@RequestMapping(value = "/api/restData", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse putRestData(@RequestBody final RestInfo restData, HttpServletRequest request) {
 		mLog.trace("In putRestData ...");
@@ -175,7 +179,7 @@ public class RESTController {
 		}
 	}
 
-	@RequestMapping(value = "/api/ltiData", method = RequestMethod.PUT, produces = "application/json")
+	@RequestMapping(value = "/api/ltiData", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse putLtiData(@RequestBody final LtiInfo ltiData, HttpServletRequest request) {
 		mLog.info("In putLtiData ..." + ltiData.getKey());
@@ -253,7 +257,7 @@ public class RESTController {
 		}
 	}
 
-	@RequestMapping(value = "/api/portalData", method = RequestMethod.PUT, produces = "application/json")
+	@RequestMapping(value = "/api/portalData", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse putPortalData(@RequestBody final PortalInfo portalData, HttpServletRequest request) {
 		mLog.trace("In putPortalData ...");
@@ -326,7 +330,7 @@ public class RESTController {
 		}
 	}
 
-	@RequestMapping(value = "/api/adminData", method = RequestMethod.PUT, produces = "application/json")
+	@RequestMapping(value = "/api/adminData", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse putAdminData(@RequestBody final AdminInfo adminData, HttpServletRequest request) {
 		mLog.trace("In putAdminData ...");
@@ -367,6 +371,69 @@ public class RESTController {
 		return l_restResponse;
 	}
 
+	@RequestMapping(value = "/api/snapshotData", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public String getSnapshotData(HttpServletRequest request) {
+		mLog.info("In getSnapshotData ...");
+		if (checkApiKey(request)) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				ConfigData l_configData = m_service.getConfigData();
+				SnapshotInfo l_snapshotData = new SnapshotInfo();
+				l_snapshotData.setBbInstanceId(l_configData.getSnapshotBbInstanceId());
+				l_snapshotData.setSharedUsername(l_configData.getSnapshotSharedUsername());
+				l_snapshotData.setSharedPassword(l_configData.getSnapshotSharedPassword());
+				l_snapshotData.setEmail(l_configData.getSnapshotEmail());
+
+				return mapper.writeValueAsString(l_snapshotData);
+			} catch (JsonProcessingException e) {
+				mLog.error(e.getMessage());
+				return FAILURE;
+			} catch (Exception e) {
+				mLog.error(e.getMessage());
+				return FAILURE;
+			}
+		} else {
+			return FAILURE;
+		}
+	}
+
+	@RequestMapping(value = "/api/snapshotData", method = RequestMethod.POST, produces = "application/json")
+	@ResponseBody
+	public RestResponse putSnapshotData(@RequestBody final SnapshotInfo snapshotData, HttpServletRequest request) {
+		mLog.info("In putSnapshotData ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			try {
+				ConfigData l_configData = m_service.getConfigData();
+				l_configData.setSnapshotBbInstanceId(snapshotData.getBbInstanceId());
+				l_configData.setSnapshotSharedUsername(snapshotData.getSharedUsername());
+				l_configData.setSnapshotSharedPassword(snapshotData.getSharedPassword());
+				l_configData.setSnapshotEmail(snapshotData.getEmail());
+				m_service.saveConfigData(l_configData);
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("SNAPSHOT Data Updated");
+				l_restResponse.setToast(l_toast);
+			} catch (Exception l_ex) {
+				mLog.error("Error: ", l_ex);
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("ERROR on REST API");
+				l_restResponse.setToast(l_toast);
+			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+		return l_restResponse;
+	}
+	
 	@RequestMapping(value = "/api/getTemplates", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getTemplates (HttpServletRequest request) {
@@ -747,19 +814,74 @@ public class RESTController {
 			List<ICUser> l_students = dao.getSISStudents();
 			mLog.info("Number of Students: " + l_students.size());
 
+			String l_file = l_manager.createStudentFile(l_students);
+			if (l_file != null) {
+				try {
+					service.processSISFile(l_file, 1, l_students.size(), l_manager);
+					l_restResponse.setSuccess(true);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("success");
+					l_toast.setMessage("Sync Users Successfully Submitted");
+					l_restResponse.setToast(l_toast);
+				} catch (InterruptedException e) {
+					mLog.error("Error: " + "Unable to queue Snapshot File");
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("Unable to queue Snapshot File");
+					l_restResponse.setToast(l_toast);
+				}
+				//l_manager.sendFile(l_file, "person", 1, l_students.size());
 
+			} else {
+				mLog.error("Error: " + "Unable to create Snapshot File");
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Unable to create Snapshot File");
+				l_restResponse.setToast(l_toast);
+			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+		return l_restResponse;
+	}
+	
+	@RequestMapping(value = "/api/syncStaff", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public RestResponse syncStaff (HttpServletRequest request) {
+		mLog.info("In syncStaff() ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			mLog.info ("Starting to Sync the Staff between Infinite Campus and Blackboard");
+			SnapshotFileManager l_manager = new SnapshotFileManager();
 			// Get Staff
 			List<ICStaff> l_staffs = dao.getSISStaff();
 			mLog.info("Number of Staff: " + l_staffs.size());
 
-			String l_file = l_manager.createFile(l_students, l_staffs);
+			String l_file = l_manager.createStaffFile(l_staffs);
 			if (l_file != null) {
-				l_manager.sendFile(l_file, "person", l_students.size()+l_staffs.size());
-				l_restResponse.setSuccess(true);
-				ToastMessage l_toast = new ToastMessage();
-				l_toast.setType("success");
-				l_toast.setMessage("Sync Users Successfull");
-				l_restResponse.setToast(l_toast);
+				try {
+					service.processSISFile(l_file, 2, l_staffs.size(), l_manager);
+					l_restResponse.setSuccess(true);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("success");
+					l_toast.setMessage("Sync Staff Successfully Submitted");
+					l_restResponse.setToast(l_toast);
+				} catch (InterruptedException e) {
+					mLog.error("Error: " + "Unable to queue Snapshot File");
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("Unable to queue Snapshot File");
+					l_restResponse.setToast(l_toast);
+				}
+				//l_manager.sendFile(l_file, "person", 2, l_staffs.size());
+
 			} else {
 				mLog.error("Error: " + "Unable to create Snapshot File");
 				l_restResponse.setSuccess(false);
@@ -792,12 +914,23 @@ public class RESTController {
 
 			String l_file = l_manager.createEnrollmentFile(l_enrollments);
 			if (l_file != null) {
-				l_manager.sendFile(l_file, "membership", l_enrollments.size());
-				l_restResponse.setSuccess(true);
-				ToastMessage l_toast = new ToastMessage();
-				l_toast.setType("success");
-				l_toast.setMessage("Sync Groups Successfull");
-				l_restResponse.setToast(l_toast);
+				try {
+					service.processSISFile(l_file, 1, l_enrollments.size(), l_manager);
+					l_restResponse.setSuccess(true);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("success");
+					l_toast.setMessage("Sync Enrollments Successfully Submitted");
+					l_restResponse.setToast(l_toast);
+				} catch (InterruptedException e) {
+					mLog.error("Error: " + "Unable to queue Snapshot File");
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("Unable to queue Snapshot File");
+					l_restResponse.setToast(l_toast);
+				}
+				//l_manager.sendFile(l_file, "membership", 1, l_enrollments.size());
+				
 			} else {
 				mLog.error("Error: " + "Unable to create Snapshot File");
 				l_restResponse.setSuccess(false);
@@ -854,6 +987,59 @@ public class RESTController {
 		return l_restResponse;
 	}
 
+	
+	@RequestMapping(value = "/api/syncGuardians", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public RestResponse syncGuardians (HttpServletRequest request) {
+		mLog.info("In syncGuardians() ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			mLog.info ("Starting to Sync the Guardians between Infinite Campus and Blackboard");
+			SnapshotFileManager l_manager = new SnapshotFileManager();
+
+			List<ICGuardian> l_guardians = dao.getSISGuardians();
+			mLog.info("Number of Guardians: " + l_guardians.size());
+
+			String l_file = l_manager.createGuardianFile(l_guardians);
+			if (l_file != null) {
+				try {
+					service.processSISFile(l_file, 3, l_guardians.size(), l_manager);
+					l_restResponse.setSuccess(true);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("success");
+					l_toast.setMessage("Sync Guardians Successfully Submitted");
+					l_restResponse.setToast(l_toast);
+				} catch (InterruptedException e) {
+					mLog.error("Error: " + "Unable to queue Snapshot File");
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("Unable to queue Snapshot File");
+					l_restResponse.setToast(l_toast);
+				}
+				//l_manager.sendFile(l_file, "membership", 1, l_enrollments.size());
+			} else {
+				mLog.error("Error: " + "Unable to create Snapshot File");
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Unable to create Snapshot File");
+				l_restResponse.setToast(l_toast);
+			}
+			
+			mLog.info("DONE");
+			
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+		return l_restResponse;
+	}
+	
+	
 	@RequestMapping(value = "/api/getStudents", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public List<ICStudent> getStudents(HttpServletRequest request) {
@@ -949,10 +1135,9 @@ public class RESTController {
 	}
 
 
-	@RequestMapping(value = "/api/addBBStudent/{courseId}/{students}/{personId}", method = RequestMethod.POST, produces = "application/json")
+	@RequestMapping(value = "/api/addBBStudent", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
-	public RestResponse addBBStudent(@PathVariable("courseId") String courseId, 
-			@PathVariable("students") String[] students, @PathVariable("personId") String personId, HttpServletRequest request) {
+	public RestResponse addBBStudent(@RequestBody final StudentInfo studentInfo, HttpServletRequest request) {
 		mLog.info("In addBBStudent ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
@@ -962,13 +1147,13 @@ public class RESTController {
 				RestManager l_manager = new RestManager(l_configData);
 
 				// Add the Extra teachers
-				if (students != null) {
-					ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
+				if (studentInfo != null) {
+					ICBBCourse l_bbCourse = dao.getBBCourseById(studentInfo.getCourseId());
 					if (l_bbCourse != null) {
-						for (String l_student : students) {
+						for (String l_student : studentInfo.getStudents()) {
 							mLog.info("Adding Student: " + l_student);
 
-							l_manager.createMembership(courseId, l_student, "Student");
+							l_manager.createMembership(studentInfo.getCourseId(), l_student, "Student");
 							// Add to SDW Person Table
 							Long l_personId = dao.getPersonId(l_student);
 							PersonInfo l_personInfo = new PersonInfo();
@@ -976,7 +1161,7 @@ public class RESTController {
 							l_personInfo.setPersonId(l_personId);
 							l_personInfo.setPersonType("S");
 							l_personInfo.setSourcePersonType("S");
-							l_personInfo.setModifiedByPersonId(Long.valueOf(personId));
+							l_personInfo.setModifiedByPersonId(Long.valueOf(studentInfo.getPersonId()));
 							Number rows = dao.insertBBPersonLink(l_personInfo);
 							if (rows == null) {
 								mLog.error("Error Updating Persons Link Table");
@@ -1065,10 +1250,9 @@ public class RESTController {
 	}
 
 
-	@RequestMapping(value = "/api/addBBTeacher/{courseId}/{teachers}/{personId}", method = RequestMethod.POST, produces = "application/json")
+	@RequestMapping(value = "/api/addBBTeacher", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
-	public RestResponse addBBTeacher(@PathVariable("courseId") String courseId, 
-			@PathVariable("teachers") String[] teachers, @PathVariable("personId") String personId, HttpServletRequest request) {
+	public RestResponse addBBTeacher(@RequestBody final TeacherInfo teacherInfo, HttpServletRequest request) {
 		mLog.info("In addBBTeacher ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
@@ -1078,13 +1262,13 @@ public class RESTController {
 				RestManager l_manager = new RestManager(l_configData);
 
 				// Add the Extra teachers
-				if (teachers != null) {
-					ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
+				if (teacherInfo != null) {
+					ICBBCourse l_bbCourse = dao.getBBCourseById(teacherInfo.getCourseId());
 					if (l_bbCourse != null) {
-						for (String l_teacher : teachers) {
+						for (String l_teacher : teacherInfo.getTeachers()) {
 							mLog.info("Adding Teacher: " + l_teacher);
 
-							l_manager.createMembership(courseId, l_teacher, "Instructor");
+							l_manager.createMembership(teacherInfo.getCourseId(), l_teacher, "Instructor");
 							// Add to SDW Person Table
 							Long l_personId = dao.getPersonId(l_teacher);
 							PersonInfo l_personInfo = new PersonInfo();
@@ -1092,7 +1276,7 @@ public class RESTController {
 							l_personInfo.setPersonId(l_personId);
 							l_personInfo.setPersonType("T");
 							l_personInfo.setSourcePersonType("T");
-							l_personInfo.setModifiedByPersonId(Long.valueOf(personId));
+							l_personInfo.setModifiedByPersonId(Long.valueOf(teacherInfo.getPersonId()));
 							Number rows = dao.insertBBPersonLink(l_personInfo);
 							if (rows == null) {
 								mLog.error("Error Updating Persons Link Table");
@@ -1368,6 +1552,10 @@ public class RESTController {
 
 
 		return SUCCESS;
+	}
+	
+	public String getPersonId(String username) {
+		return this.getPersonId(username);
 	}
 
 	private boolean checkApiKey(HttpServletRequest request) {

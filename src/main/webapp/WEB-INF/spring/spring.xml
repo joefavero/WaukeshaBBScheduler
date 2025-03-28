@@ -94,5 +94,4 @@
         <constructor-arg><ref bean="namedParameterJdbcTemplate"/></constructor-arg>  
     </bean>   
 
-
 </beans>

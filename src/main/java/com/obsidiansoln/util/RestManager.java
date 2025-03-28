@@ -521,7 +521,7 @@ public class RestManager implements IGradesDb {
 		l_requestData.setUserName(p_username);
 		EnrollmentOptionProxy l_enrollmentOption = new EnrollmentOptionProxy();
 		l_enrollmentOption.setCourseRoleId(p_type);
-		l_enrollmentOption.setDataSourceId("externalId:SIS.Enrollment");
+		l_enrollmentOption.setDataSourceId("externalId:SIS2.Enrollment");
 		Available l_available = new Available();
 		l_available.setAvailable("Yes");
 		l_enrollmentOption.setavailabilityd(l_available);

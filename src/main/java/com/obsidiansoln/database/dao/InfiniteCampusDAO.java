@@ -26,6 +26,7 @@ import com.obsidiansoln.database.model.ICBBSection;
 import com.obsidiansoln.database.model.ICCalendar;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
+import com.obsidiansoln.database.model.ICGuardian;
 import com.obsidiansoln.database.model.ICPerson;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
@@ -649,7 +650,8 @@ public class InfiniteCampusDAO {
 				+ "				  and (UA.lock Is Null OR UA.lock=0)  "
 				+ "				  and NOT (UA.username Is Null OR UA.username='')  "
 				+ "				  and NOT ((UA.LDAPDN Is Null or UA.LDAPDN='') and UA.isSAMLAccount = 0) "
-				+ "				  and (UA.expiresDate Is Null or UA.expiresDate>=GETDATE())";
+				+ "				  and (UA.expiresDate Is Null or UA.expiresDate>=GETDATE())"
+				+ "               and UA.isSAMLAccount = 1";
 
 		String sql2 = "select [identity].personID, firstname, lastname, UserAccount.username, UserAccount.email from [Identity] "
 				+ "Inner Join (select userAccount.personID, max(id.IdentityID)max_id  from UserAccount "
@@ -678,7 +680,7 @@ public class InfiniteCampusDAO {
 				+ " prs.personID as personId,"
 				+ " UA.username as userName,"
 				+ " IsNull(LTRIM(RTRIM(REPLACE(idn.firstName,',',' '))),'')  + ' ' +"
-				+ " IsNull(LTRIM(RTRIM(REPLACE(idn.lastName,',',' '))),'') + ' (' + IsNull(LTRIM(RTRIM(Prs.studentNumber)),'') + ')'  as studentName"
+				+ " IsNull(LTRIM(RTRIM(REPLACE(idn.lastName,',',' '))),'') + ' - ' + IsNull(LTRIM(RTRIM(Prs.studentNumber)),'')   as studentName"
 				+ " from Person prs with (nolock) "
 				+ " cross join campusVersion v with (nolock) "
 				+ " join Enrollment enr with (nolock) on prs.personID=enr.personID "
@@ -763,6 +765,7 @@ public class InfiniteCampusDAO {
 				+ " 	and [UA].[lock]<>1 	and (UA.expiresDate Is Null or UA.expiresDate >= GETDATE()) "
 				+ " where NOT (prs.studentNumber IS Null or prs.studentNumber='') "
 				+ "  and enr.districtID=v.districtID "
+				+ "  and UA.isSAMLAccount = 1"
 				+ " UNION "
 				+ " select distinct "
 				+ " prs.personID as personId,"
@@ -869,7 +872,8 @@ public class InfiniteCampusDAO {
 				+ "	where enrz.personID=prs.personID "
 				+ "	and enrz.active=1 "
 				+ "	and (enrz.noShow=0 or enrz.noShow Is Null) "
-				+ "	and enrz.serviceType IN ('P','S','N')),'N') = 'Y'";
+				+ "	and enrz.serviceType IN ('P','S','N')),'N') = 'Y'"
+				+ " and UA.isSAMLAccount = 1";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICStudent> students = null;
@@ -1137,6 +1141,251 @@ public class InfiniteCampusDAO {
 		return staff;
 	}
 	
+	@Transactional(readOnly=true)
+	public List<ICGuardian> getSISGuardians() {
+		mLog.info("getGuardian called ...");
+		String sql = "select distinct prs.personID as personId, "
+				+ "  RelatedPair.personID2 as bbPersonID, "
+				+ "  cdEnr.seq,RelatedPair.seq relatedPairSeq, "
+				+ "  prs.studentNumber as studentNumber, "
+				+ "  UAs.Username as studentUsername, "
+				+ "  HM.householdID, "
+				+ "  RPhm.householdID RPhouseholdID, "
+				+ "  IsNull(Household.legacyKey,'') householdLegacyKey, "
+				+ "  (CASE WHEN Household.phonePrivate=1 OR Household.phone Is Null THEN '' ELSE LTRIM(RTRIM(Household.phone)) END) householdPhone, "
+				+ "  HL.addressID hlAddressID, "
+				+ "  (CASE WHEN RPprs.legacyKey Is Null OR LTRIM(RTRIM(RPprs.legacyKey))='' OR IsNumeric(SUBSTRING(RPprs.legacyKey,2,LEN(RPprs.legacyKey)-1))=0 OR SUBSTRING(RPprs.legacyKey,1,1)<>'C' OR LEN(RPprs.legacyKey)<>8 THEN 'C'+CAST(RPprs.personID as varchar(10)) ELSE SUBSTRING(RPprs.legacyKey,2,LEN(RPprs.legacyKey)-1) END) as contactNumber, "
+				+ "  RelatedPair.name RPrelationship, "
+				+ "  IsNull(LTRIM(RTRIM(REPLACE(RPidn.firstName,',',' '))),'') as firstName, "
+				+ "  IsNull(LTRIM(RTRIM(REPLACE(RPidn.middleName,',',' '))),'') as middleName, "
+				+ "  IsNull(LTRIM(RTRIM(REPLACE(RPidn.lastName,',',' '))),'') as lastName, "
+				+ "  IsNull(LTRIM(RTRIM(REPLACE(RPidn.suffix,',',' '))),'') RPnamesfx, "
+				+ "  (CASE WHEN Household.phone Is Null THEN '' ELSE LTRIM(RTRIM(Household.phone)) END) HPhomePhone, "
+				+ "  (CASE WHEN RPcon.homePhone Is Null THEN '' ELSE LTRIM(RTRIM(RPcon.homePhone)) END) RPhomePhone, "
+				+ "  (CASE WHEN RPcon.cellPhone Is Null THEN '' ELSE LTRIM(RTRIM(RPcon.cellPhone)) END) RPcellPhone, "
+				+ "  (CASE WHEN RPcon.email Is Null THEN '' ELSE LTRIM(RTRIM(REPLACE(RPcon.email,',','.'))) END) as email, "
+				+ "  RPhl.addressID RPhlAddressID, "
+				+ "  IsNull((CASE WHEN RPh.legacyKey Is Null OR LTRIM(RTRIM(RPh.legacyKey))='' THEN 'C'+CAST(RPhm.householdID as varchar(10)) ELSE SUBSTRING(RPh.legacyKey,2,LEN(RPh.legacyKey)-1) END),'') RPhouseholdNumber, "
+				+ "  LTRIM(RTRIM(REPLACE((CASE WHEN RPaddr.number Is Null THEN '' ELSE LTRIM(RTRIM(RPaddr.number)) END)+(CASE WHEN RPaddr.prefix Is Null THEN '' ELSE ' '+LTRIM(RTRIM(RPaddr.prefix)) END)+(CASE WHEN RPaddr.street Is Null THEN '' ELSE ' '+LTRIM(RTRIM(REPLACE(RPaddr.street,',',' '))) END)+(CASE WHEN RPaddr.tag Is Null THEN '' ELSE ' '+LTRIM(RTRIM(RPaddr.tag)) END)+(CASE WHEN RPaddr.dir Is Null THEN '' ELSE ' '+LTRIM(RTRIM(RPaddr.dir)) END),',',' '))) as street1, "
+				+ "  IsNull(LTRIM(RTRIM(RPaddr.apt)),'') RPApt, "
+				+ "  IsNull(LTRIM(RTRIM(RPaddr.city)),'') as city, "
+				+ "  IsNull(LTRIM(RTRIM(RPaddr.[state])),'') as state, "
+				+ "  IsNull(LTRIM(RTRIM(RPaddr.zip)),'') as zip, "
+				+ "  IsNull(CAST(CSBbUsername.customID as varchar(10)),'') CSbbUsernameCustomID, "
+				+ "  IsNull(CSBbUsername.value,'') as bbUsername, "
+				+ "  IsNull(CAST(CSbbPassword.customID as varchar(10)),'') CSbbPasswordCustomID, "
+				+ "  IsNull(CSbbPassword.value,'') as bbPassword "
+				+ " from Person prs with (nolock) "
+				+ "  join Enrollment enr with (nolock) on prs.personID=enr.personID  "
+				+ "	   and (enr.endDate Is Null or enr.endDate>GETDATE())  "
+				+ "	   and enr.startDate=(  "
+				+ "		select max(enr1.startDate)  "
+				+ "		from Enrollment enr1 with (nolock)  "
+				+ "		where enr1.calendarID=enr.calendarID  "
+				+ "		and enr1.districtID=enr.districtID  "
+				+ "		and enr1.personID=prs.personID  "
+				+ "		and enr1.active=1  "
+				+ "		and (enr1.noShow=0 or enr1.noShow Is Null)  "
+				+ "		and enr1.serviceType=enr.serviceType  "
+				+ "		and (enr1.endDate Is Null or enr1.endDate>GETDATE())  "
+				+ "	)  "
+				+ "	and enr.active=1  "
+				+ "	and (enr.noShow=0 or enr.noShow Is Null)  "
+				+ "	and enr.serviceType IN ('P') "
+				+ " join [Identity] idn with (nolock) on prs.currentIdentityID=idn.identityID  "
+				+ "	  and prs.personID=idn.personID  "
+				+ "	  and enr.districtID=idn.districtID "
+				+ " join Contact con with (nolock) on con.personID=prs.personID "
+				+ " join UserAccount UAs with (nolock) on UAs.personID=prs.personID "
+				+ "	  and NOT (UAs.username Is Null or LTRIM(RTRIM(UAs.username))='') "
+				+ "	  and [UAs].[disable]<>1  "
+				+ "	  and [UAs].[lock]<>1  "
+				+ "	  and (UAs.expiresDate Is Null or UAs.expiresDate>=GETDATE())  "
+				+ " join HouseholdMember HM with (nolock) on prs.personID=HM.personID  "
+				+ "	  and (HM.endDate Is Null or HM.endDate>GETDATE())  "
+				+ "	  and (HM.[secondary] Is Null or HM.[secondary]=0)  "
+				+ " join Household with (nolock) on HM.householdID=Household.householdID  "
+				+ " join HouseholdLocation HL with (nolock) on Household.householdID=HL.householdID  "
+				+ "	  and (HL.endDate Is Null or HL.endDate>GETDATE())  "
+				+ "	  and HL.startDate=(select max(hlz.startDate) from HouseholdLocation hlz where hlz.householdID=HL.householdID and (HLz.endDate Is Null or HLz.endDate>GETDATE()) and (HLz.[private] Is Null or HLz.[private]=0) and HLz.mailing=1 and (HLz.[secondary] Is Null or HLz.[secondary]=0))  "
+				+ "	  and (HL.[private] Is Null or HL.[private]=0)  "
+				+ "	  and HL.mailing=1  "
+				+ "	  and (HL.[secondary] Is Null or HL.[secondary]=0)  "
+				+ " join Calendar cal with (nolock) on enr.calendarID=cal.calendarID  "
+				+ " join schoolyear sy with (nolock) on sy.endyear=cal.endyear and sy.active=1  "
+				+ " join School with (nolock) on cal.schoolID=School.schoolID  "
+				+ " join CustomSchool cslsc on cslsc.schoolID=School.schoolID  "
+				+ " join CampusAttribute calsc on cslsc.attributeID=calsc.attributeID "
+				+ "	  and calsc.[object]='School' "
+				+ "	  and calsc.element='legacySchoolc' "
+				+ "	  and calsc.dataType='textBox' "
+				+ "	  and calsc.deprecated<>1 "
+				+ " join CustomSchool csType with (nolock) on School.schoolID=csType.schoolID  "
+				+ "	  and csType.value IN ('ES','MS','HS')  "
+				+ " join CampusAttribute caType with (nolock) on csType.attributeID=caType.attributeID  "
+				+ " 	and caType.[object]='School'  "
+				+ " 	and caType.element='schoolType'  "
+				+ " 	and caType.dataType='dropList'  "
+				+ " 	and caType.deprecated<>1  "
+				+ " join CampusDictionary cdEnr on enr.serviceType=cdEnr.code  "
+				+ "	  and cdEnr.active=1  "
+				+ " join campusattribute caEnr on caEnr.attributeID=cdEnr.attributeID  "
+				+ "	  and caEnr.[object]='Enrollment'  "
+				+ "	  and caEnr.element='serviceType'  "
+				+ "	  and caEnr.dataType='dropList'  "
+				+ "	  and caEnr.deprecated<>1  "
+				+ " join RelatedPair with (nolock) on prs.personID=RelatedPair.personID1  "
+				+ "	  and ((NOT RelatedPair.guardian Is Null and RelatedPair.guardian=1) or RelatedPair.name='Blackboard')  "
+				+ "	  and (RelatedPair.endDate Is Null or RelatedPair.endDate>GETDATE())  "
+				+ " join HouseholdMember RPhm with (nolock) on RelatedPair.personID2=RPhm.personID  "
+				+ "	  and (RPhm.endDate Is Null or RPhm.endDate>GETDATE())  "
+				+ " left join Household RPh with (nolock) on RPhm.householdID=RPh.householdID  "
+				+ " left join HouseholdLocation RPhl with (nolock) on RPh.householdID=RPhl.householdID  "
+				+ "	  and (RPhl.endDate Is Null or RPhl.endDate>GETDATE())  "
+				+ "	  and RPhl.startDate=(select max(startDate) from HouseholdLocation where householdID=RPhl.householdID) "
+				+ "	  and RPhl.mailing=1 "
+				+ " left join [Address] RPaddr with (nolock) on RPhl.addressID=RPaddr.addressID  "
+				+ "	  and (RPaddr.postOfficeBox Is Null or RPaddr.postOfficeBox=0)  "
+				+ " join Person RPprs with (nolock) on RPprs.personID=RelatedPair.personID2  "
+				+ " join [Identity] RPidn with (nolock) on RPprs.currentIdentityID=RPidn.identityID  "
+				+ "	  and RPprs.personID=RPidn.personID  "
+				+ " join Contact RPcon on RPprs.personID=RPcon.personID  "
+				+ " left join CustomStudent CSBbUsername with (nolock) on CSBbUsername.personID=RelatedPair.personID2  "
+				+ "	  and CSBbUsername.enrollmentID Is Null  "
+				+ "	  and CSBbUsername.attributeID= 672  "
+				+ " left join CustomStudent CSbbPassword with (nolock) on CSbbPassword.personID=RelatedPair.personID2  "
+				+ "	  and CSbbPassword.enrollmentID Is Null  "
+				+ "	  and CSbbPassword.attributeID= 673  "
+				+ " where NOT (prs.studentNumber Is Null or LTRIM(RTRIM(prs.studentNumber))='') "
+				+ " UNION "
+				+ " select distinct prs.personID as personId, "
+				+ " OB.personIDobserver as bbPersonID, "
+				+ " cdEnr.seq, "
+				+ " 9999 relatedPairSeq, "
+				+ " prs.studentNumber as studentNumber, "
+				+ " UAs.Username as studentUsername, "
+				+ " HM.householdID, "
+				+ " -1 RPhouseholdID, "
+				+ " IsNull(Household.legacyKey,'') householdLegacyKey, "
+				+ " (CASE WHEN Household.phonePrivate=1 OR Household.phone Is Null THEN '' ELSE LTRIM(RTRIM(Household.phone)) END) householdPhone, "
+				+ " HL.addressID hlAddressID, "
+				+ " (CASE WHEN RPprs.legacyKey Is Null OR LTRIM(RTRIM(RPprs.legacyKey))='' OR IsNumeric(SUBSTRING(RPprs.legacyKey,2,LEN(RPprs.legacyKey)-1))=0 OR SUBSTRING(RPprs.legacyKey,1,1)<>'C' OR LEN(RPprs.legacyKey)<>8 THEN 'C'+CAST(RPprs.personID as varchar(10)) ELSE SUBSTRING(RPprs.legacyKey,2,LEN(RPprs.legacyKey)-1) END) as contactNumber, "
+				+ " 'Observer' RPrelationship, "
+				+ " IsNull(LTRIM(RTRIM(REPLACE(RPidn.firstName,',',' '))),'') as firstName, "
+				+ " IsNull(LTRIM(RTRIM(REPLACE(RPidn.middleName,',',' '))),'') as middleName, "
+				+ " IsNull(LTRIM(RTRIM(REPLACE(RPidn.lastName,',',' '))),'') as lastName, "
+				+ " IsNull(LTRIM(RTRIM(REPLACE(RPidn.suffix,',',' '))),'') RPnamesfx, "
+				+ " '' HPhomePhone, "
+				+ " '' RPhomePhone, "
+				+ " '' RPcellPhone, "
+				+ " (CASE WHEN RPcon.email Is Null THEN '' ELSE LTRIM(RTRIM(REPLACE(RPcon.email,',','.'))) END) as email, "
+				+ " -1 RPhlAddressID, "
+				+ " '' RPhouseholdNumber, "
+				+ " '' street1, "
+				+ " '' RPApt, "
+				+ " '' as city, "
+				+ " '' as state, "
+				+ " '' as zip, "
+				+ " IsNull(CAST(CSBbUsername.customID as varchar(10)),'') CSbbUsernameCustomID, "
+				+ " IsNull(CSBbUsername.value,'')  as bbUsername, "
+				+ " IsNull(CAST(CSbbPassword.customID as varchar(10)),'') CSbbPasswordCustomID, "
+				+ " IsNull(CSbbPassword.value,'') as bbPassword "
+				+ " from Person prs with (nolock)  "
+				+ " join Enrollment enr with (nolock) on prs.personID=enr.personID  "
+				+ " 	and (enr.endDate Is Null or enr.endDate>GETDATE())  "
+				+ " 	and enr.startDate=(  "
+				+ "	 		select max(enr1.startDate)  "
+				+ "	 		from Enrollment enr1 with (nolock)  "
+				+ "	 		where enr1.calendarID=enr.calendarID  "
+				+ "	 		and enr1.districtID=enr.districtID  "
+				+ "	 		and enr1.personID=prs.personID  "
+				+ "	 		and enr1.active=1  "
+				+ "	 		and (enr1.noShow=0 or enr1.noShow Is Null)  "
+				+ "	 		and enr1.serviceType=enr.serviceType  "
+				+ "	 		and (enr1.endDate Is Null or enr1.endDate>GETDATE())  "
+				+ "	 	)  "
+				+ "	  and enr.active=1  "
+				+ "	  and (enr.noShow=0 or enr.noShow Is Null)  "
+				+ "	  and enr.serviceType IN ('P')  "
+				+ " join [Identity] idn with (nolock) on prs.currentIdentityID=idn.identityID  "
+				+ "	  and prs.personID=idn.personID  "
+				+ " 	and enr.districtID=idn.districtID  "
+				+ " join Contact con with (nolock) on con.personID=prs.personID  "
+				+ " join UserAccount UAs with (nolock) on UAs.personID=prs.personID  "
+				+ "	  and NOT (UAs.username Is Null or LTRIM(RTRIM(UAs.username))='')  "
+				+ "	  and [UAs].[disable]<>1  "
+				+ "	  and [UAs].[lock]<>1  "
+				+ "	 and (UAs.expiresDate Is Null or UAs.expiresDate>=GETDATE())  "
+				+ " join HouseholdMember HM with (nolock) on prs.personID=HM.personID  "
+				+ " 	and (HM.endDate Is Null or HM.endDate>GETDATE())  "
+				+ " 	and (HM.[secondary] Is Null or HM.[secondary]=0)  "
+				+ " join Household with (nolock) on HM.householdID=Household.householdID  "
+				+ " join HouseholdLocation HL with (nolock) on Household.householdID=HL.householdID  "
+				+ " 	and (HL.endDate Is Null or HL.endDate>GETDATE())  "
+				+ " 	and HL.startDate=(select max(hlz.startDate) from HouseholdLocation hlz where hlz.householdID=HL.householdID and (HLz.endDate Is Null or HLz.endDate>GETDATE()) and (HLz.[private] Is Null or HLz.[private]=0) and HLz.mailing=1)  "
+				+ " 	and (HL.[private] Is Null or HL.[private]=0)  "
+				+ " 	and HL.mailing=1  "
+				+ " join Calendar cal with (nolock) on enr.calendarID=cal.calendarID  "
+				+ " join schoolyear sy with (nolock) on sy.endyear=cal.endyear  "
+				+ "	  and sy.active=1  "
+				+ " join School with (nolock) on cal.schoolID=School.schoolID  "
+				+ " join CustomSchool cslsc on cslsc.schoolID=School.schoolID  "
+				+ " join CampusAttribute calsc on cslsc.attributeID=calsc.attributeID  "
+				+ " 	and calsc.[object]='School'  "
+				+ " 	and calsc.element='legacySchoolc'  "
+				+ " 	and calsc.dataType='textBox'  "
+				+ " 	and calsc.deprecated<>1  "
+				+ " join CustomSchool csType with (nolock) on School.schoolID=csType.schoolID  "
+				+ " 	and csType.value IN ('ES','MS','HS')  "
+				+ " join CampusAttribute caType with (nolock) on csType.attributeID=caType.attributeID  "
+				+ "  	and caType.[object]='School'  "
+				+ "  	and caType.element='schoolType'  "
+				+ "  	and caType.dataType='dropList'  "
+				+ "  	and caType.deprecated<>1  "
+				+ " join CampusDictionary cdEnr on enr.serviceType=cdEnr.code  "
+				+ " 	and cdEnr.active=1  "
+				+ " join campusattribute caEnr on caEnr.attributeID=cdEnr.attributeID  "
+				+ " 	and caEnr.[object]='Enrollment'  "
+				+ " 	and caEnr.element='serviceType'  "
+				+ " 	and caEnr.dataType='dropList'  "
+				+ " 	and caEnr.deprecated<>1  "
+				+ " join SDWObserver OB with (nolock) on OB.personIDstudent=prs.personID  "
+				+ "	  and (OB.endDate Is Null or OB.endDate>GETDATE())  "
+				+ " join Person RPprs with (nolock) on RPprs.personID=OB.personIDobserver  "
+				+ " join [Identity] RPidn with (nolock) on RPprs.currentIdentityID=RPidn.identityID  "
+				+ "	  and RPprs.personID=RPidn.personID  "
+				+ " join Contact RPcon on RPprs.personID=RPcon.personID  "
+				+ " left join CustomStudent CSBbUsername with (nolock) on CSBbUsername.personID=OB.personIDobserver   "
+				+ " 	and CSBbUsername.enrollmentID Is Null "
+				+ " 	and CSBbUsername.attributeID = 672  "
+				+ " left join CustomStudent CSbbPassword with (nolock) on CSbbPassword.personID=OB.personIDobserver  "
+				+ " 	and CSbbPassword.enrollmentID Is Null  "
+				+ " 	and CSbbPassword.attributeID= 673  "
+				+ " where NOT (prs.studentNumber Is Null or LTRIM(RTRIM(prs.studentNumber))='')"
+				+ " ";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICGuardian> guardians= null;
+		try {
+			guardians= template.query(sql,params,  new BeanPropertyRowMapper<ICGuardian>(ICGuardian.class));
+			for (ICGuardian l_guardian : guardians) {
+				if (l_guardian.getBbUsername() == null) {
+					l_guardian.setBbUsername("C"+l_guardian.getBbPersonId());
+					this.insertBBUsername(l_guardian.getBbUsername(), l_guardian.getPersonId());
+					
+				}
+				if (l_guardian.getBbPassword() == null) {
+					l_guardian.setBbPassword("joe");
+					this.insertBBPassword(l_guardian.getBbPassword(), l_guardian.getPersonId());
+				}
+			}
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return guardians;
+	}
+	
 	public Number insertBBCourseLink (CourseInfo courseInfo) {
 		mLog.info("insertBBCourseLink  called ...");
 
@@ -1232,7 +1481,7 @@ public class InfiniteCampusDAO {
 		mLog.info("deleteBBPersonLink called ...");
 
 		String sql = "delete from SDWBlackboardSchedulerSISCoursePersons"
-				+ " where bbCourseId =:bbCourseId, and personId=:personId";
+				+ " where bbCourseId =:bbCourseId and personId=:personId";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		Number rows = null;
@@ -1454,7 +1703,7 @@ public class InfiniteCampusDAO {
 				+ "  left join UserAccount on UserAccount.personID = sdwp.personID "
 				+ "  left join [Identity] on [Identity].personID = sdwp.personID "
 				+ "  where sdwp.personType='S' and sdwc.bbCOURSE_ID=:courseId"
-				+ "  and  UserAccount.isSAMLAccount=1";
+				+ "  and UserAccount.isSAMLAccount=1";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICStudent> l_students = null;
@@ -1471,6 +1720,7 @@ public class InfiniteCampusDAO {
 	
 	public List<ICTeacher> getBBTeachers (String p_courseId) {
 		mLog.info("getBBTeachers  called ...");
+		mLog.info("COURSE ID: " + p_courseId);
 		String sql = "select distinct sdwp.personID as personId, "
 				+ "  UserAccount.username as userName, "
 				+ "  [Identity].firstName + ' ' + [Identity].lastName as teacherName from SDWBlackboardSchedulerSISCoursePersons sdwp "
@@ -1478,7 +1728,7 @@ public class InfiniteCampusDAO {
 				+ "  left join UserAccount on UserAccount.personID = sdwp.personID"
 				+ "  left join [Identity] on [Identity].personID = sdwp.personID"
 				+ "  where sdwp.personType='T' and sdwc.bbCOURSE_ID=:courseId"
-				+ "  and  UserAccount.isSAMLAccount=1";
+				+ "  and UserAccount.isSAMLAccount = 1";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICTeacher> l_teachers = null;
@@ -1492,4 +1742,47 @@ public class InfiniteCampusDAO {
 		return l_teachers;
 	}
 	
+	public Number insertBBUsername (String p_bbUsername, String p_personId) {
+		mLog.info("insertBBUserName called ...");
+
+		String sql = "insert INTO CustomStudent (personID,enrollmentID,attributeID,value,[date],districtID) "
+				+ "values (:personId,Null,672,:bbusername,GETDATE(),Null)";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		
+		params.addValue("personId", p_personId);
+		params.addValue("bbusername", p_bbUsername);
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		try {
+			int id = template.update(sql, params, keyHolder);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+
+		return keyHolder.getKey();
+
+	}
+	
+	public Number insertBBPassword (String p_bbPassword, String p_personId) {
+		mLog.info("insertBBPassword called ...");
+
+		String sql = "insert INTO CustomStudent (personID,enrollmentID,attributeID,value,[date],districtID) "
+				+ "values (:personId,Null,673,:bbpw,GETDATE(),Null)";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		
+		params.addValue("personId", p_personId);
+		params.addValue("bbpw", p_bbPassword);
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		try {
+			int id = template.update(sql, params, keyHolder);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+
+		return keyHolder.getKey();
+
+	}
 }

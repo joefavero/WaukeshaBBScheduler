@@ -11,6 +11,7 @@ import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.database.dao.InfiniteCampusDAO;
 import com.obsidiansoln.database.model.ICBBEnrollment;
 import com.obsidiansoln.database.model.ICBBGroup;
+import com.obsidiansoln.database.model.ICGuardian;
 import com.obsidiansoln.database.model.ICStaff;
 import com.obsidiansoln.database.model.ICUser;
 import com.obsidiansoln.util.RestManager;
@@ -41,15 +42,45 @@ public class SyncLMS {
 		List<ICUser> l_students = dao.getSISStudents();
 		mLog.info("Number of Students: " + l_students.size());
 		
+		String l_file = l_manager.createStudentFile(l_students);
+		if (l_file != null) {
+			l_manager.sendFile(l_file, "person", 1, l_students.size());
+		} else {
+			mLog.error("Error: " + "Unable to create Snapshot File");
+		}
+	}
+	
+	public void syncStaff() {
+		mLog.trace("In syncStaff() ...");
+
+		mLog.info ("Starting to Sync the Staffbetween Infinite Campus and Blackboard");
+		SnapshotFileManager l_manager = new SnapshotFileManager();
+			
 		// Get Staff
-		
-		// Add Staff
 		List<ICStaff> l_staffs = dao.getSISStaff();
 		mLog.info("Number of Staff: " + l_staffs.size());
 		
-		String l_file = l_manager.createFile(l_students, l_staffs);
+		String l_file = l_manager.createStaffFile(l_staffs);
 		if (l_file != null) {
-			l_manager.sendFile(l_file, "person", l_students.size()+l_staffs.size());
+			l_manager.sendFile(l_file, "person", 2, l_staffs.size());
+		} else {
+			mLog.error("Error: " + "Unable to create Snapshot File");
+		}
+	}
+	
+	public void syncGuardians() {
+		mLog.trace("In syncGuardians() ...");
+
+		mLog.info ("Starting to Sync the Guardians between Infinite Campus and Blackboard");
+		SnapshotFileManager l_manager = new SnapshotFileManager();
+			
+		// Get Guardians
+		List<ICGuardian> l_guardians= dao.getSISGuardians();
+		mLog.info("Number of Guardians: " + l_guardians.size());
+		
+		String l_file = l_manager.createGuardianFile(l_guardians);
+		if (l_file != null) {
+			l_manager.sendFile(l_file, "person", 3, l_guardians.size());
 		} else {
 			mLog.error("Error: " + "Unable to create Snapshot File");
 		}
@@ -65,7 +96,7 @@ public class SyncLMS {
 
 		String l_file = l_manager.createEnrollmentFile(l_enrollments);
 		if (l_file != null) {
-			l_manager.sendFile(l_file, "membership", l_enrollments.size());
+			l_manager.sendFile(l_file, "membership", 1, l_enrollments.size());
 		} else {
 			mLog.error("Error: " + "Unable to create Snapshot File");
 		}

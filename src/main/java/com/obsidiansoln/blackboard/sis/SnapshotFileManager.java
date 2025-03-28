@@ -32,12 +32,12 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.obsidiansoln.blackboard.model.DataSetStatus;
 import com.obsidiansoln.blackboard.model.SnapshotJobDetails;
 import com.obsidiansoln.database.model.ICBBEnrollment;
+import com.obsidiansoln.database.model.ICGuardian;
 import com.obsidiansoln.database.model.ICStaff;
 import com.obsidiansoln.database.model.ICUser;
 import com.obsidiansoln.util.EmailManager;
@@ -48,20 +48,20 @@ import com.obsidiansoln.web.service.BBSchedulerService;
 public class SnapshotFileManager {
 
 	private static Logger mLog = LoggerFactory.getLogger(SnapshotFileManager.class);
-
 	private BBSchedulerService m_service = null;
+
 
 	public SnapshotFileManager() {
 		m_service = new BBSchedulerService();
 	}
 
-	public String createFile(List<ICUser>l_students, List<ICStaff> l_staffs) {
-		mLog.trace("In createFile() ...");
+	public String createStudentFile(List<ICUser>l_students) {
+		mLog.trace("In createStudentFile() ...");
 
 		// Create File;
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-hhmmss");
 		LocalDateTime now = LocalDateTime.now();
-		String fileName = "SIS_PERSON_" + dtf.format(now) + ".txt";
+		String fileName = "SIS_PERSON_STUDENT_" + dtf.format(now) + ".txt";
 		String l_snapshotFilename = null;
 
 		FileWriter fileWriter = null;
@@ -74,7 +74,7 @@ public class SnapshotFileManager {
 			p.write("\r\n");
 
 			for (ICUser l_student:l_students) {
-				p.write("SIS.Student"+"|"						//data_source
+				p.write("SIS2.Student"+"|"						//data_source
 						+ l_student.getStudentNumber() + "|"	//external_person_key
 						+ l_student.getUserName() + "|" 		//user_id
 						+ l_student.getStudentNumber() + "|" 	//passwd
@@ -113,6 +113,39 @@ public class SnapshotFileManager {
 				p.write("\r\n");
 			}
 
+		} catch (Exception l_ex) {
+			mLog.error("Error: ", l_ex);
+		} finally  {
+			p.flush();
+			p.close();
+			try {
+				fileWriter.close();
+			} catch (IOException e) {
+				mLog.error("Error: ", e);
+			}
+		}
+
+		return l_snapshotFilename;
+	}
+
+	public String createStaffFile(List<ICStaff> l_staffs) {
+		mLog.trace("In createStaffFile() ...");
+
+		// Create File;
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-hhmmss");
+		LocalDateTime now = LocalDateTime.now();
+		String fileName = "SIS_PERSON_STAFF_" + dtf.format(now) + ".txt";
+		String l_snapshotFilename = null;
+
+		FileWriter fileWriter = null;
+		PrintWriter p = null;
+		try {
+			l_snapshotFilename = m_service.getConfigData().getWorkingDirectory() + "/" + fileName;
+			fileWriter = new FileWriter(l_snapshotFilename);
+			p = new PrintWriter(fileWriter);
+			p.write("data_source_key|external_person_key|user_id|passwd|firstname|lastname|system_role|institution_role|row_status|student_id|middlename|new_external_person_key|company|email|street_1|street_2|gender|birthdate|title|city|state|zip_code|department|country|b_phone_1|b_phone_2|h_fax|b_fax|h_phone_1|h_phone_2|m_phone|job_title|available_ind|educ_level|webpage|locale");
+			p.write("\r\n");
+
 			HashMap<String, List<String>> l_institutionRoles = new HashMap<String, List<String>>();
 			int i=0;
 			for (ICStaff l_staff:l_staffs) {
@@ -127,7 +160,7 @@ public class SnapshotFileManager {
 					} else {
 						l_role = "";
 					}
-					p.write("SIS.Staff"+"|"							//data_source
+					p.write("SIS2.Staff"+"|"							//data_source
 							+ l_staff.getStaffNumber() + "|"		//external_person_key
 							+ l_staff.getUserName() + "|" 			//user_id
 							+ "FaCP@$sW0RD4Bb!" + "|" 		        //passwd
@@ -192,7 +225,7 @@ public class SnapshotFileManager {
 
 		return l_snapshotFilename;
 	}
-	
+
 	public String createEnrollmentFile(List<ICBBEnrollment>p_enrollments) {
 		mLog.trace("In createEnrollmentFile() ...");
 
@@ -212,16 +245,16 @@ public class SnapshotFileManager {
 			p.write("\r\n");
 
 			for (ICBBEnrollment l_enrollment:p_enrollments) {
-				p.write("SIS.Enrollment"+"|"					//data_source
+				p.write("SIS2.Enrollment"+"|"					//data_source
 						+ l_enrollment.getCourseId() + "|"		//external_course_key
 						+ l_enrollment.getStudentNumber() + "|" //external_person_key
 						+ l_enrollment.getRole() + "|" 			//role
 						+ l_enrollment.getRowStatus() + "|"		//row_status
 						+ l_enrollment.getAvailableInd());		//available_ind
-		
+
 				p.write("\r\n");
 			}
-			
+
 			p.flush();
 			p.close();
 			fileWriter.close();
@@ -242,8 +275,90 @@ public class SnapshotFileManager {
 		return l_snapshotFilename;
 	}
 
-	public DataSetStatus sendFile(String p_file, String p_endpoint, int p_count) {
+	public String createGuardianFile(List<ICGuardian>p_guardians) {
+		mLog.trace("In createGuardianFile() ...");
+
+		// Create File;
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd-hhmmss");
+		LocalDateTime now = LocalDateTime.now();
+		String fileName = "SIS_GUARDIAN_" + dtf.format(now) + ".txt";
+		String l_snapshotFilename = null;
+
+		FileWriter fileWriter = null;
+		PrintWriter p = null;
+		try {
+			l_snapshotFilename = m_service.getConfigData().getWorkingDirectory() + "/" + fileName;
+			fileWriter = new FileWriter(l_snapshotFilename);
+			p = new PrintWriter(fileWriter);
+			p.write("data_source_key|external_person_key|user_id|passwd|firstname|lastname|system_role|institution_role|row_status|company|email|street_1|street_2|title|city|state|zip_code|department|job_title|available_ind|locale");
+			p.write("\r\n");
+			HashMap<String, List<String>> l_observers = new HashMap<String, List<String>>();
+			int i=0;
+			for (ICGuardian l_guardian:p_guardians) {
+				if (l_observers.get(l_guardian.getBbPersonId()) == null) {
+					i++;
+					List<String> l_observees = new ArrayList<String>();
+					l_observees.add(l_guardian.getStudentUsername());
+					l_observers.put(l_guardian.getBbPersonId(), l_observees);
+
+					p.write("SIS2.Guardians"+"|"					           //data_source
+							+ "Observer"+l_guardian.getContactNumber() + "|"   //external_person_key
+							+ l_guardian.getBbUsername() + "|" 	    //user_id
+							+ l_guardian.getBbPassword() + "|"		//passwd
+							+ l_guardian.getFirstName() + "|"		//firstname
+							+ l_guardian.getLastName()+ "|"	    	//lastname
+							+ l_guardian.getSystemRole()+ "|"	    //system_role
+							+ l_guardian.getInstitutionRole()+ "|"  //institution_role
+							+ l_guardian.getRowStatus()+ "|"		//rowStatus
+							+ l_guardian.getCompany()+ "|"			//company
+							+ l_guardian.getEmail()+ "|"			//email
+							+ l_guardian.getStreet1()+ "|"			//street1
+							+ l_guardian.getStreet2()+ "|"			//street2
+							+ l_guardian.getTitle()+ "|"			//title
+							+ l_guardian.getCity()+ "|"			    //city
+							+ l_guardian.getState()+ "|"			//state
+							+ l_guardian.getZip()+ "|"			    //zip_code
+							+ l_guardian.getDepartment()+ "|"	    //department
+							+ l_guardian.getJobTitle()+ "|"			//job_title
+							+ l_guardian.getAvailableInd()+ "|"	    //available_ind
+							+ l_guardian.getLocale());				//locale
+
+					p.write("\r\n");
+				} else {
+					List<String> l_observees = l_observers.get(l_guardian.getBbPersonId());
+					l_observees.add(l_guardian.getStudentUsername());
+					l_observers.put(l_guardian.getBbPersonId(), l_observees);
+				}
+			}
+			p.flush();
+			p.close();
+			fileWriter.close();
+
+			
+			mLog.info("Number of Unique Records: " + i);
+			
+			for (HashMap.Entry<String, List<String>> entry : l_observers.entrySet()) {
+				mLog.info("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+			}
+
+		} catch (Exception l_ex) {
+			mLog.error("Error: ", l_ex);
+		} finally  {
+			p.flush();
+			p.close();
+			try {
+				fileWriter.close();
+			} catch (IOException e) {
+				mLog.error("Error: ", e);
+			}
+		}
+
+		return l_snapshotFilename;
+	}
+
+	public DataSetStatus sendFile(String p_file, String p_endpoint, int p_type, int p_count) {
 		mLog.trace("In sendFile() ...");
+		mLog.info("TYPE: " + p_type);
 
 		DataSetStatus status = null;
 		String l_message = null;
@@ -261,8 +376,20 @@ public class SnapshotFileManager {
 			}
 			AuthScope scope = new AuthScope(host, port);
 
-			Credentials credentials = new UsernamePasswordCredentials(l_configData.getSnapshotSharedUsername(),
-					l_configData.getSnapshotSharedPassword());
+			Credentials credentials = null;
+			if (p_type == 1) {
+				mLog.info("OPTION 1");
+				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotSharedUsername(),
+						l_configData.getSnapshotSharedPassword());
+			} else if (p_type == 2) {
+				mLog.info("OPTION 2");
+				credentials = new UsernamePasswordCredentials("8c932be4-76f2-407b-9872-578b1d37f284",
+						l_configData.getSnapshotSharedPassword());
+			} else if (p_type == 3) {
+				mLog.info("OPTION 3");
+				credentials = new UsernamePasswordCredentials("31e17893-12bb-490c-80d1-97c9fed8974d",
+						l_configData.getSnapshotSharedPassword());
+			}
 			credentialsPovider.setCredentials(scope, credentials);
 
 			// Creating the HttpClientBuilder
@@ -353,7 +480,7 @@ public class SnapshotFileManager {
 												+ "    Warning Count: " + status.getWarningCount() + "<br>"
 												+ "    BB Learn URL: " + resultURL + "<br>";
 									} else {
-										l_message = response1.getStatusLine().getReasonPhrase();
+										l_message = "HTTP Status: " + response1.getStatusLine().getStatusCode() + response1.getStatusLine().getReasonPhrase();
 									}
 								} else {
 									mLog.info("Unable to processs Status Response");
@@ -388,7 +515,7 @@ public class SnapshotFileManager {
 		}
 		return status;
 	}
-	
+
 	public DataSetStatus sendFile(String p_file, String p_endpoint) {
 		mLog.trace("In sendFile() ...");
 
