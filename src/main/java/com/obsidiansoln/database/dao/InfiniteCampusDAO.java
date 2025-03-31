@@ -27,6 +27,7 @@ import com.obsidiansoln.database.model.ICCalendar;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
 import com.obsidiansoln.database.model.ICGuardian;
+import com.obsidiansoln.database.model.ICMessage;
 import com.obsidiansoln.database.model.ICPerson;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
@@ -1740,6 +1741,22 @@ public class InfiniteCampusDAO {
 			return null;
 		}
 		return l_teachers;
+	}
+	
+	public List<ICMessage> getMessages () {
+		mLog.info("getMessages  called ...");
+		String sql = "select bbSchedMessageID as Id, Message as message"
+				+ "  from SDWBlackboardSchedulerMessages ";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICMessage> l_messages = null;
+		try {
+			l_messages= template.query(sql,params,  new BeanPropertyRowMapper<ICMessage>(ICMessage.class));
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return l_messages;
 	}
 	
 	public Number insertBBUsername (String p_bbUsername, String p_personId) {

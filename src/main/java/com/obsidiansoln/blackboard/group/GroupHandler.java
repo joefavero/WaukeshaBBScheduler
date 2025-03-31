@@ -53,7 +53,7 @@ public class GroupHandler implements RestHandler {
 	
 	public GroupProxy createObject(String host, String access_token, RequestData data, SectionInfo section, String groupSet) {
 		log.trace("In createObject()");
-		HTTPStatus l_response = RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2+data.getCourseId()+ RestConstants.COURSE_GROUP_SET_PATH + "/" + groupSet +"/groups", HttpMethod.POST, access_token, getBody(section));
+		HTTPStatus l_response = RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2+data.getCourseId()+ RestConstants.COURSE_GROUP_SET_PATH + "/" + groupSet +"/groups", HttpMethod.POST, access_token, getBody(data.getCourseId(),section));
 
 		ObjectMapper mapper = new ObjectMapper();
 
@@ -103,7 +103,7 @@ public class GroupHandler implements RestHandler {
 	@Override
 	public HTTPStatus deleteObject(String host, String access_token, RequestData data) {
 		log.trace("In deleteObject()");
-		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP + "externalId:" + data.getGroupId(), HttpMethod.DELETE, access_token, ""));
+		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP + "externalId:" + data.getCourseId()+"."+data.getGroupId(), HttpMethod.DELETE, access_token, ""));
 	}
 
 	public GroupResponseProxy getClientData(String host, String access_token, String p_nextPage,
@@ -163,13 +163,13 @@ public class GroupHandler implements RestHandler {
 		return obj;
 	}
 	
-	private String getBody(SectionInfo section) {
+	private String getBody(String courseId, SectionInfo section) {
 		log.trace("In getBody()");
 
 		ObjectMapper objMapper = new ObjectMapper();
 		GroupProxy l_group = new GroupProxy();
 		l_group.setName(String.valueOf("SECTION " + section.getSectionNumber()));
-		l_group.setExternalId(String.valueOf(section.getSectionId()));
+		l_group.setExternalId(courseId + "." + String.valueOf(section.getSectionId()));
 		l_group.setDescription("Auto generated groups synced to IC roster.  Do not modify manually.");
 		Availability l_avail = new Availability();
 		l_avail.setAvailable("Yes");

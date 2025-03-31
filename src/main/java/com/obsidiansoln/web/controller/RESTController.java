@@ -42,6 +42,7 @@ import com.obsidiansoln.database.model.ICCalendar;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
 import com.obsidiansoln.database.model.ICGuardian;
+import com.obsidiansoln.database.model.ICMessage;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
@@ -1533,6 +1534,20 @@ public class RESTController {
 
 		return null;
 	}
+	
+	@RequestMapping(value = "/api/getMessages", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public List<ICMessage> getMessages(HttpServletRequest request) {
+		mLog.trace("In getMessages...");
+		if (checkApiKey(request)) {
+
+			List <ICMessage> l_teachers = dao.getMessages();
+			return l_teachers;
+		}
+
+		return null;
+	}
+
 
 	@RequestMapping(value = "/api/test", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
