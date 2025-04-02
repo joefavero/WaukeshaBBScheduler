@@ -82,7 +82,7 @@ public class BBSchedulerController {
 
 	@RequestMapping(value = "/lti", method = RequestMethod.POST)
 	public ModelAndView processLti(HttpServletRequest request, HttpServletResponse response) {
-		mLog.info("In processLti()");
+		mLog.trace("In processLti()");
 		ModelAndView mv = new ModelAndView("intro");
 		RestRequest.setCounter(0);
 		String l_courseId = null;
@@ -130,7 +130,7 @@ public class BBSchedulerController {
 								// Get The Infinite Campus Person ID
 								//Long l_personId = dao.getPersonId(l_user.getUserName());
 								Long l_personId = dao.getPersonId("lpotter");
-								mLog.info("Person ID: " + l_personId);
+								mLog.debug("Person ID: " + l_personId);
 
 								if (l_personId != null) {
 

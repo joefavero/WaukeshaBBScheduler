@@ -44,7 +44,7 @@ public class SyncLMS {
 		
 		String l_file = l_manager.createStudentFile(l_students);
 		if (l_file != null) {
-			l_manager.sendFile(l_file, "person", 1, l_students.size());
+			l_manager.sendFile(l_file, 1, l_students.size());
 		} else {
 			mLog.error("Error: " + "Unable to create Snapshot File");
 		}
@@ -62,7 +62,7 @@ public class SyncLMS {
 		
 		String l_file = l_manager.createStaffFile(l_staffs);
 		if (l_file != null) {
-			l_manager.sendFile(l_file, "person", 2, l_staffs.size());
+			l_manager.sendFile(l_file,  2, l_staffs.size());
 		} else {
 			mLog.error("Error: " + "Unable to create Snapshot File");
 		}
@@ -80,7 +80,7 @@ public class SyncLMS {
 		
 		String l_file = l_manager.createGuardianFile(l_guardians);
 		if (l_file != null) {
-			l_manager.sendFile(l_file, "person", 3, l_guardians.size());
+			l_manager.sendFile(l_file, 3, l_guardians.size());
 		} else {
 			mLog.error("Error: " + "Unable to create Snapshot File");
 		}
@@ -96,7 +96,7 @@ public class SyncLMS {
 
 		String l_file = l_manager.createEnrollmentFile(l_enrollments);
 		if (l_file != null) {
-			l_manager.sendFile(l_file, "membership", 1, l_enrollments.size());
+			l_manager.sendFile(l_file, 4, l_enrollments.size());
 		} else {
 			mLog.error("Error: " + "Unable to create Snapshot File");
 		}

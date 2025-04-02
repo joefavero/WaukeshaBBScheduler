@@ -40,8 +40,15 @@ public class ConfigData {
     private String parentInviteMessage;
     private String parentExistingMessage;
     private String snapshotBbInstanceId;
-    private String snapshotSharedUsername;
-    private String snapshotSharedPassword;
+    private String snapshotStudentSharedUsername;
+    private String snapshotStudentSharedPassword;
+    private String snapshotStudentDatasource;
+    private String snapshotStaffSharedUsername;
+    private String snapshotStaffSharedPassword;
+    private String snapshotStaffDatasource;
+    private String snapshotGuardianSharedUsername;
+    private String snapshotGuardianSharedPassword;
+    private String snapshotGuardianDatasource;
     private String snapshotEmail;
     
 
@@ -80,8 +87,15 @@ public class ConfigData {
     		String p_parentInviteMessage,
     		String p_parentExistingMessage,
     		String p_snapshotBbInstanceId,
-    		String p_snapshotSharedUsername,
-    		String p_snapshotSharedPassword,
+    		String p_snapshotStudentSharedUsername,
+    		String p_snapshotStudentSharedPassword,
+    		String p_snapshotStudentDatasource,
+    		String p_snapshotStaffSharedUsername,
+    		String p_snapshotStaffSharedPassword,
+    		String p_snapshotStaffDatasource,
+    		String p_snapshotGuardianSharedUsername,
+    		String p_snapshotGuardianSharedPassword,
+    		String p_snapshotGuardianDatasource,
     		String p_snapshotEmail) {
         this.logLevel = p_logLevel;
         this.workingDirectory = p_workingDirectory;
@@ -115,8 +129,15 @@ public class ConfigData {
         this.parentInviteMessage = p_parentInviteMessage;
         this.parentExistingMessage = p_parentExistingMessage;
         this.snapshotBbInstanceId = p_snapshotBbInstanceId;
-        this.snapshotSharedUsername = p_snapshotSharedUsername;
-        this.snapshotSharedPassword = p_snapshotSharedPassword;
+        this.snapshotStudentSharedUsername = p_snapshotStudentSharedUsername;
+        this.snapshotStudentSharedPassword = p_snapshotStudentSharedPassword;
+        this.snapshotStudentDatasource = p_snapshotStudentDatasource;
+        this.snapshotStaffSharedUsername = p_snapshotStaffSharedUsername;
+        this.snapshotStaffSharedPassword = p_snapshotStaffSharedPassword;
+        this.snapshotStaffDatasource = p_snapshotStaffDatasource;
+        this.snapshotGuardianSharedUsername = p_snapshotGuardianSharedUsername;
+        this.snapshotGuardianSharedPassword = p_snapshotGuardianSharedPassword;
+        this.snapshotGuardianDatasource = p_snapshotGuardianDatasource;
         this.snapshotEmail = p_snapshotEmail;
     }
 	public String getLogLevel() {
@@ -380,22 +401,78 @@ public class ConfigData {
 		this.snapshotBbInstanceId = snapshotBbInstanceId;
 	}
 
-	public String getSnapshotSharedUsername() {
-		return snapshotSharedUsername;
+	public String getSnapshotStudentSharedUsername() {
+		return snapshotStudentSharedUsername;
 	}
 
-	public void setSnapshotSharedUsername(String snapshotSharedUsername) {
-		this.snapshotSharedUsername = snapshotSharedUsername;
+	public void setSnapshotStudentSharedUsername(String snapshotStudentSharedUsername) {
+		this.snapshotStudentSharedUsername = snapshotStudentSharedUsername;
 	}
 
-	public String getSnapshotSharedPassword() {
-		return snapshotSharedPassword;
+	public String getSnapshotStudentSharedPassword() {
+		return snapshotStudentSharedPassword;
 	}
 
-	public void setSnapshotSharedPassword(String snapshotSharedPassword) {
-		this.snapshotSharedPassword = snapshotSharedPassword;
+	public void setSnapshotStudentSharedPassword(String snapshotStudentSharedPassword) {
+		this.snapshotStudentSharedPassword = snapshotStudentSharedPassword;
 	}
 
+	public String getSnapshotStudentDatasource() {
+		return snapshotStudentDatasource;
+	}
+
+	public void setSnapshotStudentDatasource(String snapshotStudentDatasource) {
+		this.snapshotStudentDatasource = snapshotStudentDatasource;
+	}
+	
+	public String getSnapshotStaffSharedUsername() {
+		return snapshotStaffSharedUsername;
+	}
+
+	public void setSnapshotStaffSharedUsername(String snapshotStaffSharedUsername) {
+		this.snapshotStaffSharedUsername = snapshotStaffSharedUsername;
+	}
+
+	public String getSnapshotStaffSharedPassword() {
+		return snapshotStaffSharedPassword;
+	}
+
+	public void setSnapshotStaffSharedPassword(String snapshotStaffSharedPassword) {
+		this.snapshotStaffSharedPassword = snapshotStaffSharedPassword;
+	}
+
+	public String getSnapshotStaffDatasource() {
+		return snapshotStaffDatasource;
+	}
+
+	public void setSnapshotStaffDatasource(String snapshotStaffDatasource) {
+		this.snapshotStaffDatasource = snapshotStaffDatasource;
+	}
+	
+	public String getSnapshotGuardianSharedUsername() {
+		return snapshotGuardianSharedUsername;
+	}
+
+	public void setSnapshotGuardianSharedUsername(String snapshotGuardianSharedUsername) {
+		this.snapshotGuardianSharedUsername = snapshotGuardianSharedUsername;
+	}
+
+	public String getSnapshotGuardianSharedPassword() {
+		return snapshotGuardianSharedPassword;
+	}
+
+	public void setSnapshotGuardianSharedPassword(String snapshotGuardianSharedPassword) {
+		this.snapshotGuardianSharedPassword = snapshotGuardianSharedPassword;
+	}
+
+	public String getSnapshotGuardianDatasource() {
+		return snapshotGuardianDatasource;
+	}
+
+	public void setSnapshotGuardianDatasource(String snapshotGuardianDatasource) {
+		this.snapshotGuardianDatasource = snapshotGuardianDatasource;
+	}
+	
 	public String getSnapshotEmail() {
 		return snapshotEmail;
 	}

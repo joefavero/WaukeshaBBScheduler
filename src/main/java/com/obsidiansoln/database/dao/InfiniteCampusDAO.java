@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +81,7 @@ public class InfiniteCampusDAO {
 	}
 	@Transactional(readOnly=true)
 	public List<ICCourse> getCoursesByUsername(String username) {
-		mLog.info("In getCoursesByUsername ...");
+		mLog.trace("In getCoursesByUsername ...");
 		List<ICCourse> l_returnList = new ArrayList<ICCourse>();
 		String userSQL = "select distinct Course.courseID,"
 				+ " Course.calendarID, "
@@ -120,7 +121,7 @@ public class InfiniteCampusDAO {
 				+ " Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear "
 				+ " where Section.courseID = Course.courseID and Section.teacherPersonId = (select personId from UserAccount where username = :username) "
 				+ " and Trial.active = 1 and schoolyear.active=1) > 0";
-		
+
 		String userSQLAdmin = "select distinct Course.courseID,"
 				+ " Course.calendarID, "
 				+ " Course.name as courseName, "
@@ -160,7 +161,7 @@ public class InfiniteCampusDAO {
 				+ "				 and Trial.active = 1 and schoolyear.active=1) > 0";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		
+
 		List<ICCourse> courses = null;
 		try {
 			if (username.equals("admin")) {
@@ -215,7 +216,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional(readOnly=true)
 	public List<ICBBCourse> getBBCoursesByUsername(String username) {
-		mLog.info("In getBBCoursesByUsername ...");
+		mLog.trace("In getBBCoursesByUsername ...");
 		String sql = "select distinct sdw.bbCourseID as id, sdw.bbCOURSE_ID as bbCourseId,  Calendar.name as calendarName,"
 				+ "	 UserAccount.username as userName,"
 				+ "	 sdw.schoolYear,"
@@ -244,7 +245,7 @@ public class InfiniteCampusDAO {
 				+ " where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		
+
 		List<ICBBCourse> bbCourses = null;
 		try {
 			if (username.equals("admin")) {
@@ -260,10 +261,10 @@ public class InfiniteCampusDAO {
 		}
 		return bbCourses;
 	}
-	
+
 	@Transactional(readOnly=true)
 	public List<ICBBSection> getBBSectionsByCourseIdUsername(String courseId, String username) {
-		mLog.info("In getBBCoursesByUsername ...");
+		mLog.trace("In getBBCoursesByUsername ...");
 		String sql = "select distinct sdws.sectionID as sectionId, "
 				+ "					Course.name as courseName, "
 				+ "          Section.number as sectionNumber, "
@@ -303,7 +304,7 @@ public class InfiniteCampusDAO {
 				+ "         and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		
+
 		List<ICBBSection> bbSections = null;
 		try {
 			if (username.equals("admin")) {
@@ -321,7 +322,7 @@ public class InfiniteCampusDAO {
 		}
 		return bbSections;
 	}
-	
+
 	@Transactional(readOnly=true)
 	public List<ICBBEnrollment> getBBEnrollments() {
 		mLog.info("In getBBEnrollments ...");
@@ -371,7 +372,7 @@ public class InfiniteCampusDAO {
 		}
 		return bbEnrollments;
 	}
-	
+
 	@Transactional(readOnly=true)
 	public List<ICBBGroup> getBBGroups() {
 		mLog.info("In getBBGroups ...");
@@ -388,7 +389,10 @@ public class InfiniteCampusDAO {
 				+ "		left join [Identity] on [Identity].personID = Roster.personID"
 				+ "		left join UserAccount on UserAccount.personID = Roster.personID"
 				+ "		Inner join Calendar cal on sdw.calendarID = cal.calendarID"
-				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) and (sdws.sectionID is not null) and (Cal.endDate is null or Cal.endDate >= GETDATE())";
+				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) "
+				+ "   and (sdws.sectionID is not null) "
+				+ "   and (Cal.endDate is null or Cal.endDate >= GETDATE())"
+				+ "   and sdws.groupId is not null";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICBBGroup> bbGroups = null;
@@ -403,8 +407,8 @@ public class InfiniteCampusDAO {
 	}
 	@Transactional(readOnly=true)
 	public ICBBCourse getBBCourseById(String courseId) {
-		mLog.info("In getBBCoursesById ...");
-		mLog.info("COURSE ID: " + courseId);
+		mLog.trace("In getBBCoursesById ...");
+		mLog.debug("COURSE ID: " + courseId);
 		String sql = "select sdw.bbCourseID as bbCourseId, sdw.bbCOURSE_ID as courseId, sdw.bbCOURSE_NAME as courseName, sdw.bbDESCRIPTION as courseDescription, sdw.groupSetId from SDWBlackboardSchedulerBbCourses sdw"
 				+ " where sdw.bbCOURSE_ID=:courseid";
 
@@ -460,7 +464,7 @@ public class InfiniteCampusDAO {
 				+ " left join PeriodSchedule on PeriodSchedule.periodScheduleID = Period.periodScheduleID"
 				+ " where Section.courseID = :courseid and Section.teacherPersonId = (select personId from UserAccount where username = :username)"
 				+ " and Trial.active = 1 and schoolyear.active=1";
-		
+
 		String sqlAdmin = "select Distinct"
 				+ " Section.sectionID, "
 				+ " Section.number as sectionNumber,"
@@ -496,7 +500,7 @@ public class InfiniteCampusDAO {
 				+ " and Trial.active = 1 and schoolyear.active=1";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		
+
 		List<ICSection> sections = null;
 		HashMap<Long, ICSection> l_sectionList = new HashMap<Long, ICSection>();
 		try {
@@ -509,7 +513,7 @@ public class InfiniteCampusDAO {
 				params.addValue("username", username);
 				sections= template.query(sql, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
 			}
-	
+
 			for (ICSection section : sections) {
 				ICSection l_temp = l_sectionList.get(section.getSectionID());
 
@@ -535,7 +539,7 @@ public class InfiniteCampusDAO {
 		return l_returnList;
 	}
 
-	
+
 
 	@Transactional(readOnly=true)
 	public ICSectionInfo getSectionInfo(String p_section) {
@@ -561,7 +565,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional(readOnly=true)
 	public Long getPersonId (String p_username) {
-		mLog.info("Username: " + p_username);
+		mLog.trace("getPersonId called ...");
 
 		String sql = "select personID from UserAccount where username=:userName";
 
@@ -600,7 +604,7 @@ public class InfiniteCampusDAO {
 
 		try {
 			enrollments = template.query(sql,params,  new BeanPropertyRowMapper<ICEnrollment>(ICEnrollment.class));
-	
+
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
 			return null;
@@ -610,7 +614,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional(readOnly=true)
 	public List<ICTemplate> getTemplates() {
-		mLog.info("getTemplates called ...");
+		mLog.trace("getTemplates called ...");
 		String sql = "select bbMasterID as bbMasterId, bbCOURSE_ID as bbCourseId, bbCOURSE_NAME as bbCourseName, MasterLevel as masterLevel, MasterSubjectArea as masterSubjectArea from SDWBlackboardSchedulerMasterCourses ";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
@@ -626,7 +630,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional(readOnly=true)
 	public List<ICTeacher> getTeachers() {
-		mLog.info("getTeachers called ...");
+		mLog.trace("getTeachers called ...");
 		String sql = "select distinct UA.personID as personId, "
 				+ "					UA.username as username, "
 				+ "					idn.firstName+ ' '+idn.lastName as teacherName "
@@ -676,7 +680,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional(readOnly=true)
 	public List<ICStudent> getStudents() {
-		mLog.info("getStudents called ...");
+		mLog.trace("getStudents called ...");
 		String sql = "select distinct "
 				+ " prs.personID as personId,"
 				+ " UA.username as userName,"
@@ -1141,7 +1145,7 @@ public class InfiniteCampusDAO {
 		}
 		return staff;
 	}
-	
+
 	@Transactional(readOnly=true)
 	public List<ICGuardian> getSISGuardians() {
 		mLog.info("getGuardian called ...");
@@ -1373,10 +1377,17 @@ public class InfiniteCampusDAO {
 				if (l_guardian.getBbUsername() == null) {
 					l_guardian.setBbUsername("C"+l_guardian.getBbPersonId());
 					this.insertBBUsername(l_guardian.getBbUsername(), l_guardian.getPersonId());
-					
+
 				}
 				if (l_guardian.getBbPassword() == null) {
-					l_guardian.setBbPassword("joe");
+					Random random = new Random();
+			        int number = random.nextInt(900) + 100; // Generates number between 100 and 999
+					String l_password = l_guardian.getFirstName().substring(0, 1).toLowerCase() + l_guardian.getLastName().toLowerCase();
+					if (l_password.length() > 6) {
+						l_guardian.setBbPassword(l_password.substring(0,5)+number);
+					} else {
+						l_guardian.setBbPassword(l_password+number);
+					}
 					this.insertBBPassword(l_guardian.getBbPassword(), l_guardian.getPersonId());
 				}
 			}
@@ -1386,7 +1397,7 @@ public class InfiniteCampusDAO {
 		}
 		return guardians;
 	}
-	
+
 	public Number insertBBCourseLink (CourseInfo courseInfo) {
 		mLog.info("insertBBCourseLink  called ...");
 
@@ -1460,7 +1471,7 @@ public class InfiniteCampusDAO {
 		mLog.info ("BB Course ID: " + personInfo.getBbCourseId());
 		mLog.info ("Person ID: " + personInfo.getPersonId());
 		mLog.info ("Modified Person ID: " + personInfo.getModifiedByPersonId());
-		
+
 		params.addValue("bbCourseId", personInfo.getBbCourseId());
 		params.addValue("personId", personInfo.getPersonId());
 		params.addValue("personType", personInfo.getPersonType());
@@ -1477,18 +1488,16 @@ public class InfiniteCampusDAO {
 		return keyHolder.getKey();
 
 	}
-	
+
 	public Number deleteBBPersonLink (Long key, Long personId) {
-		mLog.info("deleteBBPersonLink called ...");
+		mLog.trace("deleteBBPersonLink called ...");
 
 		String sql = "delete from SDWBlackboardSchedulerSISCoursePersons"
 				+ " where bbCourseId =:bbCourseId and personId=:personId";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		Number rows = null;
-		mLog.info ("BB Course ID: " + key);
-		mLog.info ("Person ID: " + personId);
-		
+
 		params.addValue("bbCourseId", key);
 		params.addValue("personId", personId);
 		try {
@@ -1525,9 +1534,9 @@ public class InfiniteCampusDAO {
 		return id;
 
 	}
-	
+
 	public Number updateBBCourseInfo (UpdateCourseInfo courseInfo) {
-		mLog.info("updateBBCourseInfo  called ...");
+		mLog.trace("updateBBCourseInfo  called ...");
 
 		String sql = "update SDWBlackboardSchedulerBBCourses"
 				+ " set bbCOURSE_NAME = :bbCourseName, bbDESCRIPTION=:bbCourseDescription, modified=GETDATE()"
@@ -1552,7 +1561,7 @@ public class InfiniteCampusDAO {
 	}
 
 	public Number updateBBCourseGroupSet (Number p_key, GroupProxy p_group, String p_personId) {
-		mLog.info("updateBBCourseLink  called ...");
+		mLog.trace("updateBBCourseLink  called ...");
 
 		String sql = "update SDWBlackboardSchedulerBBCourses"
 				+ " set groupSetId = :groupSetId, modifiedByPersonID=:personId, modified=GETDATE()"
@@ -1578,7 +1587,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional
 	public String removeSection(String p_sectionId) {
-		mLog.info("removeSection  called ...");
+		mLog.trace("removeSection  called ...");
 		Number rows = null;
 
 		String sql1 = "select b.bbCOURSE_ID from SDWBlackboardSchedulerSISCourseSections a"
@@ -1631,7 +1640,7 @@ public class InfiniteCampusDAO {
 		try {
 			l_courseId = (String) template.queryForObject(sql1, params, String.class);
 			mLog.info("BB Course ID: " + l_courseId);
-			
+
 			// Get Section Info
 			ICSectionInfo l_sectionInfo = this.getSectionInfo(p_sectionId);
 			mLog.info("Got Section Info");
@@ -1646,7 +1655,7 @@ public class InfiniteCampusDAO {
 			params.addValue("groupId", p_groupId);
 			rows = template.update(sql2, params);
 			mLog.info("Number of rows inserted: " + rows);
-			
+
 			List<String> sections = new ArrayList<String> ();
 			sections.add(p_sectionId);
 			l_enrollments = this.getEnrollmentsForSections(sections);
@@ -1693,10 +1702,10 @@ public class InfiniteCampusDAO {
 
 		return rows;
 	}
-	
+
 	public List<ICStudent> getBBStudents (String p_courseId) {
-		mLog.info("getBBStudents  called ...");
-		mLog.info("COURSE ID: " + p_courseId);
+		mLog.trace("getBBStudents  called ...");
+		mLog.debug("COURSE ID: " + p_courseId);
 		String sql = "select distinct sdwp.personID as personId, "
 				+ "  UserAccount.username as userName, "
 				+ "  [Identity].firstName + ' ' + [Identity].lastName as studentName from SDWBlackboardSchedulerSISCoursePersons sdwp "
@@ -1711,17 +1720,16 @@ public class InfiniteCampusDAO {
 		try {
 			params.addValue("courseId", p_courseId);
 			l_students = template.query(sql,params,  new BeanPropertyRowMapper<ICStudent>(ICStudent.class));
-			mLog.info("Student Number: " + l_students.size());
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
 			return null;
 		}
 		return l_students;
 	}
-	
+
 	public List<ICTeacher> getBBTeachers (String p_courseId) {
-		mLog.info("getBBTeachers  called ...");
-		mLog.info("COURSE ID: " + p_courseId);
+		mLog.trace("getBBTeachers  called ...");
+		mLog.debug("COURSE ID: " + p_courseId);
 		String sql = "select distinct sdwp.personID as personId, "
 				+ "  UserAccount.username as userName, "
 				+ "  [Identity].firstName + ' ' + [Identity].lastName as teacherName from SDWBlackboardSchedulerSISCoursePersons sdwp "
@@ -1742,7 +1750,7 @@ public class InfiniteCampusDAO {
 		}
 		return l_teachers;
 	}
-	
+
 	public List<ICMessage> getMessages () {
 		mLog.info("getMessages  called ...");
 		String sql = "select bbSchedMessageID as Id, Message as message"
@@ -1758,7 +1766,7 @@ public class InfiniteCampusDAO {
 		}
 		return l_messages;
 	}
-	
+
 	public Number insertBBUsername (String p_bbUsername, String p_personId) {
 		mLog.info("insertBBUserName called ...");
 
@@ -1766,7 +1774,7 @@ public class InfiniteCampusDAO {
 				+ "values (:personId,Null,672,:bbusername,GETDATE(),Null)";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		
+
 		params.addValue("personId", p_personId);
 		params.addValue("bbusername", p_bbUsername);
 		KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -1780,7 +1788,7 @@ public class InfiniteCampusDAO {
 		return keyHolder.getKey();
 
 	}
-	
+
 	public Number insertBBPassword (String p_bbPassword, String p_personId) {
 		mLog.info("insertBBPassword called ...");
 
@@ -1788,7 +1796,7 @@ public class InfiniteCampusDAO {
 				+ "values (:personId,Null,673,:bbpw,GETDATE(),Null)";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		
+
 		params.addValue("personId", p_personId);
 		params.addValue("bbpw", p_bbPassword);
 		KeyHolder keyHolder = new GeneratedKeyHolder();

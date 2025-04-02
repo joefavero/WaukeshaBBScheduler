@@ -89,7 +89,7 @@ public class AsyncService {
 	@ResponseBody
 	public void processSISFile (String p_file, int p_type, int p_size, SnapshotFileManager p_manager) throws InterruptedException {
 		mLog.trace("In procesSISFile()" + p_file);
-		p_manager.sendFile(p_file, "person", p_type, p_size);
+		p_manager.sendFile(p_file, p_type, p_size);
 
 	}
 	

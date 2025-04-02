@@ -382,8 +382,15 @@ public class RESTController {
 				ConfigData l_configData = m_service.getConfigData();
 				SnapshotInfo l_snapshotData = new SnapshotInfo();
 				l_snapshotData.setBbInstanceId(l_configData.getSnapshotBbInstanceId());
-				l_snapshotData.setSharedUsername(l_configData.getSnapshotSharedUsername());
-				l_snapshotData.setSharedPassword(l_configData.getSnapshotSharedPassword());
+				l_snapshotData.setSharedStudentUsername(l_configData.getSnapshotStudentSharedUsername());
+				l_snapshotData.setSharedStudentPassword(l_configData.getSnapshotStudentSharedPassword());
+				l_snapshotData.setStudentDatasource(l_configData.getSnapshotStudentDatasource());
+				l_snapshotData.setSharedStaffUsername(l_configData.getSnapshotStaffSharedUsername());
+				l_snapshotData.setSharedStaffPassword(l_configData.getSnapshotStaffSharedPassword());
+				l_snapshotData.setStaffDatasource(l_configData.getSnapshotStaffDatasource());
+				l_snapshotData.setSharedGuardianUsername(l_configData.getSnapshotGuardianSharedUsername());
+				l_snapshotData.setSharedGuardianPassword(l_configData.getSnapshotGuardianSharedPassword());
+				l_snapshotData.setGuardianDatasource(l_configData.getSnapshotGuardianDatasource());
 				l_snapshotData.setEmail(l_configData.getSnapshotEmail());
 
 				return mapper.writeValueAsString(l_snapshotData);
@@ -408,8 +415,15 @@ public class RESTController {
 			try {
 				ConfigData l_configData = m_service.getConfigData();
 				l_configData.setSnapshotBbInstanceId(snapshotData.getBbInstanceId());
-				l_configData.setSnapshotSharedUsername(snapshotData.getSharedUsername());
-				l_configData.setSnapshotSharedPassword(snapshotData.getSharedPassword());
+				l_configData.setSnapshotStudentSharedUsername(snapshotData.getSharedStudentUsername());
+				l_configData.setSnapshotStudentSharedPassword(snapshotData.getSharedStudentPassword());
+				l_configData.setSnapshotStudentDatasource(snapshotData.getStudentDatasource());
+				l_configData.setSnapshotStaffSharedUsername(snapshotData.getSharedStaffUsername());
+				l_configData.setSnapshotStaffSharedPassword(snapshotData.getSharedStaffPassword());
+				l_configData.setSnapshotStaffDatasource(snapshotData.getStaffDatasource());
+				l_configData.setSnapshotGuardianSharedUsername(snapshotData.getSharedGuardianUsername());
+				l_configData.setSnapshotGuardianSharedPassword(snapshotData.getSharedGuardianPassword());
+				l_configData.setSnapshotGuardianDatasource(snapshotData.getGuardianDatasource());
 				l_configData.setSnapshotEmail(snapshotData.getEmail());
 				m_service.saveConfigData(l_configData);
 				l_restResponse.setSuccess(true);
@@ -438,7 +452,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/getTemplates", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getTemplates (HttpServletRequest request) {
-		mLog.info("In getTemplates ...");
+		mLog.trace("In getTemplates ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -476,7 +490,7 @@ public class RESTController {
 	@ResponseBody
 	public String getCourses (@PathVariable("userName") String userName,
 			HttpServletRequest request) {
-		mLog.info("In getCourses ...");
+		mLog.trace("In getCourses ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -495,7 +509,7 @@ public class RESTController {
 	@ResponseBody
 	public String getBBCourses (@PathVariable("userName") String userName,
 			HttpServletRequest request) {
-		mLog.info("In getBBCourses ...");
+		mLog.trace("In getBBCourses ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -513,8 +527,8 @@ public class RESTController {
 	@RequestMapping(value = "/api/updateBBCourse", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse updateBBCourse (@RequestBody final UpdateCourseInfo courseInfo, HttpServletRequest request) {
-		mLog.info("In updateBBCourse ...");
-		mLog.info("Course ID: " + courseInfo.getBbCourseId());
+		mLog.trace("In updateBBCourse ...");
+		mLog.debug("Course ID: " + courseInfo.getBbCourseId());
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {
@@ -549,7 +563,7 @@ public class RESTController {
 	@ResponseBody
 	public String getBBSections (@PathVariable("bbCourseId") String bbCourseId, @PathVariable("userName") String userName,
 			HttpServletRequest request) {
-		mLog.info("In getBBSections ...");
+		mLog.trace("In getBBSections ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -567,7 +581,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/getSections/{courseId}/{userName}", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getSections (@PathVariable("courseId") String courseId, @PathVariable("userName") String userName, HttpServletRequest request) {
-		mLog.info("In getSections ...");
+		mLog.trace("In getSections ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -916,7 +930,7 @@ public class RESTController {
 			String l_file = l_manager.createEnrollmentFile(l_enrollments);
 			if (l_file != null) {
 				try {
-					service.processSISFile(l_file, 1, l_enrollments.size(), l_manager);
+					service.processSISFile(l_file, 4, l_enrollments.size(), l_manager);
 					l_restResponse.setSuccess(true);
 					ToastMessage l_toast = new ToastMessage();
 					l_toast.setType("success");
@@ -1044,7 +1058,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/getStudents", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public List<ICStudent> getStudents(HttpServletRequest request) {
-		mLog.info("In getStudents ...");
+		mLog.trace("In getStudents ...");
 		if (checkApiKey(request)) {
 			List<ICStudent> l_students = dao.getStudents();
 
@@ -1057,7 +1071,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/getBBStudents/{courseId}", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public List<ICStudent> getBBStudents(@PathVariable("courseId") String courseId, HttpServletRequest request) {
-		mLog.info("In getBBStudents ...");
+		mLog.trace("In getBBStudents ...");
 		List<ICStudent> l_students = null;
 		if (checkApiKey(request)) {
 			try {
@@ -1076,7 +1090,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/getBBTeachers/{courseId}", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public List<ICTeacher> getBBTeachers(@PathVariable("courseId") String courseId, HttpServletRequest request) {
-		mLog.info("In getBBTeachers ...");
+		mLog.trace("In getBBTeachers ...");
 		List<ICTeacher> l_teachers = null;
 		if (checkApiKey(request)) {
 
@@ -1139,7 +1153,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/addBBStudent", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse addBBStudent(@RequestBody final StudentInfo studentInfo, HttpServletRequest request) {
-		mLog.info("In addBBStudent ...");
+		mLog.trace("In addBBStudent ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			ConfigData l_configData;
@@ -1212,7 +1226,7 @@ public class RESTController {
 	@ResponseBody
 	public RestResponse removeBBTeacher(@PathVariable("courseId") String courseId,
 			@PathVariable("teacher") String teacher, HttpServletRequest request) {
-		mLog.info("In removeBBTeacher ...");
+		mLog.trace("In removeBBTeacher ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			ConfigData l_configData;
@@ -1254,7 +1268,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/addBBTeacher", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse addBBTeacher(@RequestBody final TeacherInfo teacherInfo, HttpServletRequest request) {
-		mLog.info("In addBBTeacher ...");
+		mLog.trace("In addBBTeacher ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			ConfigData l_configData;

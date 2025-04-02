@@ -74,7 +74,7 @@ public class SnapshotFileManager {
 			p.write("\r\n");
 
 			for (ICUser l_student:l_students) {
-				p.write("SIS2.Student"+"|"						//data_source
+				p.write(m_service.getConfigData().getSnapshotStudentDatasource() +"|"						//data_source
 						+ l_student.getStudentNumber() + "|"	//external_person_key
 						+ l_student.getUserName() + "|" 		//user_id
 						+ l_student.getStudentNumber() + "|" 	//passwd
@@ -160,7 +160,7 @@ public class SnapshotFileManager {
 					} else {
 						l_role = "";
 					}
-					p.write("SIS2.Staff"+"|"							//data_source
+					p.write(m_service.getConfigData().getSnapshotStaffDatasource()+"|"							//data_source
 							+ l_staff.getStaffNumber() + "|"		//external_person_key
 							+ l_staff.getUserName() + "|" 			//user_id
 							+ "FaCP@$sW0RD4Bb!" + "|" 		        //passwd
@@ -301,7 +301,7 @@ public class SnapshotFileManager {
 					l_observees.add(l_guardian.getStudentUsername());
 					l_observers.put(l_guardian.getBbPersonId(), l_observees);
 
-					p.write("SIS2.Guardians"+"|"					           //data_source
+					p.write(m_service.getConfigData().getSnapshotGuardianDatasource()+"|"					           //data_source
 							+ "Observer"+l_guardian.getContactNumber() + "|"   //external_person_key
 							+ l_guardian.getBbUsername() + "|" 	    //user_id
 							+ l_guardian.getBbPassword() + "|"		//passwd
@@ -356,7 +356,7 @@ public class SnapshotFileManager {
 		return l_snapshotFilename;
 	}
 
-	public DataSetStatus sendFile(String p_file, String p_endpoint, int p_type, int p_count) {
+	public DataSetStatus sendFile(String p_file, int p_type, int p_count) {
 		mLog.trace("In sendFile() ...");
 		mLog.info("TYPE: " + p_type);
 
@@ -377,18 +377,26 @@ public class SnapshotFileManager {
 			AuthScope scope = new AuthScope(host, port);
 
 			Credentials credentials = null;
+			String l_endpoint = null;
 			if (p_type == 1) {
 				mLog.info("OPTION 1");
-				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotSharedUsername(),
-						l_configData.getSnapshotSharedPassword());
+				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotStudentSharedUsername(),
+						l_configData.getSnapshotStudentSharedPassword());
+				l_endpoint = "person";
 			} else if (p_type == 2) {
-				mLog.info("OPTION 2");
-				credentials = new UsernamePasswordCredentials("8c932be4-76f2-407b-9872-578b1d37f284",
-						l_configData.getSnapshotSharedPassword());
+				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotStaffSharedUsername(),
+						l_configData.getSnapshotStaffSharedPassword());
+				l_endpoint = "person";
 			} else if (p_type == 3) {
 				mLog.info("OPTION 3");
-				credentials = new UsernamePasswordCredentials("31e17893-12bb-490c-80d1-97c9fed8974d",
-						l_configData.getSnapshotSharedPassword());
+				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotGuardianSharedUsername(),
+						l_configData.getSnapshotGuardianSharedPassword());
+				l_endpoint = "person";
+			} else if (p_type == 4) {
+				mLog.info("OPTION 4");
+				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotStudentSharedUsername(),
+						l_configData.getSnapshotStudentSharedPassword());
+				l_endpoint = "membership";
 			}
 			credentialsPovider.setCredentials(scope, credentials);
 
@@ -406,13 +414,13 @@ public class SnapshotFileManager {
 				// Parse the Filename to determine the endpoints
 				//SnapshotJobDetails details = SnapshotJobDetails.fromFileName(p_file);
 				SnapshotJobDetails details = new SnapshotJobDetails();
-				details.setEndpoint(p_endpoint);
+				details.setEndpoint(l_endpoint);
 				details.setOperation("refresh");
 				details.setJobTitle("Infinite Campus Integration");
 				mLog.info("Endpoint: " + details.getEndpoint());
 				mLog.info("Operation: " + details.getOperation());
 				mLog.info("Job Title: " + details.getJobTitle());
-				mLog.info("Timestamp: " + details.getTimestamp());
+
 
 				try {
 					HttpPost httppost = new HttpPost(l_configData.getRestHost()
@@ -535,8 +543,8 @@ public class SnapshotFileManager {
 			}
 			AuthScope scope = new AuthScope(host, port);
 
-			Credentials credentials = new UsernamePasswordCredentials(l_configData.getSnapshotSharedUsername(),
-					l_configData.getSnapshotSharedPassword());
+			Credentials credentials = new UsernamePasswordCredentials(l_configData.getSnapshotStudentSharedUsername(),
+					l_configData.getSnapshotStudentSharedPassword());
 			credentialsPovider.setCredentials(scope, credentials);
 
 			// Creating the HttpClientBuilder

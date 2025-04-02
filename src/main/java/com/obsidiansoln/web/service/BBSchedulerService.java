@@ -207,16 +207,50 @@ public class BBSchedulerService {
 			l_snapshotBbInstanceId= "";
 		}
 		
-		String l_snapshotSharedUsername = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_SHARED_USERNAME);
-		if ( l_snapshotSharedUsername == null) {
-			l_snapshotSharedUsername= "";
+		String l_snapshotStudentSharedUsername = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_STUDENT_SHARED_USERNAME);
+		if ( l_snapshotStudentSharedUsername == null) {
+			l_snapshotStudentSharedUsername= "";
 		}
 		
-		String l_snapshotSharedPassword = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_SHARED_PASSWORD);
-		if ( l_snapshotSharedPassword == null) {
-			l_snapshotSharedPassword= "";
+		String l_snapshotStudentSharedPassword = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_STUDENT_SHARED_PASSWORD);
+		if ( l_snapshotStudentSharedPassword == null) {
+			l_snapshotStudentSharedPassword= "";
 		}
 		
+		String l_snapshotStudentDatasource = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_STUDENT_DATASOURCE);
+		if ( l_snapshotStudentDatasource == null) {
+			l_snapshotStudentDatasource = "";
+		}
+		
+		String l_snapshotStaffSharedUsername = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_STAFF_SHARED_USERNAME);
+		if ( l_snapshotStaffSharedUsername == null) {
+			l_snapshotStaffSharedUsername= "";
+		}
+		
+		String l_snapshotStaffSharedPassword = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_STAFF_SHARED_PASSWORD);
+		if ( l_snapshotStaffSharedPassword == null) {
+			l_snapshotStaffSharedPassword= "";
+		}
+		
+		String l_snapshotStaffDatasource = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_STAFF_DATASOURCE);
+		if ( l_snapshotStaffDatasource == null) {
+			l_snapshotStaffDatasource = "";
+		}
+		
+		String l_snapshotGuardianSharedUsername = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_SHARED_USERNAME);
+		if ( l_snapshotGuardianSharedUsername == null) {
+			l_snapshotGuardianSharedUsername= "";
+		}
+		
+		String l_snapshotGuardianSharedPassword = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_SHARED_PASSWORD);
+		if ( l_snapshotGuardianSharedPassword == null) {
+			l_snapshotGuardianSharedPassword= "";
+		}
+		
+		String l_snapshotGuardianDatasource = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_DATASOURCE);
+		if ( l_snapshotGuardianDatasource == null) {
+			l_snapshotGuardianDatasource = "";
+		}
 		String l_snapshotEmail = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_EMAIL);
 		if ( l_snapshotEmail == null) {
 			l_snapshotEmail= "";
@@ -255,8 +289,15 @@ public class BBSchedulerService {
 				l_parentInviteMessage,
 				l_parentExistingMessage,
 				l_snapshotBbInstanceId,
-				l_snapshotSharedUsername,
-				l_snapshotSharedPassword,
+				l_snapshotStudentSharedUsername,
+				l_snapshotStudentSharedPassword,
+				l_snapshotStudentDatasource,
+				l_snapshotStaffSharedUsername,
+				l_snapshotStaffSharedPassword,
+				l_snapshotStaffDatasource,
+				l_snapshotGuardianSharedUsername,
+				l_snapshotGuardianSharedPassword,
+				l_snapshotGuardianDatasource,
 				l_snapshotEmail);
 
 		return l_data;
@@ -375,9 +416,23 @@ public class BBSchedulerService {
 		
 		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_BB_INSTANCE_ID, p_data.getSnapshotBbInstanceId());
 		
-		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_SHARED_USERNAME, p_data.getSnapshotSharedUsername());
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_STUDENT_SHARED_USERNAME, p_data.getSnapshotStudentSharedUsername());
 		
-		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_SHARED_PASSWORD, p_data.getSnapshotSharedPassword());
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_STUDENT_SHARED_PASSWORD, p_data.getSnapshotStudentSharedPassword());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_STUDENT_DATASOURCE, p_data.getSnapshotStudentDatasource());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_STAFF_SHARED_USERNAME, p_data.getSnapshotStaffSharedUsername());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_STAFF_SHARED_PASSWORD, p_data.getSnapshotStaffSharedPassword());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_STAFF_DATASOURCE, p_data.getSnapshotStaffDatasource());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_SHARED_USERNAME, p_data.getSnapshotGuardianSharedUsername());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_SHARED_PASSWORD, p_data.getSnapshotGuardianSharedPassword());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_DATASOURCE, p_data.getSnapshotGuardianDatasource());
 		
 		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_EMAIL, p_data.getSnapshotEmail());
 
