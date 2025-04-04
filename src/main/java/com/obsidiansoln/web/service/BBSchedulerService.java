@@ -59,6 +59,11 @@ public class BBSchedulerService {
 			l_apiKey = "test";
 		}
 		
+		String l_adminPW = l_props.getProperty(BBSchedulerUtil.ADMIN_PW);
+		if ( l_adminPW== null) {
+			l_adminPW = "NEED TO SET ADMIN PW";
+		}
+		
 		
 		String l_ltiKey = l_props.getProperty(BBSchedulerUtil.LTI_KEY);
 		if ( l_ltiKey== null) {
@@ -85,76 +90,6 @@ public class BBSchedulerService {
 			l_restSecret = "NEED TO SET REST SECRET";
 		}
 
-		Timestamp l_semester1StartTimestamp = null;
-		if (l_props.getProperty(BBSchedulerUtil.SEMESTER1_START_DATE) != null && !(l_props.getProperty(BBSchedulerUtil.SEMESTER1_START_DATE).isEmpty())) {
-			l_sdf.setTimeZone(TimeZone.getTimeZone("America/Chicago"));
-			Date l_semester1StartDate = l_sdf.parse(l_props.getProperty(BBSchedulerUtil.SEMESTER1_START_DATE));
-			l_semester1StartTimestamp = new Timestamp(l_semester1StartDate.getTime());
-		}
-
-		Timestamp l_semester1EndTimestamp = null;
-		if (l_props.getProperty(BBSchedulerUtil.SEMESTER1_END_DATE) != null && !(l_props.getProperty(BBSchedulerUtil.SEMESTER1_END_DATE).isEmpty())) {
-			l_sdf.setTimeZone(TimeZone.getTimeZone("America/Chicago"));
-			Date l_semester1EndDate = l_sdf.parse(l_props.getProperty(BBSchedulerUtil.SEMESTER1_END_DATE));
-			l_semester1EndTimestamp = new Timestamp(l_semester1EndDate.getTime());
-		}
-
-		Timestamp l_semester2StartTimestamp = null;
-		if (l_props.getProperty(BBSchedulerUtil.SEMESTER2_START_DATE) != null && !(l_props.getProperty(BBSchedulerUtil.SEMESTER2_START_DATE).isEmpty())) {
-			l_sdf.setTimeZone(TimeZone.getTimeZone("America/Chicago"));
-			Date l_semester2StartDate = l_sdf.parse(l_props.getProperty(BBSchedulerUtil.SEMESTER2_START_DATE));
-			l_semester2StartTimestamp = new Timestamp(l_semester2StartDate.getTime());
-		}
-
-		Timestamp l_semester2EndTimestamp = null;
-		if (l_props.getProperty(BBSchedulerUtil.SEMESTER2_END_DATE) != null && !(l_props.getProperty(BBSchedulerUtil.SEMESTER2_END_DATE).isEmpty())) {
-			l_sdf.setTimeZone(TimeZone.getTimeZone("America/Chicago"));
-			Date l_semester2EndDate = l_sdf.parse(l_props.getProperty(BBSchedulerUtil.SEMESTER2_END_DATE));
-			l_semester2EndTimestamp = new Timestamp(l_semester2EndDate.getTime());
-		}
-		String l_defaultSemester = l_props.getProperty(BBSchedulerUtil.DEFAULT_SEMESTER);
-		if ( l_defaultSemester== null) {
-			l_defaultSemester= "Semester 1";
-		}
-		String l_defaultTerm = l_props.getProperty(BBSchedulerUtil.DEFAULT_TERM);
-		if ( l_defaultTerm== null) {
-			l_defaultTerm= "ALL";
-		}
-		String l_maxReportDays = l_props.getProperty(BBSchedulerUtil.MAX_REPORT_DAYS);
-		if ( l_maxReportDays== null) {
-			l_maxReportDays= "30";
-		}
-		
-		boolean l_isDetailed = false;
-		if ( l_props.getProperty(BBSchedulerUtil.PARENT_TOOL_LEVEL) != null) {
-			l_isDetailed = l_props.getProperty(BBSchedulerUtil.PARENT_TOOL_LEVEL).equals("true") ? true : false;
-		} 
-		
-		String l_adminReportInstructor = l_props.getProperty(BBSchedulerUtil.ADMIN_REPORT_INSTRUCTOR);
-		if ( l_adminReportInstructor == null) {
-			l_adminReportInstructor= "";
-		}
-		
-		String l_adminReportEmail = l_props.getProperty(BBSchedulerUtil.ADMIN_REPORT_EMAIL);
-		if ( l_adminReportEmail == null) {
-			l_adminReportEmail= "";
-		}
-		
-		String l_adminReportPhone = l_props.getProperty(BBSchedulerUtil.ADMIN_REPORT_PHONE);
-		if ( l_adminReportPhone == null) {
-			l_adminReportPhone= "";
-		}
-		
-		String l_maxPDFEntires = l_props.getProperty(BBSchedulerUtil.MAX_PDF_ENTRIES);
-		if ( l_maxPDFEntires == null) {
-			l_maxPDFEntires= "120";
-		}
-		
-		String l_emailFrom = l_props.getProperty(BBSchedulerUtil.PARENT_EMAIL_FROM);
-		if ( l_emailFrom == null) {
-			l_emailFrom= "";
-		}
-		
 		String l_emailHost = l_props.getProperty(BBSchedulerUtil.EMAIL_HOST);
 		if ( l_emailHost == null) {
 			l_emailHost= "smtp.gmail.com";
@@ -186,21 +121,6 @@ public class BBSchedulerService {
 		if ( l_props.getProperty(BBSchedulerUtil.EMAIL_DEBUG) != null) {
 			l_isEmailDebug= l_props.getProperty(BBSchedulerUtil.EMAIL_DEBUG).equals("true") ? true : false;
 		} 
-		
-		String l_emailNote = l_props.getProperty(BBSchedulerUtil.EMAIL_NOTE);
-		if ( l_emailNote == null) {
-			l_emailNote= "";
-		}
-		
-		String l_parentInviteMessage = l_props.getProperty(BBSchedulerUtil.PARENT_INVITE_MESSAGE);
-		if ( l_parentInviteMessage == null) {
-			l_parentInviteMessage= "";
-		}
-		
-		String l_parentExistingMessage = l_props.getProperty(BBSchedulerUtil.PARENT_EXISTING_MESSAGE);
-		if ( l_parentExistingMessage == null) {
-			l_parentExistingMessage= "";
-		}
 		
 		String l_snapshotBbInstanceId = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_BB_INSTANCE_ID);
 		if ( l_snapshotBbInstanceId == null) {
@@ -251,6 +171,23 @@ public class BBSchedulerService {
 		if ( l_snapshotGuardianDatasource == null) {
 			l_snapshotGuardianDatasource = "";
 		}
+		
+		String l_snapshotEnrollmentDatasource = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_ENROLLMENT_DATASOURCE);
+		if ( l_snapshotEnrollmentDatasource == null) {
+			l_snapshotEnrollmentDatasource = "";
+		}
+		String l_snapshotStudentAssociationDatasource = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_STUDENT_ASSOCIATION_DATASOURCE);
+		if ( l_snapshotStudentAssociationDatasource == null) {
+			l_snapshotStudentAssociationDatasource = "";
+		}
+		String l_snapshotStaffAssociationDatasource = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_STAFF_ASSOCIATION_DATASOURCE);
+		if ( l_snapshotStaffAssociationDatasource == null) {
+			l_snapshotStaffAssociationDatasource = "";
+		}
+		String l_snapshotGuardianAssociationDatasource = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_ASSOCIATION_DATASOURCE);
+		if ( l_snapshotGuardianAssociationDatasource == null) {
+			l_snapshotGuardianAssociationDatasource = "";
+		}
 		String l_snapshotEmail = l_props.getProperty(BBSchedulerUtil.SNAPSHOT_EMAIL);
 		if ( l_snapshotEmail == null) {
 			l_snapshotEmail= "";
@@ -260,24 +197,12 @@ public class BBSchedulerService {
 		ConfigData l_data = new ConfigData(l_logLevel,
 				l_workingDirectory,
 				l_apiKey,
+				l_adminPW,
 				l_ltiKey,
 				l_ltiSecret,
 				l_restHost,
 				l_restKey,
 				l_restSecret,
-				l_semester1StartTimestamp, 
-				l_semester1EndTimestamp, 
-				l_semester2StartTimestamp, 
-				l_semester2EndTimestamp, 
-				l_defaultSemester, 
-				l_defaultTerm, 
-				l_maxReportDays, 
-				l_isDetailed,
-				l_adminReportInstructor,
-				l_adminReportEmail,
-				l_adminReportPhone,
-				l_maxPDFEntires,
-				l_emailFrom,
 				l_emailHost,
 				l_emailPort,
 				l_emailUsername,
@@ -285,9 +210,6 @@ public class BBSchedulerService {
 				l_isEmailAuthenticate,
 				l_isEmailUseSSL,
 				l_isEmailDebug,
-				l_emailNote,
-				l_parentInviteMessage,
-				l_parentExistingMessage,
 				l_snapshotBbInstanceId,
 				l_snapshotStudentSharedUsername,
 				l_snapshotStudentSharedPassword,
@@ -298,6 +220,10 @@ public class BBSchedulerService {
 				l_snapshotGuardianSharedUsername,
 				l_snapshotGuardianSharedPassword,
 				l_snapshotGuardianDatasource,
+				l_snapshotEnrollmentDatasource,
+				l_snapshotStudentAssociationDatasource,
+				l_snapshotStaffAssociationDatasource,
+				l_snapshotGuardianAssociationDatasource,
 				l_snapshotEmail);
 
 		return l_data;
@@ -318,75 +244,14 @@ public class BBSchedulerService {
 		
 		l_props.setProperty(BBSchedulerUtil.WORKING_DIRECTORY, p_data.getWorkingDirectory());
 		
-		if (p_data.getSemester1StartDate() != null) {
-			Calendar l_tempCalendar = Calendar.getInstance();
-			l_tempCalendar.setTimeInMillis(p_data.getSemester1StartDate().getTime());
-			l_tempCalendar.set(Calendar.MILLISECOND, 0);
-			l_tempCalendar.set(Calendar.SECOND, 0);
-			l_tempCalendar.set(Calendar.MINUTE, 0);
-			l_tempCalendar.set(Calendar.HOUR, 0);
-			l_props.setProperty(BBSchedulerUtil.SEMESTER1_START_DATE, l_sdf.format(l_tempCalendar.getTime()));
-		} else {
-			l_props.setProperty(BBSchedulerUtil.SEMESTER1_START_DATE, "");
-		}
 
 		l_props.setProperty(BBSchedulerUtil.API_KEY, p_data.getApiKey());
+		l_props.setProperty(BBSchedulerUtil.ADMIN_PW, p_data.getAdminPW());
 		l_props.setProperty(BBSchedulerUtil.LTI_KEY, p_data.getLtiKey());
 		l_props.setProperty(BBSchedulerUtil.LTI_SECRET, p_data.getLtiSecret());
 		l_props.setProperty(BBSchedulerUtil.REST_HOST, p_data.getRestHost());
 		l_props.setProperty(BBSchedulerUtil.REST_KEY, p_data.getRestKey());
 		l_props.setProperty(BBSchedulerUtil.REST_SECRET, p_data.getRestSecret());
-		
-		if (p_data.getSemester1EndDate() != null) {
-			Calendar l_tempCalendar = Calendar.getInstance();
-			l_tempCalendar.setTimeInMillis(p_data.getSemester1EndDate().getTime());
-			l_tempCalendar.set(Calendar.HOUR_OF_DAY, 23);
-			l_tempCalendar.set(Calendar.MINUTE, 59);
-			l_tempCalendar.set(Calendar.SECOND, 59);
-			l_tempCalendar.set(Calendar.MILLISECOND, 999);
-			l_props.setProperty(BBSchedulerUtil.SEMESTER1_END_DATE, l_sdf.format(l_tempCalendar.getTime()));
-		} else  {
-			l_props.setProperty(BBSchedulerUtil.SEMESTER1_END_DATE, "");
-		}
-
-		if (p_data.getSemester2StartDate() != null) {
-			Calendar l_tempCalendar = Calendar.getInstance();
-			l_tempCalendar.setTimeInMillis(p_data.getSemester2StartDate().getTime());
-			l_tempCalendar.set(Calendar.MILLISECOND, 0);
-			l_tempCalendar.set(Calendar.SECOND, 0);
-			l_tempCalendar.set(Calendar.MINUTE, 0);
-			l_tempCalendar.set(Calendar.HOUR, 0);
-			l_props.setProperty(BBSchedulerUtil.SEMESTER2_START_DATE, l_sdf.format(l_tempCalendar.getTime()));
-		} else {
-			l_props.setProperty(BBSchedulerUtil.SEMESTER2_START_DATE, "");
-		}
-
-		if (p_data.getSemester2EndDate() != null) {
-			Calendar l_tempCalendar = Calendar.getInstance();
-			l_tempCalendar.setTimeInMillis(p_data.getSemester2EndDate().getTime());
-			l_tempCalendar.set(Calendar.HOUR_OF_DAY, 23);
-			l_tempCalendar.set(Calendar.MINUTE, 59);
-			l_tempCalendar.set(Calendar.SECOND, 59);
-			l_tempCalendar.set(Calendar.MILLISECOND, 999);
-			l_props.setProperty(BBSchedulerUtil.SEMESTER2_END_DATE, l_sdf.format(l_tempCalendar.getTime()));
-		} else  {
-			l_props.setProperty(BBSchedulerUtil.SEMESTER2_END_DATE, "");
-		}
-
-		l_props.setProperty(BBSchedulerUtil.DEFAULT_SEMESTER, p_data.getDefaultSemester());
-		l_props.setProperty(BBSchedulerUtil.DEFAULT_TERM, p_data.getDefaultTerm());
-		l_props.setProperty(BBSchedulerUtil.MAX_REPORT_DAYS, p_data.getMaxReportDays());
-		if ( p_data.isDetailed()) {
-			l_props.setProperty(BBSchedulerUtil.PARENT_TOOL_LEVEL, "true");
-		} else {
-			l_props.setProperty(BBSchedulerUtil.PARENT_TOOL_LEVEL, "false");
-		}
-
-		l_props.setProperty(BBSchedulerUtil.ADMIN_REPORT_INSTRUCTOR, p_data.getAdminReportInstructor());
-		l_props.setProperty(BBSchedulerUtil.ADMIN_REPORT_EMAIL, p_data.getAdminReportEmail());
-		l_props.setProperty(BBSchedulerUtil.ADMIN_REPORT_PHONE, p_data.getAdminReportPhone());
-		l_props.setProperty(BBSchedulerUtil.MAX_PDF_ENTRIES, p_data.getMaxPDFEntries());
-		l_props.setProperty(BBSchedulerUtil.PARENT_EMAIL_FROM, p_data.getEmailFrom());
 		l_props.setProperty(BBSchedulerUtil.EMAIL_HOST, p_data.getEmailHost());
 		l_props.setProperty(BBSchedulerUtil.EMAIL_PORT, p_data.getEmailPort());
 		l_props.setProperty(BBSchedulerUtil.EMAIL_USERNAME, p_data.getEmailUsername());
@@ -407,12 +272,6 @@ public class BBSchedulerService {
 		} else {
 			l_props.setProperty(BBSchedulerUtil.EMAIL_DEBUG, "false");
 		}
-
-		l_props.setProperty(BBSchedulerUtil.EMAIL_NOTE, p_data.getEmailNote());
-		
-		l_props.setProperty(BBSchedulerUtil.PARENT_INVITE_MESSAGE, p_data.getParentInviteMessage());
-		
-		l_props.setProperty(BBSchedulerUtil.PARENT_EXISTING_MESSAGE, p_data.getParentExistingMessage());
 		
 		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_BB_INSTANCE_ID, p_data.getSnapshotBbInstanceId());
 		
@@ -433,6 +292,14 @@ public class BBSchedulerService {
 		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_SHARED_PASSWORD, p_data.getSnapshotGuardianSharedPassword());
 		
 		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_DATASOURCE, p_data.getSnapshotGuardianDatasource());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_ENROLLMENT_DATASOURCE, p_data.getSnapshotEnrollmentDatasource());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_STUDENT_ASSOCIATION_DATASOURCE, p_data.getSnapshotStudentAssociationDatasource());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_STAFF_ASSOCIATION_DATASOURCE, p_data.getSnapshotStaffAssociationDatasource());
+		
+		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_GUARDIAN_ASSOCIATION_DATASOURCE, p_data.getSnapshotGuardianAssociationDatasource());
 		
 		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_EMAIL, p_data.getSnapshotEmail());
 

@@ -1,18 +1,20 @@
 package com.obsidiansoln.database.model;
 
 public class ICBBSection {
-	private String sectionId;
+	private int sectionID;
 	private String courseName;
 	private String sectionNumber;
+	private String termName;
+	private String period;
 	private String teacherName;
 	private Long studentNumber;
 	private Long teacherNumber;
 	
-	public String getSectionId() {
-		return sectionId;
+	public int getSectionID() {
+		return sectionID;
 	}
-	public void setSectionId(String sectionId) {
-		this.sectionId = sectionId;
+	public void setSectionID(int sectionID) {
+		this.sectionID = sectionID;
 	}
 	public String getCourseName() {
 		return courseName;
@@ -25,6 +27,18 @@ public class ICBBSection {
 	}
 	public void setSectionNumber(String sectionNumber) {
 		this.sectionNumber = sectionNumber;
+	}
+	public String getTermName() {
+		return "TERM";
+	}
+	public void setTermName(String termName) {
+		this.termName = termName;
+	}
+	public String getPeriod() {
+		return "PERIOD";
+	}
+	public void setPeriod(String period) {
+		this.period = period;
 	}
 	public String getTeacherName() {
 		return teacherName;

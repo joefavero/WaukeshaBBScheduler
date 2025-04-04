@@ -8,6 +8,7 @@ public class CourseInfo {
 	private Long calendarId;
 	private String courseTemplateId;
 	private Long personId;
+	private String courseDuration;
 	private String targetCourseId;
 	private String targetCourseName;
 	private String targetCourseDescription;
@@ -42,6 +43,12 @@ public class CourseInfo {
 	}
 	public void setPersonId(Long personId) {
 		this.personId = personId;
+	}
+	public String getCourseDuration() {
+		return courseDuration;
+	}
+	public void setCourseDuration(String courseDuration) {
+		this.courseDuration = courseDuration;
 	}
 	public String getTargetCourseId() {
 		return targetCourseId;

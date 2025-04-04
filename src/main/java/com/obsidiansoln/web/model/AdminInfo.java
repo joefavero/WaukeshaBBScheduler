@@ -12,7 +12,6 @@ public class AdminInfo {
 	private String port;
 	private String username;
 	private String pw;
-	private String note;
 	private boolean authenticate;
 	private boolean ssl;
 	private boolean debug;
@@ -60,14 +59,6 @@ public class AdminInfo {
 
 	public void setPw(String pw) {
 		this.pw = pw;
-	}
-
-	public String getNote() {
-		return note;
-	}
-
-	public void setNote(String note) {
-		this.note = note;
 	}
 
 	public boolean isAuthenticate() {

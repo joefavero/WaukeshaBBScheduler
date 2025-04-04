@@ -1,6 +1,5 @@
 package com.obsidiansoln.web.controller;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,6 +27,7 @@ import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
 import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.blackboard.model.BBRestCounts;
 import com.obsidiansoln.blackboard.model.SeparatedCourses;
+import com.obsidiansoln.blackboard.model.SnapshotFileInfo;
 import com.obsidiansoln.blackboard.model.StudentInfo;
 import com.obsidiansoln.blackboard.model.TeacherInfo;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
@@ -62,6 +62,7 @@ import com.obsidiansoln.web.model.RestInfo;
 import com.obsidiansoln.web.model.RestResponse;
 import com.obsidiansoln.web.model.SnapshotInfo;
 import com.obsidiansoln.web.model.ToastMessage;
+import com.obsidiansoln.web.model.UtilityInfo;
 import com.obsidiansoln.web.service.AsyncService;
 import com.obsidiansoln.web.service.BBSchedulerService;
 
@@ -86,6 +87,65 @@ public class RESTController {
 
 	public RESTController() {
 		m_service = new BBSchedulerService();
+	}
+
+	@RequestMapping(value = "/api/utilityData", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public String getUtilityData(HttpServletRequest request) {
+		mLog.trace("In getUtilityData ...");
+		if (checkApiKey(request)) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				ConfigData l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+				UtilityInfo l_utility = new UtilityInfo();
+				return mapper.writeValueAsString(l_utility);
+			} catch (JsonProcessingException e) {
+				mLog.error(e.getMessage());
+				return FAILURE;
+			} catch (Exception e) {
+				mLog.error(e.getMessage());
+				return FAILURE;
+			}
+		} else {
+			return FAILURE;
+		}
+	}
+
+	@RequestMapping(value = "/api/utilityData", method = RequestMethod.POST, produces = "application/json")
+	@ResponseBody
+	public RestResponse putUtiltyData(@RequestBody final UtilityInfo utilityData, HttpServletRequest request) {
+		mLog.trace("In putUtilityData ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			try {
+				ConfigData l_configData = m_service.getConfigData();
+				//l_configData.setRestHost(restData.getHost());
+				//l_configData.setRestKey(restData.getKey());
+				//l_configData.setRestSecret(restData.getSecret());
+				//m_service.saveConfigData(l_configData);
+
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("UTILILITY Data Updated");
+				l_restResponse.setToast(l_toast);
+			} catch (Exception l_ex) {
+				mLog.error(l_ex.getMessage());
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("ERROR on REST API");
+				l_restResponse.setToast(l_toast);
+			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/restData", method = RequestMethod.GET, produces = "application/json")
@@ -130,7 +190,7 @@ public class RESTController {
 				l_configData.setRestHost(restData.getHost());
 				l_configData.setRestKey(restData.getKey());
 				l_configData.setRestSecret(restData.getSecret());
-				m_service.saveConfigData(l_configData);
+				//m_service.saveConfigData(l_configData);
 
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
@@ -191,7 +251,7 @@ public class RESTController {
 				l_configData.setLtiKey(ltiData.getKey());
 				l_configData.setLtiSecret(ltiData.getSecret());
 
-				m_service.saveConfigData(l_configData);
+				//m_service.saveConfigData(l_configData);
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");
@@ -227,22 +287,14 @@ public class RESTController {
 				RestManager l_manager = new RestManager(l_configData);
 				PortalInfo l_portalData = new PortalInfo();
 				l_portalData.setLogLevel(l_configData.getLogLevel());
-				l_portalData.setSemesterStart1(l_configData.getSemester1StartDate());
-				l_portalData.setSemesterEnd1(l_configData.getSemester1EndDate());
-				l_portalData.setSemesterStart2(l_configData.getSemester2StartDate());
-				l_portalData.setSemesterEnd2(l_configData.getSemester2EndDate());
-				l_portalData.setDefaultSemester(l_configData.getDefaultSemester());
-				l_portalData.setDefaultTerm(l_configData.getDefaultTerm());
-				l_portalData.setAdminEmail(l_configData.getAdminReportEmail());
-				l_portalData.setAdminInstructor(l_configData.getAdminReportInstructor());
-				l_portalData.setAdminPhone(l_configData.getAdminReportPhone());
+				l_portalData.setAdminPassword(l_configData.getAdminPW());
+				l_portalData.setCustomMessages(dao.getMessages());
+
 				// Add Terms
 				List<TermProxy> l_terms = l_manager.getTerms();
 				ArrayList<String> l_termList = new ArrayList<String>();
 				for (TermProxy l_term : l_terms) {
-					if (l_term.getName().contains("LT")) {
 						l_termList.add(l_term.getName());
-					}
 				}
 				l_portalData.setTerms(l_termList);
 				return mapper.writeValueAsString(l_portalData);
@@ -267,16 +319,11 @@ public class RESTController {
 			try {
 				ConfigData l_configData = m_service.getConfigData();
 				l_configData.setLogLevel(portalData.getLogLevel());
-				l_configData.setSemester1StartDate(new Timestamp(portalData.getSemesterStart1().getTime()));
-				l_configData.setSemester1EndDate(new Timestamp(portalData.getSemesterEnd1().getTime()));
-				l_configData.setSemester2StartDate(new Timestamp(portalData.getSemesterStart2().getTime()));
-				l_configData.setSemester2EndDate(new Timestamp(portalData.getSemesterEnd2().getTime()));
-				l_configData.setDefaultSemester(portalData.getDefaultSemester());
-				l_configData.setDefaultTerm(portalData.getDefaultTerm());
-				l_configData.setAdminReportEmail(portalData.getAdminEmail());
-				l_configData.setAdminReportInstructor(portalData.getAdminInstructor());
-				l_configData.setAdminReportPhone(portalData.getAdminPhone());
-				m_service.saveConfigData(l_configData);
+				l_configData.setAdminPW(portalData.getAdminPassword());
+				
+				//Now need to add the Messages to the Database
+			
+				//m_service.saveConfigData(l_configData);
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");
@@ -313,7 +360,6 @@ public class RESTController {
 				l_adminData.setPort(l_configData.getEmailPort());
 				l_adminData.setUsername(l_configData.getEmailUsername());
 				l_adminData.setPw(l_configData.getEmailPassword());
-				l_adminData.setNote(l_configData.getEmailNote());
 				l_adminData.setAuthenticate(l_configData.isEmailAuthenticate());
 				l_adminData.setSsl(l_configData.isEmailUseSSL());
 				l_adminData.setDebug(l_configData.isEmailDebug());
@@ -343,11 +389,10 @@ public class RESTController {
 				l_configData.setEmailPort(adminData.getPort());
 				l_configData.setEmailUsername(adminData.getUsername());
 				l_configData.setEmailPassword(adminData.getPw());
-				l_configData.setEmailNote(adminData.getNote());
 				l_configData.setEmailAuthenticate(adminData.isAuthenticate());
 				l_configData.setEmailUseSSL(adminData.isSsl());
 				l_configData.setEmailDebug(adminData.isDebug());
-				m_service.saveConfigData(l_configData);
+				//m_service.saveConfigData(l_configData);
 
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
@@ -391,6 +436,10 @@ public class RESTController {
 				l_snapshotData.setSharedGuardianUsername(l_configData.getSnapshotGuardianSharedUsername());
 				l_snapshotData.setSharedGuardianPassword(l_configData.getSnapshotGuardianSharedPassword());
 				l_snapshotData.setGuardianDatasource(l_configData.getSnapshotGuardianDatasource());
+				l_snapshotData.setEnrollmentDatasource(l_configData.getSnapshotEnrollmentDatasource());
+				l_snapshotData.setStudentAssociationDatasource(l_configData.getSnapshotStudentAssociationDatasource());
+				l_snapshotData.setStaffAssociationDatasource(l_configData.getSnapshotStaffAssociationDatasource());
+				l_snapshotData.setGuardianAssociationDatasource(l_configData.getSnapshotGuardianAssociationDatasource());
 				l_snapshotData.setEmail(l_configData.getSnapshotEmail());
 
 				return mapper.writeValueAsString(l_snapshotData);
@@ -424,8 +473,12 @@ public class RESTController {
 				l_configData.setSnapshotGuardianSharedUsername(snapshotData.getSharedGuardianUsername());
 				l_configData.setSnapshotGuardianSharedPassword(snapshotData.getSharedGuardianPassword());
 				l_configData.setSnapshotGuardianDatasource(snapshotData.getGuardianDatasource());
+				l_configData.setSnapshotEnrollmentDatasource(snapshotData.getEnrollmentDatasource());
+				l_configData.setSnapshotStudentAssociationDatasource(snapshotData.getStudentAssociationDatasource());
+				l_configData.setSnapshotStaffAssociationDatasource(snapshotData.getStaffAssociationDatasource());
+				l_configData.setSnapshotGuardianAssociationDatasource(snapshotData.getGuardianAssociationDatasource());
 				l_configData.setSnapshotEmail(snapshotData.getEmail());
-				m_service.saveConfigData(l_configData);
+				//m_service.saveConfigData(l_configData);
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");
@@ -829,16 +882,16 @@ public class RESTController {
 			List<ICUser> l_students = dao.getSISStudents();
 			mLog.info("Number of Students: " + l_students.size());
 
-			String l_file = l_manager.createStudentFile(l_students);
-			if (l_file != null) {
+			List<SnapshotFileInfo> l_files = l_manager.createStudentFile(l_students);
+			for (SnapshotFileInfo l_file:l_files) {
 				try {
-					service.processSISFile(l_file, 1, l_students.size(), l_manager);
+					//service.processSISFile(l_file, l_manager);
 					l_restResponse.setSuccess(true);
 					ToastMessage l_toast = new ToastMessage();
 					l_toast.setType("success");
 					l_toast.setMessage("Sync Users Successfully Submitted");
 					l_restResponse.setToast(l_toast);
-				} catch (InterruptedException e) {
+				} catch (Exception e) {
 					mLog.error("Error: " + "Unable to queue Snapshot File");
 					l_restResponse.setSuccess(false);
 					ToastMessage l_toast = new ToastMessage();
@@ -848,14 +901,7 @@ public class RESTController {
 				}
 				//l_manager.sendFile(l_file, "person", 1, l_students.size());
 
-			} else {
-				mLog.error("Error: " + "Unable to create Snapshot File");
-				l_restResponse.setSuccess(false);
-				ToastMessage l_toast = new ToastMessage();
-				l_toast.setType("error");
-				l_toast.setMessage("Unable to create Snapshot File");
-				l_restResponse.setToast(l_toast);
-			}
+			} 
 		} else {
 			l_restResponse.setSuccess(false);
 			ToastMessage l_toast = new ToastMessage();
@@ -878,10 +924,10 @@ public class RESTController {
 			List<ICStaff> l_staffs = dao.getSISStaff();
 			mLog.info("Number of Staff: " + l_staffs.size());
 
-			String l_file = l_manager.createStaffFile(l_staffs);
-			if (l_file != null) {
+			List<SnapshotFileInfo> l_files = l_manager.createStaffFile(l_staffs);
+			for (SnapshotFileInfo l_file:l_files) {
 				try {
-					service.processSISFile(l_file, 2, l_staffs.size(), l_manager);
+					service.processSISFile(l_file, l_manager);
 					l_restResponse.setSuccess(true);
 					ToastMessage l_toast = new ToastMessage();
 					l_toast.setType("success");
@@ -895,16 +941,7 @@ public class RESTController {
 					l_toast.setMessage("Unable to queue Snapshot File");
 					l_restResponse.setToast(l_toast);
 				}
-				//l_manager.sendFile(l_file, "person", 2, l_staffs.size());
-
-			} else {
-				mLog.error("Error: " + "Unable to create Snapshot File");
-				l_restResponse.setSuccess(false);
-				ToastMessage l_toast = new ToastMessage();
-				l_toast.setType("error");
-				l_toast.setMessage("Unable to create Snapshot File");
-				l_restResponse.setToast(l_toast);
-			}
+			} 
 		} else {
 			l_restResponse.setSuccess(false);
 			ToastMessage l_toast = new ToastMessage();
@@ -927,10 +964,10 @@ public class RESTController {
 			List<ICBBEnrollment> l_enrollments = dao.getBBEnrollments();
 			mLog.info("Number of Enrollments: " + l_enrollments.size());
 
-			String l_file = l_manager.createEnrollmentFile(l_enrollments);
-			if (l_file != null) {
+			List<SnapshotFileInfo> l_files = l_manager.createEnrollmentFile(l_enrollments);
+			for (SnapshotFileInfo l_file:l_files) {
 				try {
-					service.processSISFile(l_file, 4, l_enrollments.size(), l_manager);
+					service.processSISFile(l_file, l_manager);
 					l_restResponse.setSuccess(true);
 					ToastMessage l_toast = new ToastMessage();
 					l_toast.setType("success");
@@ -944,16 +981,7 @@ public class RESTController {
 					l_toast.setMessage("Unable to queue Snapshot File");
 					l_restResponse.setToast(l_toast);
 				}
-				//l_manager.sendFile(l_file, "membership", 1, l_enrollments.size());
-				
-			} else {
-				mLog.error("Error: " + "Unable to create Snapshot File");
-				l_restResponse.setSuccess(false);
-				ToastMessage l_toast = new ToastMessage();
-				l_toast.setType("error");
-				l_toast.setMessage("Unable to create Snapshot File");
-				l_restResponse.setToast(l_toast);
-			}
+			} 
 		} else {
 			l_restResponse.setSuccess(false);
 			ToastMessage l_toast = new ToastMessage();
@@ -1015,16 +1043,17 @@ public class RESTController {
 			List<ICGuardian> l_guardians = dao.getSISGuardians();
 			mLog.info("Number of Guardians: " + l_guardians.size());
 
-			String l_file = l_manager.createGuardianFile(l_guardians);
-			if (l_file != null) {
+			List<SnapshotFileInfo> l_files = l_manager.createGuardianFile(l_guardians);
+			for (SnapshotFileInfo l_file:l_files) {
+				mLog.info("Processing File: " + l_file.getFileName());
 				try {
-					service.processSISFile(l_file, 3, l_guardians.size(), l_manager);
+					service.processSISFile(l_file, l_manager);
 					l_restResponse.setSuccess(true);
 					ToastMessage l_toast = new ToastMessage();
 					l_toast.setType("success");
 					l_toast.setMessage("Sync Guardians Successfully Submitted");
 					l_restResponse.setToast(l_toast);
-				} catch (InterruptedException e) {
+				} catch (Exception e) {
 					mLog.error("Error: " + "Unable to queue Snapshot File");
 					l_restResponse.setSuccess(false);
 					ToastMessage l_toast = new ToastMessage();
@@ -1032,15 +1061,7 @@ public class RESTController {
 					l_toast.setMessage("Unable to queue Snapshot File");
 					l_restResponse.setToast(l_toast);
 				}
-				//l_manager.sendFile(l_file, "membership", 1, l_enrollments.size());
-			} else {
-				mLog.error("Error: " + "Unable to create Snapshot File");
-				l_restResponse.setSuccess(false);
-				ToastMessage l_toast = new ToastMessage();
-				l_toast.setType("error");
-				l_toast.setMessage("Unable to create Snapshot File");
-				l_restResponse.setToast(l_toast);
-			}
+			} 
 			
 			mLog.info("DONE");
 			
@@ -1551,12 +1572,15 @@ public class RESTController {
 	
 	@RequestMapping(value = "/api/getMessages", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
-	public List<ICMessage> getMessages(HttpServletRequest request) {
+	public List<String> getMessages(HttpServletRequest request) {
 		mLog.trace("In getMessages...");
 		if (checkApiKey(request)) {
-
-			List <ICMessage> l_teachers = dao.getMessages();
-			return l_teachers;
+			List<String> l_returnList = new ArrayList<String>();
+			List <ICMessage> l_messages = dao.getMessages();
+			for (ICMessage l_message: l_messages) {
+				l_returnList.add(l_message.getMessage());
+			}
+			return l_returnList;
 		}
 
 		return null;
@@ -1602,26 +1626,4 @@ public class RESTController {
 		return false;
 	}
 
-
-	private void sendEmail(UserProxy p_student, String p_email, String p_subject, String p_message, String p_fileName) {
-		// Now Send Email
-		try {
-			mLog.info("Sending Email: ");
-			EmailManager l_email = new EmailManager();
-			ContactModel l_contact = new ContactModel();
-			l_contact.setEmail(p_email);
-			l_contact.setSubject(p_subject);
-			l_contact.setMessage(p_message);
-			// l_contact.setAttachement(p_fileName);
-			l_contact.setNote(m_service.getConfigData().getEmailNote());
-			if (p_student != null && p_student.getContact() != null && p_student.getContact().getEmail() != null) {
-				l_contact.setEmail(p_student.getContact().getEmail());
-				l_email.sendEmail(p_student.getContact().getEmail(), p_email, l_contact);
-			} else {
-				l_email.sendEmail(m_service.getConfigData().getAdminReportEmail(), p_email, l_contact);
-			}
-		} catch (Exception l_ex) {
-			mLog.error("ERROR", l_ex);
-		}
-	}
 }

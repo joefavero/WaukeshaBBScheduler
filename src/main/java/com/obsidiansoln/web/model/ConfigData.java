@@ -4,31 +4,17 @@
  */
 package com.obsidiansoln.web.model;
 
-import java.sql.Timestamp;
-
 public class ConfigData {
 
     private String logLevel;
     private String workingDirectory;
     private String apiKey;
+    private String adminPW;
     private String ltiKey;
     private String ltiSecret;
 	private String restHost;
 	private String restKey;
 	private String restSecret;
-    private Timestamp semester1StartDate;
-    private Timestamp semester1EndDate;
-    private Timestamp semester2StartDate;
-    private Timestamp semester2EndDate;
-    private String defaultSemester;
-    private String defaultTerm;
-    private String maxReportDays;
-    private boolean isDetailed;
-    private String adminReportInstructor;
-    private String adminReportEmail;
-    private String adminReportPhone;
-    private String maxPDFEntries;
-    private String emailFrom;
     private String emailHost;
     private String emailPort;
     private String emailUsername;
@@ -36,9 +22,6 @@ public class ConfigData {
     private boolean emailAuthenticate;
     private boolean emailUseSSL;
     private boolean emailDebug;
-    private String emailNote;
-    private String parentInviteMessage;
-    private String parentExistingMessage;
     private String snapshotBbInstanceId;
     private String snapshotStudentSharedUsername;
     private String snapshotStudentSharedPassword;
@@ -49,6 +32,10 @@ public class ConfigData {
     private String snapshotGuardianSharedUsername;
     private String snapshotGuardianSharedPassword;
     private String snapshotGuardianDatasource;
+    private String snapshotEnrollmentDatasource;
+    private String snapshotStudentAssociationDatasource;
+    private String snapshotStaffAssociationDatasource;
+    private String snapshotGuardianAssociationDatasource;
     private String snapshotEmail;
     
 
@@ -58,24 +45,12 @@ public class ConfigData {
     public ConfigData(String p_logLevel, 
     		String p_workingDirectory,
     		String p_apiKey,
+    		String p_adminPW,
     		String p_ltiKey,
     		String p_ltiSecret,
     		String p_restHost,
     		String p_restKey,
     		String p_restSecret,
-    		Timestamp p_semester1StartDate, 
-    		Timestamp p_semester1EndDate, 
-    		Timestamp p_semester2StartDate, 
-    		Timestamp p_semester2EndDate, 
-    		String p_defaultSemester, 
-    		String p_defaultTerm, 
-    		String p_maxReportDays, 
-    		boolean p_isDetailed,
-    		String p_adminReportInstructor,
-    		String p_adminReportEmail,
-    		String p_adminReportPhone,
-    		String p_maxPDFEntries,
-    		String p_emailFrom,
     		String p_emailHost,
     		String p_emailPort,
     		String p_emailUsername,
@@ -83,9 +58,6 @@ public class ConfigData {
     		boolean p_emailAuthenticate,
     		boolean p_emailUseSSL,
     		boolean p_emailDebug,
-    		String p_emailNote,
-    		String p_parentInviteMessage,
-    		String p_parentExistingMessage,
     		String p_snapshotBbInstanceId,
     		String p_snapshotStudentSharedUsername,
     		String p_snapshotStudentSharedPassword,
@@ -96,28 +68,20 @@ public class ConfigData {
     		String p_snapshotGuardianSharedUsername,
     		String p_snapshotGuardianSharedPassword,
     		String p_snapshotGuardianDatasource,
+    		String p_snapshotEnrollmentDatasource,
+    		String p_snapshotStudentAssociationDatasource,
+    		String p_snapshotStaffAssociationDatasource,
+    		String p_snapshotGuardianAssociationDatasource,
     		String p_snapshotEmail) {
         this.logLevel = p_logLevel;
         this.workingDirectory = p_workingDirectory;
         this.apiKey = p_apiKey;
+        this.adminPW = p_adminPW;
         this.ltiKey = p_ltiKey;
         this.ltiSecret = p_ltiSecret;
         this.restHost = p_restHost;
         this.restKey = p_restKey;
         this.restSecret = p_restSecret;
-        this.semester1StartDate = p_semester1StartDate;
-        this.semester1EndDate = p_semester1EndDate;
-        this.semester2StartDate = p_semester2StartDate;
-        this.semester2EndDate = p_semester2EndDate;
-        this.defaultSemester = p_defaultSemester;
-        this.defaultTerm = p_defaultTerm;
-        this.maxReportDays = p_maxReportDays;
-        this.isDetailed = p_isDetailed;
-        this.adminReportInstructor = p_adminReportInstructor;
-        this.adminReportEmail = p_adminReportEmail;
-        this.adminReportPhone = p_adminReportPhone;
-        this.maxPDFEntries = p_maxPDFEntries;
-        this.emailFrom = p_emailFrom;
         this.emailHost = p_emailHost;
         this.emailPort = p_emailPort;
         this.emailUsername = p_emailUsername;
@@ -125,9 +89,6 @@ public class ConfigData {
         this.emailAuthenticate = p_emailAuthenticate;
         this.emailUseSSL = p_emailUseSSL;
         this.emailDebug = p_emailDebug;
-        this.emailNote = p_emailNote;
-        this.parentInviteMessage = p_parentInviteMessage;
-        this.parentExistingMessage = p_parentExistingMessage;
         this.snapshotBbInstanceId = p_snapshotBbInstanceId;
         this.snapshotStudentSharedUsername = p_snapshotStudentSharedUsername;
         this.snapshotStudentSharedPassword = p_snapshotStudentSharedPassword;
@@ -138,6 +99,10 @@ public class ConfigData {
         this.snapshotGuardianSharedUsername = p_snapshotGuardianSharedUsername;
         this.snapshotGuardianSharedPassword = p_snapshotGuardianSharedPassword;
         this.snapshotGuardianDatasource = p_snapshotGuardianDatasource;
+        this.snapshotEnrollmentDatasource = p_snapshotEnrollmentDatasource;
+        this.snapshotStudentAssociationDatasource = p_snapshotStudentAssociationDatasource;
+        this.snapshotStaffAssociationDatasource = p_snapshotStaffAssociationDatasource;
+        this.snapshotGuardianAssociationDatasource = p_snapshotGuardianAssociationDatasource;
         this.snapshotEmail = p_snapshotEmail;
     }
 	public String getLogLevel() {
@@ -162,6 +127,14 @@ public class ConfigData {
 
 	public void setApiKey(String apiKey) {
 		this.apiKey = apiKey;
+	}
+
+	public String getAdminPW() {
+		return adminPW;
+	}
+
+	public void setAdminPW(String adminPW) {
+		this.adminPW = adminPW;
 	}
 
 	public String getLtiKey() {
@@ -203,114 +176,6 @@ public class ConfigData {
 	public void setRestSecret(String restSecret) {
 		this.restSecret = restSecret;
 	}
-
-	public Timestamp getSemester1StartDate() {
-		return semester1StartDate;
-	}
-
-	public void setSemester1StartDate(Timestamp semester1StartDate) {
-		this.semester1StartDate = semester1StartDate;
-	}
-
-	public Timestamp getSemester1EndDate() {
-		return semester1EndDate;
-	}
-
-	public void setSemester1EndDate(Timestamp semester1EndDate) {
-		this.semester1EndDate = semester1EndDate;
-	}
-
-	public Timestamp getSemester2StartDate() {
-		return semester2StartDate;
-	}
-
-	public void setSemester2StartDate(Timestamp semester2StartDate) {
-		this.semester2StartDate = semester2StartDate;
-	}
-
-	public Timestamp getSemester2EndDate() {
-		return semester2EndDate;
-	}
-
-	public void setSemester2EndDate(Timestamp semester2EndDate) {
-		this.semester2EndDate = semester2EndDate;
-	}
-
-	public String getDefaultSemester() {
-		return defaultSemester;
-	}
-
-	public void setDefaultSemester(String p_defaultSemester) {
-		this.defaultSemester = p_defaultSemester;
-	}
-	
-	public String getDefaultTerm() {
-		return defaultTerm;
-	}
-
-	public void setDefaultTerm(String p_defaultTerm) {
-		this.defaultTerm = p_defaultTerm;
-	}
-	
-
-	public String getMaxReportDays() {
-		return maxReportDays;
-	}
-
-	public void setMaxReportDays(String p_maxReportDays) {
-		this.maxReportDays = p_maxReportDays;
-	}
-	
-	
-	public boolean isDetailed() {
-		return isDetailed;
-	}
-
-	public void setDetailed(boolean isDetailed) {
-		this.isDetailed = isDetailed;
-	}
-
-	
-	public String getAdminReportInstructor() {
-		return adminReportInstructor;
-	}
-
-	public void setAdminReportInstructor(String adminReportInstructor) {
-		this.adminReportInstructor = adminReportInstructor;
-	}
-
-	public String getAdminReportEmail() {
-		return adminReportEmail;
-	}
-
-	public void setAdminReportEmail(String adminReportEmail) {
-		this.adminReportEmail = adminReportEmail;
-	}
-
-	public String getAdminReportPhone() {
-		return adminReportPhone;
-	}
-
-	public void setAdminReportPhone(String adminReportPhone) {
-		this.adminReportPhone = adminReportPhone;
-	}
-
-	public String getMaxPDFEntries() {
-		return maxPDFEntries;
-	}
-
-	public void setMaxPDFEntries(String maxPDFEntries) {
-		this.maxPDFEntries = maxPDFEntries;
-	}
-	
-	public String getEmailFrom() {
-		return emailFrom;
-	}
-
-	public void setEmailFrom(String emailFrom) {
-		this.emailFrom = emailFrom;
-	}
-	
 
 	public String getEmailHost() {
 		return emailHost;
@@ -367,31 +232,6 @@ public class ConfigData {
 	public void setEmailDebug(boolean emailDebug) {
 		this.emailDebug = emailDebug;
 	}
-	
-	public String getEmailNote() {
-		return emailNote;
-	}
-
-	public void setEmailNote(String emailNote) {
-		this.emailNote = emailNote;
-	}
-	
-	public String getParentInviteMessage() {
-		return parentInviteMessage;
-	}
-
-	public void setParentInviteMessage(String parentInviteMessage) {
-		this.parentInviteMessage = parentInviteMessage;
-	}
-	
-	public String getParentExistingMessage() {
-		return parentExistingMessage;
-	}
-
-	public void setParentExistingMessage(String parentExistingMessage) {
-		this.parentExistingMessage = parentExistingMessage;
-	}
-
 	
 	public String getSnapshotBbInstanceId() {
 		return snapshotBbInstanceId;
@@ -473,6 +313,39 @@ public class ConfigData {
 		this.snapshotGuardianDatasource = snapshotGuardianDatasource;
 	}
 	
+	public String getSnapshotEnrollmentDatasource() {
+		return snapshotEnrollmentDatasource;
+	}
+
+	public void setSnapshotEnrollmentDatasource(String snapshotEnrollmentDatasource) {
+		this.snapshotEnrollmentDatasource = snapshotEnrollmentDatasource;
+	}
+
+	
+	public String getSnapshotStudentAssociationDatasource() {
+		return snapshotStudentAssociationDatasource;
+	}
+
+	public void setSnapshotStudentAssociationDatasource(String snapshotStudentAssociationDatasource) {
+		this.snapshotStudentAssociationDatasource = snapshotStudentAssociationDatasource;
+	}
+
+	public String getSnapshotStaffAssociationDatasource() {
+		return snapshotStaffAssociationDatasource;
+	}
+
+	public void setSnapshotStaffAssociationDatasource(String snapshotStaffAssociationDatasource) {
+		this.snapshotStaffAssociationDatasource = snapshotStaffAssociationDatasource;
+	}
+
+	public String getSnapshotGuardianAssociationDatasource() {
+		return snapshotGuardianAssociationDatasource;
+	}
+
+	public void setSnapshotGuardianAssociationDatasource(String snapshotGuardianAssociationDatasource) {
+		this.snapshotGuardianAssociationDatasource = snapshotGuardianAssociationDatasource;
+	}
+
 	public String getSnapshotEmail() {
 		return snapshotEmail;
 	}

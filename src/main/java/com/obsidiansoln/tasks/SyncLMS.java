@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.obsidiansoln.blackboard.model.SnapshotFileInfo;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.database.dao.InfiniteCampusDAO;
 import com.obsidiansoln.database.model.ICBBEnrollment;
@@ -42,12 +43,10 @@ public class SyncLMS {
 		List<ICUser> l_students = dao.getSISStudents();
 		mLog.info("Number of Students: " + l_students.size());
 		
-		String l_file = l_manager.createStudentFile(l_students);
-		if (l_file != null) {
-			l_manager.sendFile(l_file, 1, l_students.size());
-		} else {
-			mLog.error("Error: " + "Unable to create Snapshot File");
-		}
+		List<SnapshotFileInfo> l_files = l_manager.createStudentFile(l_students);
+		for (SnapshotFileInfo l_file:l_files) {
+			l_manager.sendFile(l_file);
+		} 
 	}
 	
 	public void syncStaff() {
@@ -60,12 +59,10 @@ public class SyncLMS {
 		List<ICStaff> l_staffs = dao.getSISStaff();
 		mLog.info("Number of Staff: " + l_staffs.size());
 		
-		String l_file = l_manager.createStaffFile(l_staffs);
-		if (l_file != null) {
-			l_manager.sendFile(l_file,  2, l_staffs.size());
-		} else {
-			mLog.error("Error: " + "Unable to create Snapshot File");
-		}
+		List<SnapshotFileInfo> l_files = l_manager.createStaffFile(l_staffs);
+		for (SnapshotFileInfo l_file:l_files) {
+			l_manager.sendFile(l_file);
+		} 
 	}
 	
 	public void syncGuardians() {
@@ -78,11 +75,9 @@ public class SyncLMS {
 		List<ICGuardian> l_guardians= dao.getSISGuardians();
 		mLog.info("Number of Guardians: " + l_guardians.size());
 		
-		String l_file = l_manager.createGuardianFile(l_guardians);
-		if (l_file != null) {
-			l_manager.sendFile(l_file, 3, l_guardians.size());
-		} else {
-			mLog.error("Error: " + "Unable to create Snapshot File");
+		List<SnapshotFileInfo> l_files = l_manager.createGuardianFile(l_guardians);
+		for (SnapshotFileInfo l_file:l_files) {
+			l_manager.sendFile(l_file);
 		}
 	}
 	
@@ -94,12 +89,10 @@ public class SyncLMS {
 		
 		List<ICBBEnrollment> l_enrollments = dao.getBBEnrollments();
 
-		String l_file = l_manager.createEnrollmentFile(l_enrollments);
-		if (l_file != null) {
-			l_manager.sendFile(l_file, 4, l_enrollments.size());
-		} else {
-			mLog.error("Error: " + "Unable to create Snapshot File");
-		}
+		List<SnapshotFileInfo> l_files = l_manager.createEnrollmentFile(l_enrollments);
+		for (SnapshotFileInfo l_file:l_files) {
+			l_manager.sendFile(l_file);
+		} 
 	}
 	
 	public void syncGroups() {

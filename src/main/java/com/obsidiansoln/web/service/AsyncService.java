@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.obsidiansoln.blackboard.group.GroupProxy;
+import com.obsidiansoln.blackboard.model.SnapshotFileInfo;
 import com.obsidiansoln.blackboard.model.StudentData;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.database.model.ICEnrollment;
@@ -87,27 +88,10 @@ public class AsyncService {
 	
 	@Async("asyncExecutor2")
 	@ResponseBody
-	public void processSISFile (String p_file, int p_type, int p_size, SnapshotFileManager p_manager) throws InterruptedException {
+	public void processSISFile (SnapshotFileInfo p_file,  SnapshotFileManager p_manager) throws InterruptedException {
 		mLog.trace("In procesSISFile()" + p_file);
-		p_manager.sendFile(p_file, p_type, p_size);
+		p_manager.sendFile(p_file);
 
-	}
-	
-	private void sendEmail(String p_email, String p_subject, String p_message, String p_fileName) {
-		// Now Send Email
-		try {
-			mLog.info("Sending Email: ");
-			EmailManager l_email = new EmailManager();
-			ContactModel l_contact = new ContactModel();
-			l_contact.setEmail(p_email);
-			l_contact.setSubject(p_subject);
-			l_contact.setMessage(p_message);
-			l_contact.setAttachement(p_fileName);
-			l_contact.setNote(m_service.getConfigData().getEmailNote());
-			l_email.sendEmail(m_service.getConfigData().getAdminReportEmail(), p_email, l_contact);
-		} catch (Exception l_ex) {
-			mLog.error("ERROR", l_ex);
-		}
 	}
 
 }

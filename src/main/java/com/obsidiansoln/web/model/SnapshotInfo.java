@@ -11,6 +11,10 @@ public class SnapshotInfo {
 	private String sharedGuardianUsername;
 	private String sharedGuardianPassword;
 	private String guardianDatasource;
+	private String enrollmentDatasource;
+	private String studentAssociationDatasource;
+	private String staffAssociationDatasource;
+	private String guardianAssociationDatasource;
 	private String email;
 
 	public SnapshotInfo() {
@@ -95,6 +99,38 @@ public class SnapshotInfo {
 
 	public void setGuardianDatasource(String guardianDatasource) {
 		this.guardianDatasource = guardianDatasource;
+	}
+
+	public String getEnrollmentDatasource() {
+		return enrollmentDatasource;
+	}
+
+	public void setEnrollmentDatasource(String enrollmentDatasource) {
+		this.enrollmentDatasource = enrollmentDatasource;
+	}
+
+	public String getStudentAssociationDatasource() {
+		return studentAssociationDatasource;
+	}
+
+	public void setStudentAssociationDatasource(String studentAssociationDatasource) {
+		this.studentAssociationDatasource = studentAssociationDatasource;
+	}
+
+	public String getStaffAssociationDatasource() {
+		return staffAssociationDatasource;
+	}
+
+	public void setStaffAssociationDatasource(String staffAssociationDatasource) {
+		this.staffAssociationDatasource = staffAssociationDatasource;
+	}
+
+	public String getGuardianAssociationDatasource() {
+		return guardianAssociationDatasource;
+	}
+
+	public void setGuardianAssociationDatasource(String guardianAssociationDatasource) {
+		this.guardianAssociationDatasource = guardianAssociationDatasource;
 	}
 
 	public String getEmail() {

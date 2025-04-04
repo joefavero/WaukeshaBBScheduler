@@ -265,7 +265,7 @@ public class InfiniteCampusDAO {
 	@Transactional(readOnly=true)
 	public List<ICBBSection> getBBSectionsByCourseIdUsername(String courseId, String username) {
 		mLog.trace("In getBBCoursesByUsername ...");
-		String sql = "select distinct sdws.sectionID as sectionId, "
+		String sql = "select distinct sdws.sectionID as sectionID, "
 				+ "					Course.name as courseName, "
 				+ "          Section.number as sectionNumber, "
 				+ "          UserAccount.username as teacherName, "
@@ -284,7 +284,7 @@ public class InfiniteCampusDAO {
 				+ "				 where UserAccount.username=:username and sdw.bbCOURSE_ID = :courseid "
 				+ "         and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
 
-		String sqlAdmin = "select distinct sdws.sectionID as sectionId, "
+		String sqlAdmin = "select distinct sdws.sectionID as sectionID, "
 				+ "					Course.name as courseName, "
 				+ "          Section.number as sectionNumber, "
 				+ "          UserAccount.username as teacherName, "
@@ -505,7 +505,6 @@ public class InfiniteCampusDAO {
 		HashMap<Long, ICSection> l_sectionList = new HashMap<Long, ICSection>();
 		try {
 			if (username.equals("admin")) {
-				mLog.info("Admin Query");
 				params.addValue("courseid", courseId);
 				sections= template.query(sqlAdmin, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
 			} else {
@@ -1105,6 +1104,7 @@ public class InfiniteCampusDAO {
 				+ "	IsNull(LTRIM(RTRIM(REPLACE(idn.alias,',',' '))),'') as alias,"
 				+ "	IsNull(CONVERT(varchar(10),idn.birthdate,112),'') as birthDate,"
 				+ "	IsNull(idn.gender,'') as gender,"
+				+ " (CASE WHEN ea.teacher Is Null or ea.teacher<>1 THEN 'Staff' ELSE 'Faculty' END) jobTitle,"
 				+ " (CASE WHEN con.workPhone Is Null THEN '' ELSE LTRIM(RTRIM(con.workPhone)) END) as workPhone,"
 				+ " (CASE WHEN con.email Is Null THEN '' ELSE LTRIM(RTRIM(REPLACE(con.email,',',' '))) END) as email1,"
 				+ " (select count (*) from School sz with (nolock) "
@@ -1124,7 +1124,7 @@ public class InfiniteCampusDAO {
 				+ "	  and (Employment.endDate>GETDATE() or Employment.endDate Is Null) "
 				+ "	  and Employment.districtID=v.districtID "
 				+ " join EmploymentAssignment ea with (nolock) on ea.personID=Employment.personID "
-				+ "	  and (ea.endDate>GETDATE() or ea.endDate Is Null) \n"
+				+ "	  and (ea.endDate>GETDATE() or ea.endDate Is Null) "
 				+ " join EmploymentAssignmentLocation eal with (nolock) on eal.assignmentID=ea.assignmentID "
 				+ " left join Department with (nolock) on ea.departmentID=Department.departmentID "
 				+ "	  and ea.schoolID=eal.schoolID "
@@ -1753,7 +1753,7 @@ public class InfiniteCampusDAO {
 
 	public List<ICMessage> getMessages () {
 		mLog.info("getMessages  called ...");
-		String sql = "select bbSchedMessageID as Id, Message as message"
+		String sql = "select Message as message"
 				+ "  from SDWBlackboardSchedulerMessages ";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
