@@ -15,6 +15,7 @@ public class ConfigData {
 	private String restHost;
 	private String restKey;
 	private String restSecret;
+	private String emailFrom;
     private String emailHost;
     private String emailPort;
     private String emailUsername;
@@ -51,6 +52,7 @@ public class ConfigData {
     		String p_restHost,
     		String p_restKey,
     		String p_restSecret,
+    		String p_emailFrom,
     		String p_emailHost,
     		String p_emailPort,
     		String p_emailUsername,
@@ -82,6 +84,7 @@ public class ConfigData {
         this.restHost = p_restHost;
         this.restKey = p_restKey;
         this.restSecret = p_restSecret;
+        this.emailFrom = p_emailFrom;
         this.emailHost = p_emailHost;
         this.emailPort = p_emailPort;
         this.emailUsername = p_emailUsername;
@@ -175,6 +178,14 @@ public class ConfigData {
 
 	public void setRestSecret(String restSecret) {
 		this.restSecret = restSecret;
+	}
+
+	public String getEmailFrom() {
+		return emailFrom;
+	}
+
+	public void setEmailFrom(String emailFrom) {
+		this.emailFrom = emailFrom;
 	}
 
 	public String getEmailHost() {

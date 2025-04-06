@@ -90,10 +90,16 @@ public class BBSchedulerService {
 			l_restSecret = "NEED TO SET REST SECRET";
 		}
 
+		String l_emailFrom = l_props.getProperty(BBSchedulerUtil.EMAIL_FROM);
+		if ( l_emailFrom == null) {
+			l_emailFrom= "";
+		}
+		
 		String l_emailHost = l_props.getProperty(BBSchedulerUtil.EMAIL_HOST);
 		if ( l_emailHost == null) {
 			l_emailHost= "smtp.gmail.com";
 		}
+		
 		String l_emailPort = l_props.getProperty(BBSchedulerUtil.EMAIL_PORT);
 		if ( l_emailPort == null) {
 			l_emailPort= "465";
@@ -203,6 +209,7 @@ public class BBSchedulerService {
 				l_restHost,
 				l_restKey,
 				l_restSecret,
+				l_emailFrom,
 				l_emailHost,
 				l_emailPort,
 				l_emailUsername,
@@ -252,6 +259,7 @@ public class BBSchedulerService {
 		l_props.setProperty(BBSchedulerUtil.REST_HOST, p_data.getRestHost());
 		l_props.setProperty(BBSchedulerUtil.REST_KEY, p_data.getRestKey());
 		l_props.setProperty(BBSchedulerUtil.REST_SECRET, p_data.getRestSecret());
+		l_props.setProperty(BBSchedulerUtil.EMAIL_FROM, p_data.getEmailFrom());
 		l_props.setProperty(BBSchedulerUtil.EMAIL_HOST, p_data.getEmailHost());
 		l_props.setProperty(BBSchedulerUtil.EMAIL_PORT, p_data.getEmailPort());
 		l_props.setProperty(BBSchedulerUtil.EMAIL_USERNAME, p_data.getEmailUsername());

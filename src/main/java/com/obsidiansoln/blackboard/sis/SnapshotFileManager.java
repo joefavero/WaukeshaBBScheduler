@@ -124,7 +124,6 @@ public class SnapshotFileManager {
 							+ l_student.getLocale());			        //locale
 					p.write("\r\n");
 				} else {
-					mLog.info("Duplicate Found ...");
 					String l_role = "Student-SDW";
 					if (l_student.getInstitutionRole().equals("EAC") || l_student.getInstitutionRole().equals("EAE")) {
 						l_role = "Student-eA";
@@ -171,7 +170,7 @@ public class SnapshotFileManager {
 			l_studentAssociationFile.setEndpoint("secondaryinstrole");
 			l_studentAssociationFile.setType(1);
 			l_studentAssociationFile.setNumberOfRecords(j);
-			//l_fileList.add(l_studentAssociationFile);
+			l_fileList.add(l_studentAssociationFile);
 
 		} catch (Exception l_ex) {
 			mLog.error("Error: ", l_ex);
@@ -607,7 +606,7 @@ public class SnapshotFileManager {
 											s = new String(text, StandardCharsets.UTF_8);
 											XmlMapper xmlMapper = new XmlMapper();
 											status = xmlMapper.readValue(s, DataSetStatus.class);
-											mLog.info("Code: " + s);
+											mLog.debug("Code: " + s);
 											mLog.info("Completed Count: " + status.getCompletedCount());
 											mLog.info("Error Count: " + status.getErrorCount());
 											mLog.info("Queued Count: " + status.getQueuedCount());
@@ -619,12 +618,16 @@ public class SnapshotFileManager {
 										} while (status.getQueuedCount() > 0 || (status.getCompletedCount() < p_file.getNumberOfRecords() && l_retry < 5));
 
 										l_message = "Snapshot Integration Completed" + "<br>"
-												+ "    File Processsed: " + p_file + "<br>"
-												+ "    Completed Count: " + status.getCompletedCount() + "<br>"
-												+ "    Error Count: " + status.getErrorCount() + "<br>"
-												+ "    Queued Count: " + status.getQueuedCount() + "<br>"
-												+ "    Warning Count: " + status.getWarningCount() + "<br>"
-												+ "    BB Learn URL: " + resultURL + "<br>";
+												+ "    File Processsed: " + p_file.getFileName() + "<br>"
+												+ "      BB Endpoint: " + p_file.getEndpoint() + "<br>"
+												+ "      BB Operation: " + details.getOperation() + "<br>"
+												+ "      <br>"
+												+ "    Data Load Status Operation: " + "<br>"
+												+ "      Completed Count: " + status.getCompletedCount() + "<br>"
+												+ "      Error Count: " + status.getErrorCount() + "<br>"
+												+ "      Queued Count: " + status.getQueuedCount() + "<br>"
+												+ "      Warning Count: " + status.getWarningCount() + "<br>"
+												+ "      BB Learn URL: " + resultURL + "<br>";
 									} else {
 										l_message = "HTTP Status: " + response1.getStatusLine().getStatusCode() + response1.getStatusLine().getReasonPhrase();
 									}
@@ -655,7 +658,7 @@ public class SnapshotFileManager {
 			}
 
 			// Send Email
-			sendEmail(l_configData.getSnapshotEmail(), "Infinite Campus Integration", l_message);
+			sendEmail(l_configData.getEmailFrom(), l_configData.getSnapshotEmail(), "Infinite Campus Integration", l_message);
 		} catch (Exception l_ex) {
 			mLog.error("ERROR", l_ex);
 		}
@@ -754,7 +757,7 @@ public class SnapshotFileManager {
 											s = new String(text, StandardCharsets.UTF_8);
 											XmlMapper xmlMapper = new XmlMapper();
 											status = xmlMapper.readValue(s, DataSetStatus.class);
-											mLog.info("Code: " + s);
+											mLog.debug("Code: " + s);
 											mLog.info("Completed Count: " + status.getCompletedCount());
 											mLog.info("Error Count: " + status.getErrorCount());
 											mLog.info("Queued Count: " + status.getQueuedCount());
@@ -802,14 +805,14 @@ public class SnapshotFileManager {
 			}
 
 			// Send Email
-			sendEmail(l_configData.getSnapshotEmail(), "Infinite Campus Integration", l_message);
+			sendEmail(l_configData.getEmailFrom(), l_configData.getSnapshotEmail(), "Infinite Campus Integration", l_message);
 		} catch (Exception l_ex) {
 			mLog.error("ERROR", l_ex);
 		}
 		return status;
 	}
 
-	private void sendEmail(String p_email, String p_subject, String p_message) {
+	private void sendEmail(String p_from, String p_email, String p_subject, String p_message) {
 		mLog.trace("In sendEmail() ...");
 		// Now Send Email
 		try {
@@ -819,7 +822,8 @@ public class SnapshotFileManager {
 			l_contact.setEmail(p_email);
 			l_contact.setSubject(p_subject);
 			l_contact.setMessage(p_message);
-			l_email.sendEmail("joefavero@gmail.com", p_email, l_contact);
+			//l_email.sendEmail("joefavero@gmail.com", p_email, l_contact);
+			l_email.sendEmail(p_from, p_email, l_contact);
 		} catch (Exception l_ex) {
 			mLog.error("ERROR", l_ex);
 		}

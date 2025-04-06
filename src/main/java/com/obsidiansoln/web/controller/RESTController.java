@@ -394,6 +394,7 @@ public class RESTController {
 			try {
 				ConfigData l_configData = m_service.getConfigData();
 				AdminInfo l_adminData = new AdminInfo();
+				l_adminData.setFrom(l_configData.getEmailFrom());
 				l_adminData.setHost(l_configData.getEmailHost());
 				l_adminData.setPort(l_configData.getEmailPort());
 				l_adminData.setUsername(l_configData.getEmailUsername());
@@ -423,6 +424,7 @@ public class RESTController {
 		if (checkApiKey(request)) {
 			try {
 				ConfigData l_configData = m_service.getConfigData();
+				l_configData.setEmailFrom(adminData.getFrom());
 				l_configData.setEmailHost(adminData.getHost());
 				l_configData.setEmailPort(adminData.getPort());
 				l_configData.setEmailUsername(adminData.getUsername());

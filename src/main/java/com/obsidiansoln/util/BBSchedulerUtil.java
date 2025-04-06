@@ -27,6 +27,7 @@ public class BBSchedulerUtil extends AppUtil {
     public static final String REST_HOST = "REST_HOST";
     public static final String REST_KEY = "REST_KEY";
     public static final String REST_SECRET = "REST_SECRET";
+	public static final String EMAIL_FROM = "EMAIL_FROM";
 	public static final String EMAIL_HOST = "EMAIL_HOST";
 	public static final String EMAIL_PORT = "EMAIL_PORT";
 	public static final String EMAIL_USERNAME = "EMAIL_USERNAME";
