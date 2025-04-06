@@ -50,27 +50,27 @@
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncUsers" cron="0 0 12 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
-			method="syncUsers" cron="0 0 15 * * *" />
+			method="syncUsers" cron="0 0 18 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncStaff" cron="0 10 4 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncStaff" cron="0 10 12 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
-			method="syncStaff" cron="0 10 15 * * *" />
+			method="syncStaff" cron="0 10 18 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncEnrollments" cron="0 15 4 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncEnrollments" cron="0 15 12 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
-			method="syncEnrollments" cron="0 15 15 * * *" />
+			method="syncEnrollments" cron="0 15 18 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncGuardians" cron="0 20 4 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncGuardians" cron="0 20 12 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
-			method="syncGuardians" cron="0 20 15 * * *" />
+			method="syncGuardians" cron="0 20 18 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
-			method="syncGroups" cron="0 0 16 * * *" />
+			method="syncGroups" cron="0 0 18 * * *" />
 	</task:scheduled-tasks>
 
 	<task:scheduler id="myScheduler" />

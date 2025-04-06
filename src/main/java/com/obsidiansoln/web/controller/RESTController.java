@@ -32,7 +32,6 @@ import com.obsidiansoln.blackboard.model.StudentInfo;
 import com.obsidiansoln.blackboard.model.TeacherInfo;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.blackboard.term.TermProxy;
-import com.obsidiansoln.blackboard.user.UserProxy;
 import com.obsidiansoln.database.dao.InfiniteCampusDAO;
 import com.obsidiansoln.database.model.ICBBCourse;
 import com.obsidiansoln.database.model.ICBBEnrollment;
@@ -51,11 +50,9 @@ import com.obsidiansoln.database.model.ICTeacher;
 import com.obsidiansoln.database.model.ICTemplate;
 import com.obsidiansoln.database.model.ICUser;
 import com.obsidiansoln.database.model.UpdateCourseInfo;
-import com.obsidiansoln.util.EmailManager;
 import com.obsidiansoln.util.RestManager;
 import com.obsidiansoln.web.model.AdminInfo;
 import com.obsidiansoln.web.model.ConfigData;
-import com.obsidiansoln.web.model.ContactModel;
 import com.obsidiansoln.web.model.LtiInfo;
 import com.obsidiansoln.web.model.PortalInfo;
 import com.obsidiansoln.web.model.RestInfo;
@@ -63,6 +60,7 @@ import com.obsidiansoln.web.model.RestResponse;
 import com.obsidiansoln.web.model.SnapshotInfo;
 import com.obsidiansoln.web.model.ToastMessage;
 import com.obsidiansoln.web.model.UtilityInfo;
+import com.obsidiansoln.web.model.VerifyInfo;
 import com.obsidiansoln.web.service.AsyncService;
 import com.obsidiansoln.web.service.BBSchedulerService;
 
@@ -75,7 +73,7 @@ public class RESTController {
 	private BBSchedulerService m_service = null;
 	@Autowired
 	private InfiniteCampusDAO dao;
-	
+
 	@Autowired
 	private AsyncService service;
 
@@ -87,6 +85,46 @@ public class RESTController {
 
 	public RESTController() {
 		m_service = new BBSchedulerService();
+	}
+
+	@RequestMapping(value = "/api/verifyAdminMode", method = RequestMethod.POST, produces = "application/json")
+	@ResponseBody
+	public RestResponse verifyAdminMode(@RequestBody final VerifyInfo verifyData, HttpServletRequest request) {
+		mLog.trace("In verifyAdminMode ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			try {
+				ConfigData l_configData = m_service.getConfigData();
+				String l_adminPW = l_configData.getAdminPW();
+				if (l_adminPW.equals(verifyData.getAdminPassword())) {
+					l_restResponse.setSuccess(true);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("success");
+					l_toast.setMessage("UTILILITY Data Updated");
+					l_restResponse.setToast(l_toast);
+				} else {
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("Incorrect Admin Password");
+					l_restResponse.setToast(l_toast);
+				}
+			} catch (Exception l_ex) {
+				mLog.error(l_ex.getMessage());
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("ERROR on REST API");
+				l_restResponse.setToast(l_toast);
+			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+		return l_restResponse;
 	}
 
 	@RequestMapping(value = "/api/utilityData", method = RequestMethod.GET, produces = "application/json")
@@ -294,7 +332,7 @@ public class RESTController {
 				List<TermProxy> l_terms = l_manager.getTerms();
 				ArrayList<String> l_termList = new ArrayList<String>();
 				for (TermProxy l_term : l_terms) {
-						l_termList.add(l_term.getName());
+					l_termList.add(l_term.getName());
 				}
 				l_portalData.setTerms(l_termList);
 				return mapper.writeValueAsString(l_portalData);
@@ -320,9 +358,9 @@ public class RESTController {
 				ConfigData l_configData = m_service.getConfigData();
 				l_configData.setLogLevel(portalData.getLogLevel());
 				l_configData.setAdminPW(portalData.getAdminPassword());
-				
+
 				//Now need to add the Messages to the Database
-			
+
 				//m_service.saveConfigData(l_configData);
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
@@ -501,7 +539,7 @@ public class RESTController {
 		}
 		return l_restResponse;
 	}
-	
+
 	@RequestMapping(value = "/api/getTemplates", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getTemplates (HttpServletRequest request) {
@@ -669,6 +707,7 @@ public class RESTController {
 		mLog.info("In createCourse ...");
 		RestResponse l_restResponse = new RestResponse();
 		mLog.info(" Course ID: " + courseInfo.getCourseTemplateId());
+		mLog.info(" Course Duration: " + courseInfo.getCourseDuration());
 		mLog.info(" Target Course ID: " + courseInfo.getTargetCourseId());
 		mLog.info(" Target Course Name: " + courseInfo.getTargetCourseName());
 		mLog.info(" Target Course Description: " + courseInfo.getTargetCourseDescription());
@@ -885,13 +924,13 @@ public class RESTController {
 			List<SnapshotFileInfo> l_files = l_manager.createStudentFile(l_students);
 			for (SnapshotFileInfo l_file:l_files) {
 				try {
-					//service.processSISFile(l_file, l_manager);
+					service.processSISFile(l_file, l_manager);
 					l_restResponse.setSuccess(true);
 					ToastMessage l_toast = new ToastMessage();
 					l_toast.setType("success");
 					l_toast.setMessage("Sync Users Successfully Submitted");
 					l_restResponse.setToast(l_toast);
-				} catch (Exception e) {
+				} catch (InterruptedException e) {
 					mLog.error("Error: " + "Unable to queue Snapshot File");
 					l_restResponse.setSuccess(false);
 					ToastMessage l_toast = new ToastMessage();
@@ -911,7 +950,7 @@ public class RESTController {
 		}
 		return l_restResponse;
 	}
-	
+
 	@RequestMapping(value = "/api/syncStaff", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse syncStaff (HttpServletRequest request) {
@@ -1030,7 +1069,7 @@ public class RESTController {
 		return l_restResponse;
 	}
 
-	
+
 	@RequestMapping(value = "/api/syncGuardians", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse syncGuardians (HttpServletRequest request) {
@@ -1062,9 +1101,9 @@ public class RESTController {
 					l_restResponse.setToast(l_toast);
 				}
 			} 
-			
+
 			mLog.info("DONE");
-			
+
 		} else {
 			l_restResponse.setSuccess(false);
 			ToastMessage l_toast = new ToastMessage();
@@ -1074,8 +1113,8 @@ public class RESTController {
 		}
 		return l_restResponse;
 	}
-	
-	
+
+
 	@RequestMapping(value = "/api/getStudents", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public List<ICStudent> getStudents(HttpServletRequest request) {
@@ -1127,7 +1166,7 @@ public class RESTController {
 
 		return l_teachers;
 	}
-	
+
 	@RequestMapping(value = "/api/removeBBStudent/{courseId}/{student}", method = RequestMethod.DELETE, produces = "application/json")
 	@ResponseBody
 	public RestResponse removeBBStudent(@PathVariable("courseId") String courseId,
@@ -1140,7 +1179,7 @@ public class RESTController {
 				l_configData = m_service.getConfigData();
 				RestManager l_manager = new RestManager(l_configData);
 				l_manager.removeMembership(courseId, student);
-				
+
 				// Remove From SDWBlackboaardSchedulerSISPersons Table
 				Long l_personId = dao.getPersonId(student);
 				ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
@@ -1215,7 +1254,7 @@ public class RESTController {
 						l_toast.setMessage("No BB Course Found");
 						l_restResponse.setToast(l_toast);
 					}
-					
+
 				} else {
 					l_restResponse.setSuccess(false);
 					ToastMessage l_toast = new ToastMessage();
@@ -1255,7 +1294,7 @@ public class RESTController {
 				l_configData = m_service.getConfigData();
 				RestManager l_manager = new RestManager(l_configData);
 				l_manager.removeMembership(courseId, teacher);
-				
+
 				// Remove From SDWBlackboaardSchedulerSISPersons Table
 				Long l_personId = dao.getPersonId(teacher);
 				ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
@@ -1330,7 +1369,7 @@ public class RESTController {
 						l_toast.setMessage("No BB Course Found");
 						l_restResponse.setToast(l_toast);
 					}
-					
+
 				} else {
 					l_restResponse.setSuccess(false);
 					ToastMessage l_toast = new ToastMessage();
@@ -1569,7 +1608,7 @@ public class RESTController {
 
 		return null;
 	}
-	
+
 	@RequestMapping(value = "/api/getMessages", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public List<String> getMessages(HttpServletRequest request) {
@@ -1606,7 +1645,7 @@ public class RESTController {
 
 		return SUCCESS;
 	}
-	
+
 	public String getPersonId(String username) {
 		return this.getPersonId(username);
 	}

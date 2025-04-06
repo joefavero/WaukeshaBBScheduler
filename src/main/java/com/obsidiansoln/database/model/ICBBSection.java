@@ -29,13 +29,13 @@ public class ICBBSection {
 		this.sectionNumber = sectionNumber;
 	}
 	public String getTermName() {
-		return "TERM";
+		return termName;
 	}
 	public void setTermName(String termName) {
 		this.termName = termName;
 	}
 	public String getPeriod() {
-		return "PERIOD";
+		return period;
 	}
 	public void setPeriod(String period) {
 		this.period = period;

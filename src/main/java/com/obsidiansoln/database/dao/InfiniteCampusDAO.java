@@ -265,29 +265,13 @@ public class InfiniteCampusDAO {
 	@Transactional(readOnly=true)
 	public List<ICBBSection> getBBSectionsByCourseIdUsername(String courseId, String username) {
 		mLog.trace("In getBBCoursesByUsername ...");
+		List<ICBBSection> l_returnList = new ArrayList<ICBBSection>();
 		String sql = "select distinct sdws.sectionID as sectionID, "
 				+ "					Course.name as courseName, "
 				+ "          Section.number as sectionNumber, "
 				+ "          UserAccount.username as teacherName, "
-				+ "          (select count(*) as studentCount from Roster "
-				+ "				 inner join [Identity] on [Identity].personID = Roster.personID "
-				+ "				 inner join UserAccount on UserAccount.personID = Roster.personID "
-				+ "				 where Roster.sectionID = Section.sectionID "
-				+ "				 and (Roster.endDate is null or Roster.endDate > GETDATE())) as studentNumber, "
-				+ "         1 as teacherNumber "
-				+ "				 from SDWBlackboardSchedulerSISCourseSections sdws\n"
-				+ "				 left join SDWBlackboardSchedulerBBCourses sdw on sdw.bbCourseID = sdws.bbCourseID "
-				+ "         left join Section on section.sectionID= sdws.sectionID "
-				+ "         left join Course on course.courseID=Section.courseID "
-				+ "         left join UserAccount on UserAccount.personID=Section.teacherPersonID "
-				+ "         left join Calendar on Calendar.calendarID=sdw.calendarID "
-				+ "				 where UserAccount.username=:username and sdw.bbCOURSE_ID = :courseid "
-				+ "         and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
-
-		String sqlAdmin = "select distinct sdws.sectionID as sectionID, "
-				+ "					Course.name as courseName, "
-				+ "          Section.number as sectionNumber, "
-				+ "          UserAccount.username as teacherName, "
+				+ "          Term.name as termName, "
+				+ "          [Period].name as period, "
 				+ "          (select count(*) as studentCount from Roster "
 				+ "				 inner join [Identity] on [Identity].personID = Roster.personID "
 				+ "				 inner join UserAccount on UserAccount.personID = Roster.personID "
@@ -300,12 +284,44 @@ public class InfiniteCampusDAO {
 				+ "         left join Course on course.courseID=Section.courseID "
 				+ "         left join UserAccount on UserAccount.personID=Section.teacherPersonID "
 				+ "         left join Calendar on Calendar.calendarID=sdw.calendarID "
-				+ "				 where sdw.bbCOURSE_ID = :courseid "
+				+ "         left Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID "
+				+ "         left Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
+				+ "			left Join SectionPlacement on SectionPlacement.sectionID=section.sectionID  and SectionPlacement.trialID=trial.trialID "
+				+ "         left Join Term on Term.termID=sectionplacement.termID "
+				+ "         left Join [Period] on [Period].periodID=sectionplacement.periodID "
+				+ "		where UserAccount.username=:username and sdw.bbCOURSE_ID = :courseid "
+				+ "         and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
+
+		String sqlAdmin = "select distinct sdws.sectionID as sectionID, "
+				+ "					Course.name as courseName, "
+				+ "          Section.number as sectionNumber, "
+				+ "          UserAccount.username as teacherName, "
+				+ "          Term.name as termName, "
+				+ "          [Period].name as period, "
+				+ "          (select count(*) as studentCount from Roster "
+				+ "				 inner join [Identity] on [Identity].personID = Roster.personID "
+				+ "				 inner join UserAccount on UserAccount.personID = Roster.personID "
+				+ "				 where Roster.sectionID = Section.sectionID "
+				+ "				 and (Roster.endDate is null or Roster.endDate > GETDATE())) as studentNumber, "
+				+ "         1 as teacherNumber "
+				+ "				 from SDWBlackboardSchedulerSISCourseSections sdws "
+				+ "				 left join SDWBlackboardSchedulerBBCourses sdw on sdw.bbCourseID = sdws.bbCourseID "
+				+ "         left join Section on section.sectionID= sdws.sectionID "
+				+ "         left join Course on course.courseID=Section.courseID "
+				+ "         left join UserAccount on UserAccount.personID=Section.teacherPersonID "
+				+ "         left join Calendar on Calendar.calendarID=sdw.calendarID "
+				+ "         left Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID "
+				+ "         left Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
+				+ "			left Join SectionPlacement on SectionPlacement.sectionID=section.sectionID  and SectionPlacement.trialID=trial.trialID "
+				+ "         left Join Term on Term.termID=sectionplacement.termID "
+				+ "         left Join [Period] on [Period].periodID=sectionplacement.periodID "
+				+ "		  where sdw.bbCOURSE_ID = :courseid "
 				+ "         and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 
 		List<ICBBSection> bbSections = null;
+		HashMap<Long, ICBBSection> l_sectionList = new HashMap<Long, ICBBSection>();
 		try {
 			if (username.equals("admin")) {
 				params.addValue("courseid", courseId);
@@ -316,11 +332,29 @@ public class InfiniteCampusDAO {
 				bbSections= template.query(sql, params, new BeanPropertyRowMapper<ICBBSection>(ICBBSection.class));
 			}
 
+			for (ICBBSection bbSection : bbSections) {
+				ICBBSection l_temp = l_sectionList.get(Long.valueOf(bbSection.getSectionID()));
+
+				if (l_temp != null) {
+					if (l_temp.getTermName() != null) {
+						l_temp.setTermName (l_temp.getTermName().concat("/"+bbSection.getTermName()));
+					}
+
+					l_sectionList.put(Long.valueOf(bbSection.getSectionID()), l_temp);
+				} else {
+					l_sectionList.put(Long.valueOf(bbSection.getSectionID()), bbSection);
+				}
+			}
+
+			// Iterating HashMap through for loop
+			for (Map.Entry<Long, ICBBSection> set : l_sectionList.entrySet()) {
+				l_returnList.add(set.getValue());
+			}
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
 			return null;
 		}
-		return bbSections;
+		return l_returnList;
 	}
 
 	@Transactional(readOnly=true)

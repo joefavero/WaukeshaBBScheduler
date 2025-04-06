@@ -76,14 +76,16 @@ public class SnapshotFileManager {
 			p.write("data_source_key|external_person_key|user_id|passwd|firstname|lastname|system_role|institution_role|row_status|student_id|middlename|new_external_person_key|company|email|street_1|street_2|gender|birthdate|title|city|state|zip_code|department|country|b_phone_1|b_phone_2|h_fax|b_fax|h_phone_1|h_phone_2|m_phone|job_title|available_ind|educ_level|webpage|locale");
 			p.write("\r\n");
 
-			HashMap<String, List<String>> l_institutionRoles = new HashMap<String, List<String>>();
+			HashMap<String, String> l_institutionRoles = new HashMap<String, String>();
 			int i=0;
 			for (ICUser l_student:l_students) {
 				if (l_institutionRoles.get(l_student.getStudentNumber()) == null) {
 					i++;
-					List<String> l_roles = new ArrayList<String>();
-					l_roles.add("Student-"+l_student.getInstitutionRole());
-					l_institutionRoles.put(l_student.getStudentNumber(), l_roles);
+					String l_role = "Student-SDW";
+					if (l_student.getInstitutionRole().equals("EAC") || l_student.getInstitutionRole().equals("EAE")) {
+						l_role = "Student-eA";
+					}
+					l_institutionRoles.put(l_student.getStudentNumber(), l_role);
 					p.write(m_service.getConfigData().getSnapshotStudentDatasource() +"|"						//data_source
 							+ l_student.getStudentNumber() + "|"	//external_person_key
 							+ l_student.getUserName() + "|" 		//user_id
@@ -123,9 +125,11 @@ public class SnapshotFileManager {
 					p.write("\r\n");
 				} else {
 					mLog.info("Duplicate Found ...");
-					List<String> l_roles = l_institutionRoles.get(l_student.getStudentNumber());
-					l_roles.add("Student-"+l_student.getInstitutionRole());
-					l_institutionRoles.put(l_student.getStudentNumber(), l_roles);
+					String l_role = "Student-SDW";
+					if (l_student.getInstitutionRole().equals("EAC") || l_student.getInstitutionRole().equals("EAE")) {
+						l_role = "Student-eA";
+					}
+					l_institutionRoles.put(l_student.getStudentNumber(), l_role);
 				}
 			}
 
@@ -149,15 +153,14 @@ public class SnapshotFileManager {
 			p.write("data_source_key|external_person_key|role_id");
 			p.write("\r\n");
 			int j=0;
-			for (HashMap.Entry<String, List<String>> l_roles : l_institutionRoles.entrySet()) {
-				List<String> l_studentRoles = l_roles.getValue();
-				for (String l_studentRole:l_studentRoles) {
-					j++;
-					p.write("SIS2.StaffSecondaryInstutionRoleAssociations" + "|"	 //data_source
-							+ l_roles.getKey() + "|"                                //external_person_key
-							+ l_studentRole);                                          //role_id
-					p.write("\r\n");
-				}
+			for (HashMap.Entry<String, String> l_role : l_institutionRoles.entrySet()) {
+				String l_studentRole = l_role.getValue();
+
+				j++;
+				p.write(m_service.getConfigData().getSnapshotStudentAssociationDatasource() + "|"	 //data_source
+						+ l_role.getKey() + "|"                                //external_person_key
+						+ l_studentRole);                                          //role_id
+				p.write("\r\n");
 			}
 			p.flush();
 			p.close();
@@ -205,13 +208,15 @@ public class SnapshotFileManager {
 			p.write("data_source_key|external_person_key|user_id|passwd|firstname|lastname|system_role|institution_role|row_status|student_id|middlename|new_external_person_key|company|email|street_1|street_2|gender|birthdate|title|city|state|zip_code|department|country|b_phone_1|b_phone_2|h_fax|b_fax|h_phone_1|h_phone_2|m_phone|job_title|available_ind|educ_level|webpage|locale");
 			p.write("\r\n");
 
-			HashMap<String, List<String>> l_institutionRoles = new HashMap<String, List<String>>();
+			HashMap<String, String> l_institutionRoles = new HashMap<String, String>();
 			int i=0;
 			for (ICStaff l_staff:l_staffs) {
 				if (l_institutionRoles.get(l_staff.getStaffNumber()) == null) {
 					i++;
-					List<String> l_roles = new ArrayList<String>();
-					l_roles.add(l_staff.getJobTitle()+"-"+translateRole(l_staff.getInstitutionRole()));
+					String l_roles = "Faculty-SDW";
+					if (translateRole(l_staff.getInstitutionRole()).equals("eAchieve")) {
+						l_roles = "Faculty-eA";
+					}
 					l_institutionRoles.put(l_staff.getStaffNumber(), l_roles);
 					String l_role;
 					if (l_staff.getRoleCount()==1) {
@@ -257,8 +262,10 @@ public class SnapshotFileManager {
 							+ l_staff.getLocale());			        //locale
 					p.write("\r\n");
 				} else {
-					List<String> l_roles = l_institutionRoles.get(l_staff.getStaffNumber());
-					l_roles.add(l_staff.getJobTitle()+"-"+translateRole(l_staff.getInstitutionRole()));
+					String l_roles = l_institutionRoles.get(l_staff.getStaffNumber());
+					if (translateRole(l_staff.getInstitutionRole()).equals("eAchieve")) {
+						l_roles = "Faculty-eA";
+					}
 					l_institutionRoles.put(l_staff.getStaffNumber(), l_roles);
 				}
 			}
@@ -284,15 +291,14 @@ public class SnapshotFileManager {
 			p.write("data_source_key|external_person_key|role_id");
 			p.write("\r\n");
 			int j=0;
-			for (HashMap.Entry<String, List<String>> l_roles : l_institutionRoles.entrySet()) {
-				List<String> l_staffRoles = l_roles.getValue();
-				for (String l_staffRole:l_staffRoles) {
-					j++;
-					p.write("SIS2.StaffSecondaryInstutionRoleAssociations" + "|"	 //data_source
-							+ l_roles.getKey() + "|"                                //external_person_key
-							+ l_staffRole);                                          //role_id
-					p.write("\r\n");
-				}
+			for (HashMap.Entry<String, String> l_roles : l_institutionRoles.entrySet()) {
+				String l_staffRole = l_roles.getValue();
+				j++;
+				p.write(m_service.getConfigData().getSnapshotStaffAssociationDatasource() + "|"	 //data_source
+						+ l_roles.getKey() + "|"                                //external_person_key
+						+ l_staffRole);                                          //role_id
+				p.write("\r\n");
+
 			}
 			p.flush();
 			p.close();
@@ -342,7 +348,7 @@ public class SnapshotFileManager {
 			p.write("\r\n");
 
 			for (ICBBEnrollment l_enrollment:p_enrollments) {
-				p.write("SIS2.Enrollment"+"|"					//data_source
+				p.write(m_service.getConfigData().getSnapshotEnrollmentDatasource()+"|"					//data_source
 						+ l_enrollment.getCourseId() + "|"		//external_course_key
 						+ l_enrollment.getStudentNumber() + "|" //external_person_key
 						+ l_enrollment.getRole() + "|" 			//role
@@ -461,7 +467,7 @@ public class SnapshotFileManager {
 				List<String> l_observees = l_observer.getValue();
 				for (String l_observee:l_observees) {
 					j++;
-					p.write("SIS2.StudentGuardianAssociations" + "|"					           //data_source
+					p.write(m_service.getConfigData().getSnapshotGuardianAssociationDatasource() + "|"					           //data_source
 							+ "Observer"+l_observer.getKey() + "|"             //external_observer_key
 							+ l_observee);                                     //external_user_key
 					p.write("\r\n");

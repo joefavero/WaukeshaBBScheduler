@@ -70,6 +70,7 @@ public class BBSchedulerController {
 		mLog.info("In Home()");
 		ModelAndView mv = new ModelAndView("intro");
 		mv.addObject("version", RELEASE);
+		mv.addObject("username", "Unknown");
 		return mv;
 	}
 
@@ -155,8 +156,8 @@ public class BBSchedulerController {
 									}
 
 									// Testing
-									l_userMode.setMode("teacher");
-									l_userMode.setUserId("lpotter"); 
+									//l_userMode.setMode("teacher");
+									//l_userMode.setUserId("lpotter"); 
 									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
 									mv.setViewName("bbscheduler");
 
