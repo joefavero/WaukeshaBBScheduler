@@ -1,6 +1,6 @@
 /*
- * Copyright 2022-2023 Obsidian Solution Inc
- * Consulting work for Tulsa Tech Progress Tool
+ * Copyright 2024-2026 Obsidian Solution LLC
+ * Consulting work for Waukesha BB Scheduler
  */
 package com.obsidiansoln.blackboard.sis;
 
@@ -629,10 +629,21 @@ public class SnapshotFileManager {
 												+ "      Warning Count: " + status.getWarningCount() + "<br>"
 												+ "      BB Learn URL: " + resultURL + "<br>";
 									} else {
-										l_message = "HTTP Status: " + response1.getStatusLine().getStatusCode() + response1.getStatusLine().getReasonPhrase();
+										l_message = "Snapshot Integration Error Report" + "<br>"
+												+ "    File Processsed: " + p_file.getFileName() + "<br>"
+												+ "      BB Endpoint: " + p_file.getEndpoint() + "<br>"
+												+ "      BB Operation: " + details.getOperation() + "<br>"
+												+ "      HTTP Status: " + response1.getStatusLine().getStatusCode() + response1.getStatusLine().getReasonPhrase() + "<br>";
+
 									}
 								} else {
-									mLog.info("Unable to processs Status Response");
+									mLog.info("Unable to process Status Response");
+									l_message = "Snapshot Integration Error Report" + "<br>"
+											+ "    File Processsed: " + p_file.getFileName() + "<br>"
+											+ "      BB Endpoint: " + p_file.getEndpoint() + "<br>"
+											+ "      BB Operation: " + details.getOperation() + "<br>"
+											+ "      Unable to process Status Response ... Report this error" + "<br>";
+
 								}
 							}
 

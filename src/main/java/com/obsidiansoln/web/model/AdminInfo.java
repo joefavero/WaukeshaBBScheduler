@@ -1,10 +1,8 @@
 /*
- * Copyright 2022-2023 Obsidian Solution Inc
- * Consulting work for Tulsa Tech Progress Tool
+ * Copyright 2024-2026 Obsidian Solution LLC
+ * Consulting work for Waukesha BB Scheduler
  */
 package com.obsidiansoln.web.model;
-
-import java.util.Date;
 
 public class AdminInfo {
 

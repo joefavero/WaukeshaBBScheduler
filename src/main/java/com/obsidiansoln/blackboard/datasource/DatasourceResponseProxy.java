@@ -1,4 +1,7 @@
-package com.obsidiansoln.blackboard.datasource;
+/*
+ * Copyright 2024-2026 Obsidian Solution LLC
+ * Consulting work for Waukesha BB Scheduler
+ */package com.obsidiansoln.blackboard.datasource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.obsidiansoln.blackboard.PagingProxy;

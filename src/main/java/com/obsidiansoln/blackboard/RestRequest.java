@@ -1,14 +1,14 @@
 /*
- * Copyright 2022-2023 Obsidian Solution Inc
- * Consulting work for Tulsa Tech Progress Tool
+ * Copyright 2024-2026 Obsidian Solution LLC
+ * Consulting work for Waukesha BB Scheduler
  */
 package com.obsidiansoln.blackboard;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -17,7 +17,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.HttpStatusCodeException;

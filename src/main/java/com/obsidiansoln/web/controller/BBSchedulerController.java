@@ -1,14 +1,12 @@
 /*
- * Copyright 2022-2023 Obsidian Solution Inc
- * Consulting work for Tulsa Tech Progress Tool
+ * Copyright 2024-2026 Obsidian Solution LLC
+ * Consulting work for Waukesha BB Scheduler
  */
 
 package com.obsidiansoln.web.controller;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,15 +22,8 @@ import org.springframework.web.servlet.ModelAndView;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.obsidiansoln.blackboard.RestRequest;
 import com.obsidiansoln.blackboard.course.CourseProxy;
-import com.obsidiansoln.blackboard.coursecopy.CourseInfo;
-import com.obsidiansoln.blackboard.templates.TemplateProxy;
 import com.obsidiansoln.blackboard.user.UserProxy;
 import com.obsidiansoln.database.dao.InfiniteCampusDAO;
-import com.obsidiansoln.database.model.ICCalendar;
-import com.obsidiansoln.database.model.ICCourse;
-import com.obsidiansoln.database.model.ICEnrollment;
-import com.obsidiansoln.database.model.ICSection;
-import com.obsidiansoln.database.model.ICTemplate;
 import com.obsidiansoln.util.LTIRequestHandler;
 import com.obsidiansoln.util.LtiLaunch;
 import com.obsidiansoln.util.RestManager;
