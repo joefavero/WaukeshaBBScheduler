@@ -1660,18 +1660,20 @@ public class RestManager implements IGradesDb {
 		RequestData l_requestData = new RequestData();
 
 		CourseProxy l_course = this.getCourseByName(p_courseId);
-		l_requestData.setCourseId(l_course.getId());
+		if (l_course != null) {
+			l_requestData.setCourseId(l_course.getId());
 
-		// First Create the Group Set IC Enrollments
-		GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC Enrollments");
-		l_list.put(p_courseId, l_groupSet);
+			// First Create the Group Set IC Enrollments
+			GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC Enrollments");
+			l_list.put(p_courseId, l_groupSet);
 
-		// Now add the Groups to the Group Set, IC Enrollments
-		if (p_sections != null) {
-			for (SectionInfo l_section: p_sections) {
-				GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_section, l_groupSet.getId());
-				l_list.put(String.valueOf(l_section.getSectionId()), l_group);
-				log.info("Group Created: " + l_group.getId());
+			// Now add the Groups to the Group Set, IC Enrollments
+			if (p_sections != null) {
+				for (SectionInfo l_section: p_sections) {
+					GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_section, l_groupSet.getId());
+					l_list.put(String.valueOf(l_section.getSectionId()), l_group);
+					log.info("Group Created: " + l_group.getId());
+				}
 			}
 		}
 		return l_list;

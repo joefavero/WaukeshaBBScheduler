@@ -12,6 +12,7 @@
 		<ul>
 			<li>Version: ${version}</li>
 			<li>User: ${username}</li>
+			<li>LTI Message: ${ltimessage}</li>
 		</ul>
 	
 	<br />

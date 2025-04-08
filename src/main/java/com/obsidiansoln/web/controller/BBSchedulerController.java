@@ -120,9 +120,14 @@ public class BBSchedulerController {
 								}
 
 								// Get The Infinite Campus Person ID
-								//Long l_personId = dao.getPersonId(l_user.getUserName());
-								Long l_personId = dao.getPersonId("lpotter");
-								mLog.debug("Person ID: " + l_personId);
+
+
+								Long l_personId = dao.getPersonId(l_user.getUserName());
+								if (l_personId == null) {
+									mLog.info("Defaulting to lpotter");
+									l_personId = dao.getPersonId("lpotter");
+								}
+								mLog.info("Person ID: " + l_personId);
 
 								if (l_personId != null) {
 
@@ -165,10 +170,12 @@ public class BBSchedulerController {
 
 							} else {
 								mLog.error("Invalid User: " + result.getUser().getId());
+								mv.addObject("version", RELEASE);
 								mv.addObject("ltimessage", "Invalid User");
 							}
 						} catch (Exception e) {
 							mLog.error("Error", e);
+							mv.addObject("version", RELEASE);
 							mv.addObject("ltimessage", e.getMessage());
 						}
 					}
