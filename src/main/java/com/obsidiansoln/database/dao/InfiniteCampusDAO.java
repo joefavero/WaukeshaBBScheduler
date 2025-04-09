@@ -1419,7 +1419,7 @@ public class InfiniteCampusDAO {
 				}
 				if (l_guardian.getBbPassword() == null) {
 					Random random = new Random();
-			        int number = random.nextInt(900) + 100; // Generates number between 100 and 999
+					int number = random.nextInt(900) + 100; // Generates number between 100 and 999
 					String l_password = l_guardian.getFirstName().substring(0, 1).toLowerCase() + l_guardian.getLastName().toLowerCase();
 					if (l_password.length() > 6) {
 						l_guardian.setBbPassword(l_password.substring(0,5)+number);
@@ -1604,19 +1604,22 @@ public class InfiniteCampusDAO {
 		String sql = "update SDWBlackboardSchedulerBBCourses"
 				+ " set groupSetId = :groupSetId, modifiedByPersonID=:personId, modified=GETDATE()"
 				+ " where  bbCourseID = :key";
-
-		MapSqlParameterSource params = new MapSqlParameterSource();
-		params.addValue("groupSetId", p_group.getId());
-		params.addValue("key", p_key);
-		params.addValue("personId", p_personId);
-		KeyHolder keyHolder = new GeneratedKeyHolder();
 		Number id = null;
+		if (p_group != null) {
+			MapSqlParameterSource params = new MapSqlParameterSource();
+			params.addValue("groupSetId", p_group.getId());
+			params.addValue("key", p_key);
+			params.addValue("personId", p_personId);
+			KeyHolder keyHolder = new GeneratedKeyHolder();
 
-		try {
-			id = template.update(sql, params, keyHolder);
-		} catch (DataAccessException l_ex) {
-			mLog.error("Database Access Error", l_ex);
-			return null;
+
+			try {
+				id = template.update(sql, params, keyHolder);
+			} catch (DataAccessException l_ex) {
+				mLog.error("Database Access Error", l_ex);
+			}
+		} else {
+			mLog.info("Unable to BB Course Groups Set.  Group is empty");
 		}
 
 		return id;
