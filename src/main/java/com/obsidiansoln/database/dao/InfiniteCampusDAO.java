@@ -83,6 +83,7 @@ public class InfiniteCampusDAO {
 		}
 		return calendars;
 	}
+
 	@Transactional(readOnly=true)
 	public List<ICCourse> getCoursesByUsername(String username) {
 		mLog.trace("In getCoursesByUsername ...");
@@ -443,6 +444,7 @@ public class InfiniteCampusDAO {
 		}
 		return bbGroups;
 	}
+
 	@Transactional(readOnly=true)
 	public ICBBCourse getBBCourseById(String courseId) {
 		mLog.trace("In getBBCoursesById ...");
@@ -664,6 +666,32 @@ public class InfiniteCampusDAO {
 		}
 		return templates;
 	}
+
+	@Transactional
+	public void updateTemplates(List<ICTemplate> p_templates) {
+		mLog.trace("updateTemplates called ...");
+
+		String updateSql = "update SDWBlackboardSchedulerMasterCourses"
+				+ " set bbCOURSE_ID = :bbCourseId, bbCOURSE_NAME=:bbCourseName, MasterLevel = :masterLevel, MasterSubjectArea = :masterSubjectArea"
+				+ " where  bbMasterID = :bbMasterId";
+
+		for (ICTemplate l_template : p_templates) {
+			MapSqlParameterSource params = new MapSqlParameterSource();
+			params.addValue("bbMasterID", l_template.getBbMasterId());
+			params.addValue("bbCourseId", l_template.getBbCourseId());
+			params.addValue("bbCourseName", l_template.getBbCourseName());
+			params.addValue("masterLevel", l_template.getMasterLevel());
+			params.addValue("masterSubjectArea", l_template.getMasterSubjectArea());
+			KeyHolder keyHolder = new GeneratedKeyHolder();
+			Number id = null;
+			try {
+				id = template.update(updateSql, params, keyHolder);
+			} catch (DataAccessException l_ex) {
+				mLog.error("Database Access Error", l_ex);
+			}
+		}
+	}
+
 
 	@Transactional(readOnly=true)
 	public List<ICTeacher> getTeachers() {
@@ -1436,6 +1464,7 @@ public class InfiniteCampusDAO {
 		return guardians;
 	}
 
+	@Transactional
 	public Number insertBBCourseLink (CourseInfo courseInfo) {
 		mLog.info("insertBBCourseLink  called ...");
 
@@ -1467,6 +1496,7 @@ public class InfiniteCampusDAO {
 
 	}
 
+	@Transactional
 	public Number insertBBSectionLink (SectionInfo sectionInfo) {
 		mLog.info("insertBBCSectionLink  called ...");
 
@@ -1496,6 +1526,7 @@ public class InfiniteCampusDAO {
 
 	}
 
+	@Transactional
 	public Number insertBBPersonLink (PersonInfo personInfo) {
 		mLog.info("insertBBCSectionLink  called ...");
 
@@ -1527,6 +1558,7 @@ public class InfiniteCampusDAO {
 
 	}
 
+	@Transactional
 	public Number deleteBBPersonLink (Long key, Long personId) {
 		mLog.trace("deleteBBPersonLink called ...");
 
@@ -1548,6 +1580,7 @@ public class InfiniteCampusDAO {
 		return rows;
 	}
 
+	@Transactional
 	public Number updateBBCourseLink (Number p_key, CourseInfo courseInfo) {
 		mLog.info("updateBBCourseLink  called ...");
 
@@ -1573,6 +1606,7 @@ public class InfiniteCampusDAO {
 
 	}
 
+	@Transactional
 	public Number updateBBCourseInfo (UpdateCourseInfo courseInfo) {
 		mLog.trace("updateBBCourseInfo  called ...");
 
@@ -1598,6 +1632,7 @@ public class InfiniteCampusDAO {
 
 	}
 
+	@Transactional
 	public Number updateBBCourseGroupSet (Number p_key, GroupProxy p_group, String p_personId) {
 		mLog.trace("updateBBCourseLink  called ...");
 
@@ -1709,6 +1744,7 @@ public class InfiniteCampusDAO {
 		return l_enrollments;
 	}
 
+	@Transactional
 	public Number deleteBBCourses() {
 		mLog.info("deleteBBCourses  called ...");
 		Number rows = null;
@@ -1727,6 +1763,7 @@ public class InfiniteCampusDAO {
 		return rows;
 	}
 
+	@Transactional
 	public Number deleteBBSections() {
 		mLog.info("deleteBBSections  called ...");
 		Number rows = null;
@@ -1744,6 +1781,7 @@ public class InfiniteCampusDAO {
 		return rows;
 	}
 
+	@Transactional(readOnly=true)
 	public List<ICStudent> getBBStudents (String p_courseId) {
 		mLog.trace("getBBStudents  called ...");
 		mLog.debug("COURSE ID: " + p_courseId);
@@ -1768,6 +1806,7 @@ public class InfiniteCampusDAO {
 		return l_students;
 	}
 
+	@Transactional(readOnly=true)
 	public List<ICTeacher> getBBTeachers (String p_courseId) {
 		mLog.trace("getBBTeachers  called ...");
 		mLog.debug("COURSE ID: " + p_courseId);
@@ -1792,8 +1831,9 @@ public class InfiniteCampusDAO {
 		return l_teachers;
 	}
 
+	@Transactional(readOnly=true)
 	public List<ICMessage> getMessages () {
-		mLog.info("getMessages  called ...");
+		mLog.trace("getMessages  called ...");
 		String sql = "select Message as message"
 				+ "  from SDWBlackboardSchedulerMessages ";
 
@@ -1808,6 +1848,7 @@ public class InfiniteCampusDAO {
 		return l_messages;
 	}
 
+	@Transactional
 	public Number insertBBUsername (String p_bbUsername, String p_personId) {
 		mLog.info("insertBBUserName called ...");
 
@@ -1830,6 +1871,7 @@ public class InfiniteCampusDAO {
 
 	}
 
+	@Transactional
 	public Number insertBBPassword (String p_bbPassword, String p_personId) {
 		mLog.info("insertBBPassword called ...");
 

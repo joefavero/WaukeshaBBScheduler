@@ -70,7 +70,7 @@
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncGuardians" cron="0 20 18 * * *" />
 		<task:scheduled ref="BBSchedulerTasks"
-			method="syncGroups" cron="0 0 18 * * *" />
+			method="syncGroups" cron="0 30 18 * * *" />
 	</task:scheduled-tasks>
 
 	<task:scheduler id="myScheduler" />

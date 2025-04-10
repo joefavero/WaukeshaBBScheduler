@@ -138,9 +138,8 @@ public class RESTController {
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
-				ConfigData l_configData = m_service.getConfigData();
-				RestManager l_manager = new RestManager(l_configData);
 				UtilityInfo l_utility = new UtilityInfo();
+				l_utility.setTemplates(dao.getTemplates());
 				return mapper.writeValueAsString(l_utility);
 			} catch (JsonProcessingException e) {
 				mLog.error(e.getMessage());
@@ -161,12 +160,10 @@ public class RESTController {
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {
-				ConfigData l_configData = m_service.getConfigData();
-				//l_configData.setRestHost(restData.getHost());
-				//l_configData.setRestKey(restData.getKey());
-				//l_configData.setRestSecret(restData.getSecret());
-				//m_service.saveConfigData(l_configData);
 
+				List<ICTemplate> l_templates = utilityData.getTemplates();
+				// Now Update Database
+				dao.updateTemplates(l_templates);
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");
