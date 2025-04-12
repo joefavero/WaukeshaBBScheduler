@@ -13,8 +13,7 @@ public class PortalInfo {
 
 	private String logLevel;
 	private String adminPassword;
-	private List<ICMessage> customMessages;
-	private ArrayList<String> terms;
+	private List<String> customMessages;
 	
 	public PortalInfo() {
 	}
@@ -35,21 +34,12 @@ public class PortalInfo {
 		this.adminPassword = adminPassword;
 	}
 
-	public List<ICMessage> getCustomMessages() {
+	public List<String> getCustomMessages() {
 		return customMessages;
 	}
 
-	public void setCustomMessages(List<ICMessage> customMessages) {
+	public void setCustomMessages(List<String> customMessages) {
 		this.customMessages = customMessages;
 	}
 
-	public ArrayList<String> getTerms() {
-		return terms;
-	}
-
-	public void setTerms(ArrayList<String> terms) {
-		this.terms = terms;
-	}
-
-	
 }

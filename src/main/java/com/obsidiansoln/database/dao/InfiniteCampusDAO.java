@@ -677,6 +677,7 @@ public class InfiniteCampusDAO {
 				+ " where  bbMasterID = :bbMasterId";
 
 		for (ICTemplate l_template : p_templates) {
+			mLog.info("Master ID: " + l_template.getBbMasterId());
 			MapSqlParameterSource params = new MapSqlParameterSource();
 			params.addValue("bbMasterID", l_template.getBbMasterId());
 			params.addValue("bbCourseId", l_template.getBbCourseId());
@@ -686,7 +687,7 @@ public class InfiniteCampusDAO {
 			KeyHolder keyHolder = new GeneratedKeyHolder();
 			Number id = null;
 			try {
-				id = template.update(updateSql, params, keyHolder);
+				//id = template.update(updateSql, params, keyHolder);
 			} catch (DataAccessException l_ex) {
 				mLog.error("Database Access Error", l_ex);
 			}
@@ -1845,7 +1846,35 @@ public class InfiniteCampusDAO {
 		}
 		return l_messages;
 	}
-	
+
+	@Transactional
+	public void  addMessages (List<String> p_messages) {
+		mLog.info("addMessages  called ...");
+		String deleteSql = "delete"
+				+ "  from SDWBlackboardSchedulerMessages ";
+		String insertSql = "insert into SDWBlackboardSchedulerMessages "
+				+ "  (Message) "
+				+ " values (:Message)";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICMessage> l_messages = null;
+		Number l_rows=null;
+		try {
+			// First Remove all the Messages
+			l_rows = template.update(deleteSql, params);
+			mLog.info("Number of rows deleted: " + l_rows);
+
+			for (String l_message : p_messages) {
+				params.addValue("Message", l_message);
+				KeyHolder keyHolder = new GeneratedKeyHolder();
+				int id = template.update(insertSql, params, keyHolder);
+			}
+
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+		}
+	}
+
 	@Transactional(readOnly=true)
 	public ICNode getNode (String p_schoolName) {
 		mLog.trace("getNode  called ...");

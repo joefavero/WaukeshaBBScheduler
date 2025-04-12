@@ -230,7 +230,7 @@ public class RESTController {
 				l_configData.setRestHost(restData.getHost());
 				l_configData.setRestKey(restData.getKey());
 				l_configData.setRestSecret(restData.getSecret());
-				//m_service.saveConfigData(l_configData);
+				m_service.saveConfigData(l_configData);
 
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
@@ -283,7 +283,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/ltiData", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse putLtiData(@RequestBody final LtiInfo ltiData, HttpServletRequest request) {
-		mLog.info("In putLtiData ..." + ltiData.getKey());
+		mLog.trace("In putLtiData ..." + ltiData.getKey());
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {
@@ -291,7 +291,7 @@ public class RESTController {
 				l_configData.setLtiKey(ltiData.getKey());
 				l_configData.setLtiSecret(ltiData.getSecret());
 
-				//m_service.saveConfigData(l_configData);
+				m_service.saveConfigData(l_configData);
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");
@@ -328,15 +328,13 @@ public class RESTController {
 				PortalInfo l_portalData = new PortalInfo();
 				l_portalData.setLogLevel(l_configData.getLogLevel());
 				l_portalData.setAdminPassword(l_configData.getAdminPW());
-				l_portalData.setCustomMessages(dao.getMessages());
-
-				// Add Terms
-				List<TermProxy> l_terms = l_manager.getTerms();
-				ArrayList<String> l_termList = new ArrayList<String>();
-				for (TermProxy l_term : l_terms) {
-					l_termList.add(l_term.getName());
+				List<ICMessage> l_messages = dao.getMessages();
+				List<String> l_customMessages = new ArrayList<String>();
+				for (ICMessage l_message : l_messages) {
+					l_customMessages.add(l_message.getMessage());
 				}
-				l_portalData.setTerms(l_termList);
+				l_portalData.setCustomMessages(l_customMessages);
+
 				return mapper.writeValueAsString(l_portalData);
 			} catch (JsonProcessingException e) {
 				mLog.error(e.getMessage());
@@ -362,8 +360,13 @@ public class RESTController {
 				l_configData.setAdminPW(portalData.getAdminPassword());
 
 				//Now need to add the Messages to the Database
+				List<String> l_customMessages = portalData.getCustomMessages();
+				for (String l_customMessage : l_customMessages) {
+					mLog.info("Message: " + l_customMessage);
+				}
+				dao.addMessages(l_customMessages);
 
-				//m_service.saveConfigData(l_configData);
+				m_service.saveConfigData(l_configData);
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");
@@ -434,7 +437,7 @@ public class RESTController {
 				l_configData.setEmailAuthenticate(adminData.isAuthenticate());
 				l_configData.setEmailUseSSL(adminData.isSsl());
 				l_configData.setEmailDebug(adminData.isDebug());
-				//m_service.saveConfigData(l_configData);
+				m_service.saveConfigData(l_configData);
 
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
@@ -462,7 +465,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/snapshotData", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getSnapshotData(HttpServletRequest request) {
-		mLog.info("In getSnapshotData ...");
+		mLog.trace("In getSnapshotData ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -500,7 +503,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/snapshotData", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse putSnapshotData(@RequestBody final SnapshotInfo snapshotData, HttpServletRequest request) {
-		mLog.info("In putSnapshotData ...");
+		mLog.trace("In putSnapshotData ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {
@@ -520,7 +523,7 @@ public class RESTController {
 				l_configData.setSnapshotStaffAssociationDatasource(snapshotData.getStaffAssociationDatasource());
 				l_configData.setSnapshotGuardianAssociationDatasource(snapshotData.getGuardianAssociationDatasource());
 				l_configData.setSnapshotEmail(snapshotData.getEmail());
-				//m_service.saveConfigData(l_configData);
+				m_service.saveConfigData(l_configData);
 				l_restResponse.setSuccess(true);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("success");

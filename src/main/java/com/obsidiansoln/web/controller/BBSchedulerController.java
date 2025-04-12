@@ -123,10 +123,10 @@ public class BBSchedulerController {
 
 
 								Long l_personId = dao.getPersonId(l_user.getUserName());
-								if (l_personId == null) {
-									mLog.info("Defaulting to lpotter");
-									l_personId = dao.getPersonId("lpotter");
-								}
+								//if (l_personId == null) {
+								//	mLog.info("Defaulting to lpotter");
+								//	l_personId = dao.getPersonId("lpotter");
+								//}
 								mLog.info("Person ID: " + l_personId);
 
 								if (l_personId != null) {
@@ -152,8 +152,8 @@ public class BBSchedulerController {
 									}
 
 									// Testing
-									l_userMode.setMode("teacher");
-									l_userMode.setUserId("lpotter"); 
+									//l_userMode.setMode("teacher");
+									//l_userMode.setUserId("lpotter"); 
 									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
 									mv.setViewName("bbscheduler");
 
