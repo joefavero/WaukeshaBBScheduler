@@ -120,13 +120,13 @@ public class BBSchedulerController {
 								}
 
 								// Get The Infinite Campus Person ID
-
-
 								Long l_personId = dao.getPersonId(l_user.getUserName());
-								//if (l_personId == null) {
-								//	mLog.info("Defaulting to lpotter");
-								//	l_personId = dao.getPersonId("lpotter");
-								//}
+								
+								// TBD This is used for Testing ... will be removed for Production
+								if (l_personId == null && l_user.getUserName().equalsIgnoreCase("joetest")) {
+									mLog.info("Defaulting to lpotter");
+									l_personId = dao.getPersonId("lpotter");
+								}
 								mLog.info("Person ID: " + l_personId);
 
 								if (l_personId != null) {
@@ -151,9 +151,11 @@ public class BBSchedulerController {
 										}
 									}
 
-									// Testing
+									// TBD Testing - Will be removed for Production
 									//l_userMode.setMode("teacher");
 									//l_userMode.setUserId("lpotter"); 
+									
+									
 									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
 									mv.setViewName("bbscheduler");
 
