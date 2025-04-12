@@ -46,6 +46,7 @@ import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
 import com.obsidiansoln.database.model.ICGuardian;
 import com.obsidiansoln.database.model.ICMessage;
+import com.obsidiansoln.database.model.ICNode;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
@@ -711,6 +712,7 @@ public class RESTController {
 		RestResponse l_restResponse = new RestResponse();
 		mLog.info(" Course ID: " + courseInfo.getCourseTemplateId());
 		mLog.info(" Course Duration: " + courseInfo.getCourseDuration());
+		mLog.info(" School Name: " + courseInfo.getSchoolName());
 		mLog.info(" Target Course ID: " + courseInfo.getTargetCourseId());
 		mLog.info(" Target Course Name: " + courseInfo.getTargetCourseName());
 		mLog.info(" Target Course Description: " + courseInfo.getTargetCourseDescription());
@@ -746,7 +748,10 @@ public class RESTController {
 							CourseProxy l_course = l_manager.getCourseByName(courseInfo.getCourseTemplateId());
 							if (l_course != null) {
 								courseInfo.setCourseTemplateId(l_course.getId());
-								l_manager.createCourseCopy(courseInfo);
+								
+								// Get Hierarchy Node
+								ICNode l_node = dao.getNode(courseInfo.getSchoolName());
+								l_manager.createCourseCopy(courseInfo, l_node);
 
 
 								// Update The Section Link Info
@@ -803,7 +808,7 @@ public class RESTController {
 								// Add the Extra students
 								if (courseInfo.getAdditionalStudents() != null) {
 									for (String l_student : courseInfo.getAdditionalStudents()) {
-										mLog.info("Adding Student: " + l_student);
+										mLog.debug("Adding Student: " + l_student);
 										l_manager.createMembership(courseInfo.getTargetCourseId(), l_student, "Student");
 										// Add to SDW Person Table
 										Long l_personId = dao.getPersonId(l_student);
@@ -821,7 +826,7 @@ public class RESTController {
 								// Add the Extra teachers
 								if (courseInfo.getAdditionalTeachers() != null) {
 									for (String l_teacher : courseInfo.getAdditionalTeachers()) {
-										mLog.info("Adding Teacher: " + l_teacher);
+										mLog.debug("Adding Teacher: " + l_teacher);
 										l_manager.createMembership(courseInfo.getTargetCourseId(), l_teacher, "Instructor");
 										// Add to SDW Person Table
 										Long l_personId = dao.getPersonId(l_teacher);
@@ -1044,24 +1049,23 @@ public class RESTController {
 
 			List<ICBBGroup> l_groups = dao.getBBGroups();
 			ConfigData l_configData;
-			for (ICBBGroup l_group:l_groups) {
-				try {
-					l_configData = m_service.getConfigData();
-					RestManager l_manager = new RestManager(l_configData);
-					l_manager.createGroupMembership(l_group);
-					l_restResponse.setSuccess(true);
-					ToastMessage l_toast = new ToastMessage();
-					l_toast.setType("success");
-					l_toast.setMessage("Sync Groups Successfull");
-					l_restResponse.setToast(l_toast);
-				} catch (Exception e) {
-					l_restResponse.setSuccess(false);
-					ToastMessage l_toast = new ToastMessage();
-					l_toast.setType("error");
-					l_toast.setMessage("Error On REST API");
-					l_restResponse.setToast(l_toast);
-				}
-			}
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+				service.processSISGroups(l_groups, l_manager);
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("Sync Groups Successfully Submitted");
+				l_restResponse.setToast(l_toast);
+
+			} catch (Exception e) {
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("RestManager Error");
+				l_restResponse.setToast(l_toast);
+			}	
 		} else {
 			l_restResponse.setSuccess(false);
 			ToastMessage l_toast = new ToastMessage();
@@ -1104,7 +1108,6 @@ public class RESTController {
 					l_restResponse.setToast(l_toast);
 				}
 			} 
-
 			mLog.info("DONE");
 
 		} else {
@@ -1562,14 +1565,15 @@ public class RESTController {
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 
-			dao.deleteBBCourses();
-			dao.deleteBBSections();
+			//dao.deleteBBCourses();
+			//dao.deleteBBSections();
 
 			ConfigData l_configData;
 			try {
 				l_configData = m_service.getConfigData();
 				RestManager l_manager = new RestManager(l_configData);
-				List<String> l_courses = l_manager.getCoursesByDate("2025-03-15T22:22:10.002Z", true);
+				//List<String> l_courses = l_manager.getCoursesByDate("2025-03-15T22:22:10.002Z", true);
+				List<String> l_courses = new ArrayList<String>();
 				mLog.info(" Number of Courses: " + l_courses.size());
 				for (String l_course:l_courses) {
 					mLog.info("Deleting Course: " + l_course);

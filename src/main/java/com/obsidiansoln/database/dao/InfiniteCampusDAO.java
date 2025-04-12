@@ -33,6 +33,7 @@ import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
 import com.obsidiansoln.database.model.ICGuardian;
 import com.obsidiansoln.database.model.ICMessage;
+import com.obsidiansoln.database.model.ICNode;
 import com.obsidiansoln.database.model.ICPerson;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
@@ -1528,7 +1529,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional
 	public Number insertBBPersonLink (PersonInfo personInfo) {
-		mLog.info("insertBBCSectionLink  called ...");
+		mLog.trace("insertBBCSectionLink  called ...");
 
 		String sql = "insert into SDWBlackboardSchedulerSISCoursePersons"
 				+ " (bbCourseID, personID, personType, sourcePersonType, "
@@ -1537,9 +1538,6 @@ public class InfiniteCampusDAO {
 				+ " :modifiedByPersonId, GETDATE())";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		mLog.info ("BB Course ID: " + personInfo.getBbCourseId());
-		mLog.info ("Person ID: " + personInfo.getPersonId());
-		mLog.info ("Modified Person ID: " + personInfo.getModifiedByPersonId());
 
 		params.addValue("bbCourseId", personInfo.getBbCourseId());
 		params.addValue("personId", personInfo.getPersonId());
@@ -1846,6 +1844,28 @@ public class InfiniteCampusDAO {
 			return null;
 		}
 		return l_messages;
+	}
+	
+	@Transactional(readOnly=true)
+	public ICNode getNode (String p_schoolName) {
+		mLog.trace("getNode  called ...");
+		String sql = "select st.value as prefix, customschool.value as schoolValue from School"
+				+ "    join"
+				+ "    ( select * from CustomSchool where attributeID = 622 ) as st"
+				+ "       on school.schoolID = st.schoolID\n"
+				+ "    join CustomSchool on school.schoolID = CustomSchool.schoolID"
+				+ "    where CustomSchool.attributeID in (620) and school.name=:schoolName ";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		ICNode l_node = null;
+		try {
+			params.addValue("schoolName", p_schoolName);
+			l_node= (ICNode) template.queryForObject(sql, params, new BeanPropertyRowMapper(ICNode.class));
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return l_node;
 	}
 
 	@Transactional

@@ -152,8 +152,8 @@ public class BBSchedulerController {
 									}
 
 									// Testing
-									//l_userMode.setMode("teacher");
-									//l_userMode.setUserId("lpotter"); 
+									l_userMode.setMode("teacher");
+									l_userMode.setUserId("lpotter"); 
 									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));
 									mv.setViewName("bbscheduler");
 
@@ -166,6 +166,7 @@ public class BBSchedulerController {
 								} else {
 									mLog.error("Invalid IC User: " + l_user.getUserName());
 									mv.addObject("ltimessage", "Invalid User");
+									mv.setViewName("invalidUser");
 								}
 
 							} else {

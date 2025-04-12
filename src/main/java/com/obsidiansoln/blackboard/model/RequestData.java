@@ -28,6 +28,8 @@ public class RequestData {
 	private String dataSource;
 	private String groupId;
 	private String date;
+	private String nodeId;
+	private String nodeExternalId;
 
 	public RequestData() {
 
@@ -208,6 +210,22 @@ public class RequestData {
 
 	public void setDate(String date) {
 		this.date = date;
+	}
+
+	public String getNodeId() {
+		return nodeId;
+	}
+
+	public void setNodeId(String nodeId) {
+		this.nodeId = nodeId;
+	}
+
+	public String getNodeExternalId() {
+		return nodeExternalId;
+	}
+
+	public void setNodeExternalId(String nodeExternalId) {
+		this.nodeExternalId = nodeExternalId;
 	}
 
 	

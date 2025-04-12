@@ -13,6 +13,7 @@ public class CourseInfo {
 	private String courseTemplateId;
 	private Long personId;
 	private String courseDuration;
+	private String schoolName;
 	private String targetCourseId;
 	private String targetCourseName;
 	private String targetCourseDescription;
@@ -53,6 +54,12 @@ public class CourseInfo {
 	}
 	public void setCourseDuration(String courseDuration) {
 		this.courseDuration = courseDuration;
+	}
+	public String getSchoolName() {
+		return schoolName;
+	}
+	public void setSchoolName(String schoolName) {
+		this.schoolName = schoolName;
 	}
 	public String getTargetCourseId() {
 		return targetCourseId;

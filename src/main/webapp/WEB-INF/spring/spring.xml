@@ -43,7 +43,7 @@
 	<context:component-scan
 		base-package="com.obsidiansoln" />
 
-
+	<!-- 
 	<task:scheduled-tasks scheduler="myScheduler">
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncUsers" cron="0 0 4 * * *" />
@@ -72,9 +72,9 @@
 		<task:scheduled ref="BBSchedulerTasks"
 			method="syncGroups" cron="0 30 18 * * *" />
 	</task:scheduled-tasks>
-
+ 
 	<task:scheduler id="myScheduler" />
-
+	-->
 	<!-- Basic resolver for mapping to the proper JSPs -->
 	<bean id="primaryViewResolver"
 		class="org.springframework.web.servlet.view.InternalResourceViewResolver">

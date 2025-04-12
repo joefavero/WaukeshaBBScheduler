@@ -1,16 +1,13 @@
-/*
- * Copyright 2024-2026 Obsidian Solution LLC
- * Consulting work for Waukesha BB Scheduler
- */
-package com.obsidiansoln.blackboard.term;
+package com.obsidiansoln.blackboard.node;
+
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.obsidiansoln.blackboard.AvailabilityProxy;
+
 
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TermProxy {
+public class NodeProxy {
 
 	@JsonProperty("id")
 	private String id;
@@ -33,18 +30,18 @@ public class TermProxy {
 	public void setExternalId(String externalId) {
 		this.externalId = externalId;
 	}
+
+	@JsonProperty("title")
+	private String title;
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
 	
-	@JsonProperty("name")
-	private String name;
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
 	@JsonProperty("description")
 	private String description;
 
@@ -55,16 +52,15 @@ public class TermProxy {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+	
+	@JsonProperty("parentId")
+	private String parentId;
 
-	@JsonProperty("availability")
-	private AvailabilityProxy availability;
-
-	public AvailabilityProxy getAvailablity() {
-		return availability;
+	public String getParentId() {
+		return parentId;
 	}
 
-	public void setAvailability (AvailabilityProxy availability) {
-		this.availability = availability;
+	public void setParentId(String parentId) {
+		this.parentId = parentId;
 	}
-
 }

@@ -21,10 +21,12 @@ import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.blackboard.model.SnapshotFileInfo;
 import com.obsidiansoln.blackboard.model.StudentData;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
+import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICEnrollment;
 import com.obsidiansoln.util.EmailManager;
 import com.obsidiansoln.util.RestManager;
 import com.obsidiansoln.web.model.ContactModel;
+import com.obsidiansoln.web.model.ToastMessage;
 
 import jakarta.servlet.ServletContext;
 
@@ -93,5 +95,17 @@ public class AsyncService {
 		p_manager.sendFile(p_file);
 
 	}
-
+	
+	@Async("asyncExecutor2")
+	@ResponseBody
+	public void processSISGroups (List<ICBBGroup> p_groups, RestManager p_manager) throws InterruptedException {
+		mLog.trace("In procesSISGroups()");
+		for (ICBBGroup l_group:p_groups) {
+			try {
+				p_manager.createGroupMembership(l_group);
+			} catch (Exception e) {
+				mLog.error("Error: ", e);
+			}
+		}
+	}
 }

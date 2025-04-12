@@ -56,6 +56,9 @@ public abstract class RestConstants {
 	public final static String GRADEBOOK_COURSE_ID = "_82872_1";
 	public final static String GRADEBOOK_USER_ID = "_242333_1";
 	public final static String GRADEBOOK_COLUMN_ID = "/_1539055_1";
+	
+	public final static String NODE_PATH = "/learn/api/public/v1/institutionalHierarchy/nodes/";
+	public final static String NODE_AVAILABLE = "Yes";
 
 	public final static String USER_PATH = "/learn/api/public/v1/users";
 	public final static String USER_AVAILABLE = "Yes";

@@ -8,10 +8,12 @@
   	<title>BB Scheduler</title>
   	<base href="/WaukeshaBBScheduler/static/BBSCHEDULER/">
   	<script>window.sessionStorage.clear(); window.sessionStorage.setItem('userMode', '${userMode}');</script>
-    <script type="module" crossorigin src="./assets/index-Bj3VNM_Y.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BKA63mY1.css">
+    <script type="module" crossorigin src="./assets/index-CrX5Z5Xn.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DKAlKihQ.css">
   </head>
   <body>
     <div id="root"></div>
   </body>
 </html>
+
+

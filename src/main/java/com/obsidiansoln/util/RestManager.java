@@ -80,6 +80,10 @@ import com.obsidiansoln.blackboard.model.HTTPStatus;
 import com.obsidiansoln.blackboard.model.NotInListStatus;
 import com.obsidiansoln.blackboard.model.RequestData;
 import com.obsidiansoln.blackboard.model.StudentData;
+import com.obsidiansoln.blackboard.node.NodeHandler;
+import com.obsidiansoln.blackboard.node.NodeListProxy;
+import com.obsidiansoln.blackboard.node.NodeProxy;
+import com.obsidiansoln.blackboard.node.NodeResponseProxy;
 import com.obsidiansoln.blackboard.templates.TemplateHandler;
 import com.obsidiansoln.blackboard.templates.TemplateListProxy;
 import com.obsidiansoln.blackboard.templates.TemplateProxy;
@@ -95,6 +99,7 @@ import com.obsidiansoln.blackboard.user.UserProxy;
 import com.obsidiansoln.blackboard.user.UserResponseProxy;
 import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICEnrollment;
+import com.obsidiansoln.database.model.ICNode;
 import com.obsidiansoln.database.model.UpdateCourseInfo;
 import com.obsidiansoln.web.model.ConfigData;
 import com.obsidiansoln.web.model.LocationInfo;
@@ -515,7 +520,7 @@ public class RestManager implements IGradesDb {
 	}
 
 	public void createMembership (String p_courseId, String p_username, String p_type) {
-		log.info("In createMembership() ...");
+		log.trace("In createMembership() ...");
 		RequestData l_requestData = new RequestData();
 		l_requestData.setCourseName(p_courseId);
 		l_requestData.setUserName(p_username);
@@ -536,7 +541,7 @@ public class RestManager implements IGradesDb {
 	}
 
 	public void removeMembership (String p_courseId, String p_username) {
-		log.info("In removeMembership() ...");
+		log.trace("In removeMembership() ...");
 		RequestData l_requestData = new RequestData();
 		l_requestData.setCourseName(p_courseId);
 		l_requestData.setUserName(p_username);
@@ -1680,7 +1685,7 @@ public class RestManager implements IGradesDb {
 	}
 
 	public HashMap<String,GroupProxy> createCourseGroup(String p_course, SectionInfo p_section, String p_groupSetId) {
-		log.info("In createCourseGroup()");
+		log.trace("In createCourseGroup()");
 		HashMap<String,GroupProxy> l_list = new HashMap<String, GroupProxy>();
 		GroupHandler l_groupHandler = new GroupHandler();
 		RequestData l_requestData = new RequestData();
@@ -1704,20 +1709,20 @@ public class RestManager implements IGradesDb {
 	}
 
 	public int deleteCourseGroup(String p_courseId, String p_sectionId) {
-		log.info("In deleteCourseGroup()");
+		log.trace("In deleteCourseGroup()");
 		GroupHandler l_groupHandler = new GroupHandler();
 
 		RequestData l_requestData = new RequestData();
 		l_requestData.setCourseId(p_courseId);
 		l_requestData.setGroupId(p_sectionId);
 		HTTPStatus l_status = l_groupHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
-		log.info("Group Deleted");
+		log.debug("Group Deleted");
 
 		return l_status.getStatus();
 	}
 
 	public void createGroupMembership(String p_courseName, ICEnrollment p_enrollment, HashMap<String, GroupProxy> l_groups) {
-		log.info("In updateGroup()");
+		log.trace("In createGroupMembership1()");
 
 		GroupHandler l_groupHandler = new GroupHandler();
 		RequestData l_requestData = new RequestData();
@@ -1729,7 +1734,7 @@ public class RestManager implements IGradesDb {
 	}
 
 	public void createGroupMembership(ICBBGroup p_group) {
-		log.info("In updateGroup()");
+		log.trace("In createGroupMembership2()");
 
 		GroupHandler l_groupHandler = new GroupHandler();
 		RequestData l_requestData = new RequestData();
@@ -2494,14 +2499,14 @@ public class RestManager implements IGradesDb {
 	}
 
 
-	public HTTPStatus createCourseCopy(CourseInfo p_info) {
-		log.info("In createCourseCopy()");
+	public HTTPStatus createCourseCopy(CourseInfo p_info, ICNode p_node) {
+		log.trace("In createCourseCopy()");
 
 		CourseCopyHandler l_copyHandler = new CourseCopyHandler();
 
 		RequestData l_requestData = new RequestData();
 		l_requestData.setCourseId(p_info.getCourseTemplateId());
-		log.info("  COURSE ID: " + p_info.getCourseTemplateId());
+		log.debug("  COURSE ID: " + p_info.getCourseTemplateId());
 
 		checkToken();
 		HTTPStatus l_response = l_copyHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, p_info.getTargetCourseId());
@@ -2524,21 +2529,48 @@ public class RestManager implements IGradesDb {
 				}
 			} while (l_task != null && l_task.getStatus() != null);
 
-			// Now update the Course Name and Description
+			// Now update the Course Name and Description and Term
 			l_task.getCourse().setName(p_info.getTargetCourseName());
 			CourseHandler l_courseHandler = new CourseHandler();
 			l_requestData.setCourseId(l_task.getCourse().getId());
 			l_task.getCourse().getAvailability().setAvailable("Yes");
+
+			// Need to set the Term of the course based on Course Duration
+			String l_termId = getWaukeshaTerm(p_info);
+			if (l_termId != null) {
+				l_task.getCourse().setTermId(l_termId);
+			}
 			l_courseHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_task.getCourse());
 
+			// Need to Associate the course to the Correct Node based on School Name
+			this.associatedNode(l_task.getCourse().getId(),p_node);
 		}
 
 		return l_response;
 	}
 
 
+	private void associatedNode(String p_courseId, ICNode p_node) {
+		log.trace("In assocoateNode()");
+		log.debug ("Course ID: " + p_courseId);
+		if (p_node != null) {
+			String l_nodeExternalId = p_node.getPrefix()+"-"+p_node.getSchoolValue();
+			log.debug ("Node: " + l_nodeExternalId);
+			// Now Find the Node based on School Code
+			NodeHandler l_nodeHandler = new NodeHandler();
+			RequestData l_requestData = new RequestData();
+			l_requestData.setNodeExternalId(l_nodeExternalId);
+			NodeProxy l_node = l_nodeHandler.getClientData2(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
+			if (l_node != null) {
+				l_requestData.setCourseId(p_courseId);
+				l_requestData.setNodeId(l_node.getId());
+				l_nodeHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
+			}
+		}
+	}
+
 	public int updateCourse(UpdateCourseInfo p_info) {
-		log.info("In updateCourse()");
+		log.trace("In updateCourse()");
 
 
 		RequestData l_requestData = new RequestData();
@@ -2903,6 +2935,129 @@ public class RestManager implements IGradesDb {
 		}
 		return l_selected;
 	}
+
+
+	private String getWaukeshaTerm(CourseInfo p_info) {
+		log.trace("In getWaukeshaTerm: ");
+		// Construct the Term External ID
+		String l_termExternalId = null;
+		if (p_info.getCourseDuration().equalsIgnoreCase("year")) {
+			l_termExternalId = p_info.getEndYear()+"FY";
+		} else if  (p_info.getCourseDuration().equalsIgnoreCase("semester1")) {
+			l_termExternalId = p_info.getEndYear()+"S1";
+		} else if  (p_info.getCourseDuration().equalsIgnoreCase("semester2")) {
+			l_termExternalId = p_info.getEndYear()+"S2";
+		}
+		log.debug("External Term ID: " + l_termExternalId);
+
+		String l_termId = null;
+		if (l_termExternalId != null) {
+
+			// Get The Terms
+			List<TermProxy> l_terms = this.getTerms();
+
+			// Now find the Term
+			for (TermProxy l_term: l_terms) {
+				if (l_term.getExternalId().equals(l_termExternalId)) {
+					l_termId = l_term.getId();
+					log.debug("FOUND TERM: " + l_termId);
+				}
+			}
+		}
+
+		return l_termId;
+	}
+	private String translateSchool(String p_school) {
+		String translatedSchoolCode;
+		switch (p_school) {
+		case "0450":
+			translatedSchoolCode = "AHP";
+			break;
+		case "0020":
+			translatedSchoolCode = "BAN";
+			break;
+		case "0060":
+			translatedSchoolCode = "BET";
+			break;
+		case "0100":
+			translatedSchoolCode = "BUT";
+			break;
+		case "0470":
+			translatedSchoolCode = "eAchieve";
+			break;
+		case "0150":
+			translatedSchoolCode = "eAchieve";
+			break;
+		case "0490":
+			translatedSchoolCode = "EAS";
+			break;
+		case "0160":
+			translatedSchoolCode = "HAD";
+			break;
+		case "0140":
+			translatedSchoolCode = "HAW";
+			break;
+		case "0190":
+			translatedSchoolCode = "HEY";
+			break;
+		case "0200":
+			translatedSchoolCode = "HIL";
+			break;
+		case "0210":
+			translatedSchoolCode = "HOR";
+			break;
+		case "0120":
+			translatedSchoolCode = "LES";
+			break;
+		case "0260":
+			translatedSchoolCode = "LOW";
+			break;
+		case "0280":
+			translatedSchoolCode = "MEA";
+			break;
+		case "0290":
+			translatedSchoolCode = "NOR";
+			break;
+		case "0360":
+			translatedSchoolCode = "PRA";
+			break;
+		case "0410":
+			translatedSchoolCode = "ROS";
+			break;
+		case "0460":
+			translatedSchoolCode = "SOU";
+			break;
+		case "0480":
+			translatedSchoolCode = "SUM";
+			break;
+		case "0430":
+			translatedSchoolCode = "EPA";
+			break;
+		case "0400":
+			translatedSchoolCode = "STS";
+			break;
+		case "0131":
+			translatedSchoolCode = "STE";
+			break;
+		case "0560":
+			translatedSchoolCode = "WES";
+			break;
+		case "0110":
+			translatedSchoolCode = "WRC";
+			break;
+		case "0520":
+			translatedSchoolCode = "WRS";
+			break;
+		case "0415":
+			translatedSchoolCode = "WTA";
+			break;
+		default:
+			translatedSchoolCode = "SDW";
+			break;
+		}
+		return translatedSchoolCode;
+	}
+
 
 	public void clearCache() {
 
