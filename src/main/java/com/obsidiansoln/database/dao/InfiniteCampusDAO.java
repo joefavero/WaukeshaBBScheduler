@@ -672,25 +672,35 @@ public class InfiniteCampusDAO {
 	public void updateTemplates(List<ICTemplate> p_templates) {
 		mLog.trace("updateTemplates called ...");
 
-		String updateSql = "update SDWBlackboardSchedulerMasterCourses"
-				+ " set bbCOURSE_ID = :bbCourseId, bbCOURSE_NAME=:bbCourseName, MasterLevel = :masterLevel, MasterSubjectArea = :masterSubjectArea"
-				+ " where  bbMasterID = :bbMasterId";
+		String deleteSql = "delete from SDWBlackboardSchedulerMasterCourses";
 
-		for (ICTemplate l_template : p_templates) {
-			mLog.info("Master ID: " + l_template.getBbMasterId());
-			MapSqlParameterSource params = new MapSqlParameterSource();
-			params.addValue("bbMasterID", l_template.getBbMasterId());
-			params.addValue("bbCourseId", l_template.getBbCourseId());
-			params.addValue("bbCourseName", l_template.getBbCourseName());
-			params.addValue("masterLevel", l_template.getMasterLevel());
-			params.addValue("masterSubjectArea", l_template.getMasterSubjectArea());
-			KeyHolder keyHolder = new GeneratedKeyHolder();
-			Number id = null;
-			try {
-				//id = template.update(updateSql, params, keyHolder);
-			} catch (DataAccessException l_ex) {
-				mLog.error("Database Access Error", l_ex);
+		String insertSql = "insert into SDWBlackboardSchedulerMasterCourses "
+				+ "  (bbCOURSE_ID, bbCOURSE_NAME, MasterLevel, MasterSubjectArea ) "
+				+ " values (:bbCourseId, :bbCourseName, :masterLevel, :masterSubjectArea )";
+
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		Number l_rows = null;
+		try {
+			// First Remove all the Messages
+			l_rows = template.update(deleteSql, params);
+			mLog.info("Number of rows deleted: " + l_rows);
+
+			for (ICTemplate l_template : p_templates) {
+				mLog.info("Master ID: " + l_template.getBbMasterId());
+				mLog.info("Master BB Course ID: " + l_template.getBbCourseId());
+				mLog.info("Master BB Course Name: " + l_template.getBbCourseName());
+				
+				params.addValue("bbCourseId", l_template.getBbCourseId());
+				params.addValue("bbCourseName", l_template.getBbCourseName());
+				params.addValue("masterLevel", l_template.getMasterLevel());
+				params.addValue("masterSubjectArea", l_template.getMasterSubjectArea());
+				KeyHolder keyHolder = new GeneratedKeyHolder();
+				int id = template.update(insertSql, params, keyHolder);
 			}
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			throw new RuntimeException("Rollback");
 		}
 	}
 
@@ -1872,6 +1882,7 @@ public class InfiniteCampusDAO {
 
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
+			throw new RuntimeException("Rollback");
 		}
 	}
 

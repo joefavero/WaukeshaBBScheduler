@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -7,13 +8,13 @@
   	<title>BB Scheduler</title>
   	<base href="/WaukeshaBBScheduler/static/BBSCHEDULER/">
     <script type="module" crossorigin src="./assets/index-CrX5Z5Xn.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DKAlKihQ.css">
+    <script type="module" crossorigin src="./assets/index-CYAMy53U.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CyyiVNy6.css">
   </head>
   <body>
     <div id="root"></div>
   </body>
 </html>
-
 
 
 

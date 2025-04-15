@@ -157,7 +157,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/utilityData", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse putUtiltyData(@RequestBody final UtilityInfo utilityData, HttpServletRequest request) {
-		mLog.trace("In putUtilityData ...");
+		mLog.info("In putUtilityData ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {
