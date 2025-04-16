@@ -135,7 +135,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/utilityData", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getUtilityData(HttpServletRequest request) {
-		mLog.trace("In getUtilityData ...");
+		mLog.info("In getUtilityData ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
