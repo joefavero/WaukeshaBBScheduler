@@ -399,7 +399,8 @@ public class InfiniteCampusDAO {
 				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) and "
 				+ "             (sdws.sectionID is not null) and "
 				+ "             (Cal.endDate is null or Cal.endDate >= GETDATE()) and "
-				+ "             UserAccount.userName is not null";
+				+ "             UserAccount.userName is not null and "
+				+ "             sdws.IsSelected = 1";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICBBEnrollment> bbEnrollments = null;
