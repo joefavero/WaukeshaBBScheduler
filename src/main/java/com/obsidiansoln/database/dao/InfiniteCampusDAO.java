@@ -400,7 +400,7 @@ public class InfiniteCampusDAO {
 				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) and "
 				+ "             (sdws.sectionID is not null) and "
 				+ "             (Cal.endDate is null or Cal.endDate >= GETDATE()) and "
-				+ "             (Enrollment.endDate is null or Enrollment.endDate > GETDATE()) and "
+				+ "             ((Enrollment.endDate is null or Enrollment.endDate > GETDATE()) and Enrollment.startDate <= GETDATE()) and "
 				+ "             UserAccount.userName is not null and "
 				+ "             sdws.IsSelected = 1";
 
