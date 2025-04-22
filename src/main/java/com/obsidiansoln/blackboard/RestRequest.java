@@ -65,8 +65,8 @@ public abstract class RestRequest {
 			log.debug("Request Headers: " + headers.toString());
 
 			HttpEntity<String> request = new HttpEntity<String>(body, headers);
-			log.info("URI: " + uri);
-			log.info("Request Body: " + request.getBody());
+			log.debug("URI: " + uri);
+			log.debug("Request Body: " + request.getBody());
 
 			ResponseEntity<String> response = restTemplate.exchange(uri, method, request, String.class);
 
@@ -179,6 +179,4 @@ public abstract class RestRequest {
 			return (null);
 		}
 	}
-	
-
 }
