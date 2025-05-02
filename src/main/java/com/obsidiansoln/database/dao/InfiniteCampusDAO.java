@@ -138,31 +138,31 @@ public class InfiniteCampusDAO {
 				+ " (select distinct count(*) "
 				+ " From SDWBlackboardSchedulerSISCourseSections "
 				+ " where SDWBlackboardSchedulerSISCourseSections.courseID = Course.courseID) as linkedCount, "
-				+ " (select distinct count(*)"
-				+ " From Section"
-				+ " Inner Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID"
-				+ " Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1"
-				+ " Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear"
+				+ " (select distinct count(*) "
+				+ " From Section "
+				+ " Inner Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID "
+				+ " Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
+				+ " Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear "
 				+ " where Section.courseID = Course.courseID "
-				+ " and Trial.active = 1 and schoolyear.active=1) as sectionCount,"
+				+ " and Trial.active = 1 and schoolyear.active=1) as sectionCount, "
 				+ " a.bbCourseID as bbCourseId, "
 				+ " a.bbCOURSE_ID as blackboardId, "
 				+ " a.bbCOURSE_NAME as blackboardName "
 				+ " from Section with (nolock) "
-				+ " left join Course with (nolock) on Course.courseID = Section.courseID"
-				+ " left join Calendar with (nolock) on Calendar.calendarID = Course.calendarID"
+				+ " left join Course with (nolock) on Course.courseID = Section.courseID "
+				+ " left join Calendar with (nolock) on Calendar.calendarID = Course.calendarID "
 				+ " left join School with (nolock) on School.schoolID = Calendar.schoolID "
-				+ " left join Teacher with (nolock) on Teacher.sectionID = Section.sectionID"
+				+ " left join Teacher with (nolock) on Teacher.sectionID = Section.sectionID "
 				+ " left join UserAccount with (nolock) on UserAccount.personID = Teacher.personID "
-				+ " left join SDWBlackboardSchedulerSISCourseSections b with (nolock) on b.sectionID = Section.sectionID"
-				+ " left join SDWBlackboardSchedulerBBCourses a with (nolock) on a.bbCourseId = b.bbCourseID"
-				+ " where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)"
-				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0"
-				+ " and (select distinct count(*)"
-				+ "				 From Section"
-				+ "				 Inner Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID"
-				+ "				 Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1"
-				+ "				 Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear"
+				+ " left join SDWBlackboardSchedulerSISCourseSections b with (nolock) on b.sectionID = Section.sectionID "
+				+ " left join SDWBlackboardSchedulerBBCourses a with (nolock) on a.bbCourseId = b.bbCourseID "
+				+ " where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1) "
+				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0 "
+				+ " and (select distinct count(*) "
+				+ "				 From Section "
+				+ "				 Inner Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID "
+				+ "				 Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
+				+ "				 Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear "
 				+ "				 where Section.courseID = Course.courseID "
 				+ "				 and Trial.active = 1 and schoolyear.active=1) > 0";
 
@@ -172,45 +172,80 @@ public class InfiniteCampusDAO {
 		try {
 			if (username.equals("admin")) {
 				courses= template.query(userSQLAdmin, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
+				
+				// Now remove duplicates and add configure Linked Courses
+				HashMap<String, ICCourse> l_courseList = new HashMap<String, ICCourse>();
+				for (ICCourse course : courses) {
+
+					ICCourse l_temp = l_courseList.get(course.getCourseID());
+
+					if (l_temp != null) {
+						if (course.getBbCourseId() != null) {
+							if (l_temp.getLinkedCourses() != null) {
+								l_temp.getLinkedCourses().add(course.getBlackboardName());
+							} else {
+								List<String> l_linkedCourses = new ArrayList<String>();
+								l_linkedCourses.add(course.getBlackboardName());
+								l_temp.setLinkedCourses(l_linkedCourses);
+							}
+						}
+						l_courseList.put(String.valueOf(course.getCourseID())+course.getTeacherName() , l_temp);
+					} else {
+						if (course.getBbCourseId() != null) {
+							if (course.getLinkedCourses() != null) {
+								course.getLinkedCourses().add(course.getBlackboardName());
+							} else {
+								List<String> l_linkedCourses = new ArrayList<String>();
+								l_linkedCourses.add(course.getBlackboardName());
+								course.setLinkedCourses(l_linkedCourses);
+							}
+						}
+						l_courseList.put(String.valueOf(course.getCourseID())+course.getTeacherName(), course);
+					}
+				}
+				// Iterating HashMap through for loop
+				for (Map.Entry<String, ICCourse> set : l_courseList.entrySet()) {
+					l_returnList.add(set.getValue());
+				}
+				return l_returnList;
 			} else {
 				params.addValue("username", username);
 				courses= template.query(userSQL, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
-			}
+				
+				// Now remove duplicates and add configure Linked Courses
+				HashMap<Long, ICCourse> l_courseList = new HashMap<Long, ICCourse>();
+				for (ICCourse course : courses) {
 
-			// Now remove duplicates and add configure Linked Courses
-			HashMap<Long, ICCourse> l_courseList = new HashMap<Long, ICCourse>();
-			for (ICCourse course : courses) {
+					ICCourse l_temp = l_courseList.get(course.getCourseID());
 
-				ICCourse l_temp = l_courseList.get(course.getCourseID());
-
-				if (l_temp != null) {
-					if (course.getBbCourseId() != null) {
-						if (l_temp.getLinkedCourses() != null) {
-							l_temp.getLinkedCourses().add(course.getBlackboardName());
-						} else {
-							List<String> l_linkedCourses = new ArrayList<String>();
-							l_linkedCourses.add(course.getBlackboardName());
-							l_temp.setLinkedCourses(l_linkedCourses);
+					if (l_temp != null) {
+						if (course.getBbCourseId() != null) {
+							if (l_temp.getLinkedCourses() != null) {
+								l_temp.getLinkedCourses().add(course.getBlackboardName());
+							} else {
+								List<String> l_linkedCourses = new ArrayList<String>();
+								l_linkedCourses.add(course.getBlackboardName());
+								l_temp.setLinkedCourses(l_linkedCourses);
+							}
 						}
-					}
-					l_courseList.put(l_temp.getCourseID(), l_temp);
-				} else {
-					if (course.getBbCourseId() != null) {
-						if (course.getLinkedCourses() != null) {
-							course.getLinkedCourses().add(course.getBlackboardName());
-						} else {
-							List<String> l_linkedCourses = new ArrayList<String>();
-							l_linkedCourses.add(course.getBlackboardName());
-							course.setLinkedCourses(l_linkedCourses);
+						l_courseList.put(l_temp.getCourseID(), l_temp);
+					} else {
+						if (course.getBbCourseId() != null) {
+							if (course.getLinkedCourses() != null) {
+								course.getLinkedCourses().add(course.getBlackboardName());
+							} else {
+								List<String> l_linkedCourses = new ArrayList<String>();
+								l_linkedCourses.add(course.getBlackboardName());
+								course.setLinkedCourses(l_linkedCourses);
+							}
 						}
+						l_courseList.put(course.getCourseID(), course);
 					}
-					l_courseList.put(course.getCourseID(), course);
 				}
-			}
-
-			// Iterating HashMap through for loop
-			for (Map.Entry<Long, ICCourse> set : l_courseList.entrySet()) {
-				l_returnList.add(set.getValue());
+				// Iterating HashMap through for loop
+				for (Map.Entry<Long, ICCourse> set : l_courseList.entrySet()) {
+					l_returnList.add(set.getValue());
+				}
 			}
 
 		} catch (DataAccessException l_ex) {
@@ -327,34 +362,51 @@ public class InfiniteCampusDAO {
 		MapSqlParameterSource params = new MapSqlParameterSource();
 
 		List<ICBBSection> bbSections = null;
-		HashMap<Long, ICBBSection> l_sectionList = new HashMap<Long, ICBBSection>();
+		HashMap<String, ICBBSection> l_sectionList = new HashMap<String, ICBBSection>();
 		try {
 			if (username.equals("admin")) {
 				params.addValue("courseid", courseId);
 				bbSections= template.query(sqlAdmin, params, new BeanPropertyRowMapper<ICBBSection>(ICBBSection.class));
+				for (ICBBSection bbSection : bbSections) {
+					ICBBSection l_temp = l_sectionList.get(Long.valueOf(bbSection.getSectionID()));
+
+					if (l_temp != null) {
+						if (l_temp.getTermName() != null) {
+							l_temp.setTermName (l_temp.getTermName().concat("/"+bbSection.getTermName()));
+						}
+
+						l_sectionList.put(String.valueOf(bbSection.getSectionID())+bbSection.getTeacherName(), l_temp);
+					} else {
+						l_sectionList.put(String.valueOf(bbSection.getSectionID())+bbSection.getTeacherName(), bbSection);
+					}
+				}
+
+				// Iterating HashMap through for loop
+				for (Map.Entry<String, ICBBSection> set : l_sectionList.entrySet()) {
+					l_returnList.add(set.getValue());
+				}
 			} else {
 				params.addValue("courseid", courseId);
 				params.addValue("username", username);
 				bbSections= template.query(sql, params, new BeanPropertyRowMapper<ICBBSection>(ICBBSection.class));
-			}
+				for (ICBBSection bbSection : bbSections) {
+					ICBBSection l_temp = l_sectionList.get(Long.valueOf(bbSection.getSectionID()));
 
-			for (ICBBSection bbSection : bbSections) {
-				ICBBSection l_temp = l_sectionList.get(Long.valueOf(bbSection.getSectionID()));
+					if (l_temp != null) {
+						if (l_temp.getTermName() != null) {
+							l_temp.setTermName (l_temp.getTermName().concat("/"+bbSection.getTermName()));
+						}
 
-				if (l_temp != null) {
-					if (l_temp.getTermName() != null) {
-						l_temp.setTermName (l_temp.getTermName().concat("/"+bbSection.getTermName()));
+						l_sectionList.put(String.valueOf(bbSection.getSectionID()), l_temp);
+					} else {
+						l_sectionList.put(String.valueOf(bbSection.getSectionID()), bbSection);
 					}
-
-					l_sectionList.put(Long.valueOf(bbSection.getSectionID()), l_temp);
-				} else {
-					l_sectionList.put(Long.valueOf(bbSection.getSectionID()), bbSection);
 				}
-			}
 
-			// Iterating HashMap through for loop
-			for (Map.Entry<Long, ICBBSection> set : l_sectionList.entrySet()) {
-				l_returnList.add(set.getValue());
+				// Iterating HashMap through for loop
+				for (Map.Entry<String, ICBBSection> set : l_sectionList.entrySet()) {
+					l_returnList.add(set.getValue());
+				}
 			}
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
@@ -546,34 +598,51 @@ public class InfiniteCampusDAO {
 		MapSqlParameterSource params = new MapSqlParameterSource();
 
 		List<ICSection> sections = null;
-		HashMap<Long, ICSection> l_sectionList = new HashMap<Long, ICSection>();
+		HashMap<String, ICSection> l_sectionList = new HashMap<String, ICSection>();
 		try {
 			if (username.equals("admin")) {
 				params.addValue("courseid", courseId);
 				sections= template.query(sqlAdmin, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
+				for (ICSection section : sections) {
+					ICSection l_temp = l_sectionList.get(section.getSectionID());
+
+					if (l_temp != null) {
+						if (l_temp.getTermName() != null) {
+							l_temp.setTermName (l_temp.getTermName().concat("/"+section.getTermName()));
+						}
+
+						l_sectionList.put(String.valueOf(section.getSectionID())+section.getTeacherNumber(), l_temp);
+					} else {
+						l_sectionList.put(String.valueOf(section.getSectionID())+section.getTeacherNumber(), section);
+					}
+				}
+
+				// Iterating HashMap through for loop
+				for (Map.Entry<String, ICSection> set : l_sectionList.entrySet()) {
+					l_returnList.add(set.getValue());
+				}
 			} else {
 				params.addValue("courseid", courseId);
 				params.addValue("username", username);
 				sections= template.query(sql, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
-			}
+				for (ICSection section : sections) {
+					ICSection l_temp = l_sectionList.get(section.getSectionID());
 
-			for (ICSection section : sections) {
-				ICSection l_temp = l_sectionList.get(section.getSectionID());
+					if (l_temp != null) {
+						if (l_temp.getTermName() != null) {
+							l_temp.setTermName (l_temp.getTermName().concat("/"+section.getTermName()));
+						}
 
-				if (l_temp != null) {
-					if (l_temp.getTermName() != null) {
-						l_temp.setTermName (l_temp.getTermName().concat("/"+section.getTermName()));
+						l_sectionList.put(String.valueOf(l_temp.getSectionID()), l_temp);
+					} else {
+						l_sectionList.put(String.valueOf(section.getSectionID()), section);
 					}
-
-					l_sectionList.put(l_temp.getSectionID(), l_temp);
-				} else {
-					l_sectionList.put(section.getSectionID(), section);
 				}
-			}
 
-			// Iterating HashMap through for loop
-			for (Map.Entry<Long, ICSection> set : l_sectionList.entrySet()) {
-				l_returnList.add(set.getValue());
+				// Iterating HashMap through for loop
+				for (Map.Entry<String, ICSection> set : l_sectionList.entrySet()) {
+					l_returnList.add(set.getValue());
+				}
 			}
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
