@@ -153,7 +153,7 @@ public class BBSchedulerController {
 
 									// TBD Testing - Will be removed for Production
 									//l_userMode.setMode("teacher");
-									//l_userMode.setUserId("pbowen"); 
+									//l_userMode.setUserId("lpotter"); 
 									
 									
 									mv.addObject("userMode", mapper.writeValueAsString(l_userMode));

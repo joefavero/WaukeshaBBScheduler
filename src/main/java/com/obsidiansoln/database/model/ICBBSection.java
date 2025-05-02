@@ -6,6 +6,7 @@ package com.obsidiansoln.database.model;
 
 public class ICBBSection {
 	private int sectionID;
+	private Long courseId;
 	private String courseName;
 	private String sectionNumber;
 	private String termName;
@@ -19,6 +20,12 @@ public class ICBBSection {
 	}
 	public void setSectionID(int sectionID) {
 		this.sectionID = sectionID;
+	}
+	public Long getCourseId() {
+		return courseId;
+	}
+	public void setCourseId(Long courseId) {
+		this.courseId = courseId;
 	}
 	public String getCourseName() {
 		return courseName;

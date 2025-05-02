@@ -40,6 +40,7 @@ import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
 import com.obsidiansoln.database.model.ICStudent;
 import com.obsidiansoln.database.model.ICTeacher;
+import com.obsidiansoln.database.model.ICTeacherList;
 import com.obsidiansoln.database.model.ICTemplate;
 import com.obsidiansoln.database.model.ICUser;
 import com.obsidiansoln.database.model.UpdateCourseInfo;
@@ -172,7 +173,7 @@ public class InfiniteCampusDAO {
 		try {
 			if (username.equals("admin")) {
 				courses= template.query(userSQLAdmin, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
-				
+
 				// Now remove duplicates and add configure Linked Courses
 				HashMap<String, ICCourse> l_courseList = new HashMap<String, ICCourse>();
 				for (ICCourse course : courses) {
@@ -211,7 +212,7 @@ public class InfiniteCampusDAO {
 			} else {
 				params.addValue("username", username);
 				courses= template.query(userSQL, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
-				
+
 				// Now remove duplicates and add configure Linked Courses
 				HashMap<Long, ICCourse> l_courseList = new HashMap<Long, ICCourse>();
 				for (ICCourse course : courses) {
@@ -308,7 +309,8 @@ public class InfiniteCampusDAO {
 		mLog.trace("In getBBCoursesByUsername ...");
 		List<ICBBSection> l_returnList = new ArrayList<ICBBSection>();
 		String sql = "select distinct sdws.sectionID as sectionID, "
-				+ "					Course.name as courseName, "
+				+ "			 Course.courseID as courseId, "
+				+ "			 Course.name as courseName, "
 				+ "          Section.number as sectionNumber, "
 				+ "          UserAccount.username as teacherName, "
 				+ "          Term.name as termName, "
@@ -334,7 +336,8 @@ public class InfiniteCampusDAO {
 				+ "         and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1)";
 
 		String sqlAdmin = "select distinct sdws.sectionID as sectionID, "
-				+ "					Course.name as courseName, "
+				+ "			 Course.courseID as courseId, "
+				+ "			 Course.name as courseName, "
 				+ "          Section.number as sectionNumber, "
 				+ "          UserAccount.username as teacherName, "
 				+ "          Term.name as termName, "
@@ -378,6 +381,10 @@ public class InfiniteCampusDAO {
 						l_sectionList.put(String.valueOf(bbSection.getSectionID())+bbSection.getTeacherName(), l_temp);
 					} else {
 						l_sectionList.put(String.valueOf(bbSection.getSectionID())+bbSection.getTeacherName(), bbSection);
+						
+						// Now Update the Teacher Count
+						List<ICTeacherList> l_teacherList = this.getTeacherList(bbSection.getCourseId());
+						bbSection.setTeacherNumber(Long.valueOf(l_teacherList.size()));
 					}
 				}
 
@@ -531,7 +538,6 @@ public class InfiniteCampusDAO {
 				+ " Section.sectionID, "
 				+ " Section.number as sectionNumber,"
 				+ " Section.courseID,"
-				+ " Section.roomID,"
 				+ " Section.teacherPersonID,"
 				+ " Term.name as termName,"
 				+ " [Period].name as period,"
@@ -565,7 +571,6 @@ public class InfiniteCampusDAO {
 				+ " Section.sectionID, "
 				+ " Section.number as sectionNumber,"
 				+ " Section.courseID,"
-				+ " Section.roomID,"
 				+ " Section.teacherPersonID,"
 				+ " Term.name as termName,"
 				+ " [Period].name as period,"
@@ -598,51 +603,42 @@ public class InfiniteCampusDAO {
 		MapSqlParameterSource params = new MapSqlParameterSource();
 
 		List<ICSection> sections = null;
-		HashMap<String, ICSection> l_sectionList = new HashMap<String, ICSection>();
+		HashMap<Long, ICSection> l_sectionList = new HashMap<Long, ICSection>();
 		try {
 			if (username.equals("admin")) {
 				params.addValue("courseid", courseId);
 				sections= template.query(sqlAdmin, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
-				for (ICSection section : sections) {
-					ICSection l_temp = l_sectionList.get(section.getSectionID());
-
-					if (l_temp != null) {
-						if (l_temp.getTermName() != null) {
-							l_temp.setTermName (l_temp.getTermName().concat("/"+section.getTermName()));
-						}
-
-						l_sectionList.put(String.valueOf(section.getSectionID())+section.getTeacherNumber(), l_temp);
-					} else {
-						l_sectionList.put(String.valueOf(section.getSectionID())+section.getTeacherNumber(), section);
-					}
-				}
-
-				// Iterating HashMap through for loop
-				for (Map.Entry<String, ICSection> set : l_sectionList.entrySet()) {
-					l_returnList.add(set.getValue());
-				}
 			} else {
 				params.addValue("courseid", courseId);
 				params.addValue("username", username);
 				sections= template.query(sql, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
-				for (ICSection section : sections) {
-					ICSection l_temp = l_sectionList.get(section.getSectionID());
+			}
 
-					if (l_temp != null) {
-						if (l_temp.getTermName() != null) {
+			for (ICSection section : sections) {
+				ICSection l_temp = l_sectionList.get(section.getSectionID());
+
+				if (l_temp != null) {
+					if (l_temp.getTermName() != null) {
+						if (!l_temp.getTermName().contains(section.getTermName())) {
 							l_temp.setTermName (l_temp.getTermName().concat("/"+section.getTermName()));
 						}
-
-						l_sectionList.put(String.valueOf(l_temp.getSectionID()), l_temp);
-					} else {
-						l_sectionList.put(String.valueOf(section.getSectionID()), section);
 					}
+
+					l_sectionList.put(l_temp.getSectionID(), l_temp);
+				} else {
+					l_sectionList.put(section.getSectionID(), section);
+
+					// Now Update the Teacher Count
+					List<ICTeacherList> l_teacherList = this.getTeacherList(section.getCourseID());
+					section.setTeacherNumber(l_teacherList.size());
 				}
 
-				// Iterating HashMap through for loop
-				for (Map.Entry<String, ICSection> set : l_sectionList.entrySet()) {
-					l_returnList.add(set.getValue());
-				}
+
+			}
+
+			// Iterating HashMap through for loop
+			for (Map.Entry<Long, ICSection> set : l_sectionList.entrySet()) {
+				l_returnList.add(set.getValue());
 			}
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
@@ -676,6 +672,30 @@ public class InfiniteCampusDAO {
 	}
 
 	@Transactional(readOnly=true)
+	public List<ICTeacherList> getTeacherList(Long p_courseId) {
+		mLog.trace("getTeacherList called ...");
+
+		String sql = "select distinct Course.courseID as courseId, Section.teacherPersonID as teacherId, UserAccount.username as username, 'Instructor' as role  "
+				+ " from Section"
+				+ " inner join Course on Course.courseID = Section.courseID "
+				+ " inner join UserAccount on UserAccount.personID=Section.teacherPersonID "
+				+ " where Course.courseID = :courseId";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("courseId", p_courseId);
+		List<ICTeacherList> l_teachers = null;
+
+		try {
+			l_teachers = template.query(sql,params,  new BeanPropertyRowMapper<ICTeacherList>(ICTeacherList.class));
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+
+		return l_teachers;
+	}
+
+	@Transactional(readOnly=true)
 	public Long getPersonId (String p_username) {
 		mLog.trace("getPersonId called ...");
 
@@ -702,13 +722,7 @@ public class InfiniteCampusDAO {
 				+ " inner join [Identity] on [Identity].personID = Roster.personID"
 				+ " inner join UserAccount on UserAccount.personID = Roster.personID"
 				+ " where Roster.sectionID in (:sections)"
-				+ " and (Roster.endDate is null or Roster.endDate > GETDATE())"
-				+ " UNION"
-				+ " select Distinct UserAccount.username, Section.teacherPersonID as personId, Section.sectionID as sectionId,"
-				+ "	 'Instructor' as role from Section"
-				+ "	 inner join UserAccount on UserAccount.personID = Section.teacherPersonID"
-				+ "	 where Section.sectionID in (:sections)";
-
+				+ " and (Roster.endDate is null or Roster.endDate > GETDATE())";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		params.addValue("sections", sectionList);
@@ -762,7 +776,7 @@ public class InfiniteCampusDAO {
 				mLog.info("Master ID: " + l_template.getBbMasterId());
 				mLog.info("Master BB Course ID: " + l_template.getBbCourseId());
 				mLog.info("Master BB Course Name: " + l_template.getBbCourseName());
-				
+
 				params.addValue("bbCourseId", l_template.getBbCourseId());
 				params.addValue("bbCourseName", l_template.getBbCourseName());
 				params.addValue("masterLevel", l_template.getMasterLevel());

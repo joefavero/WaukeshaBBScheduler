@@ -52,6 +52,7 @@ import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
 import com.obsidiansoln.database.model.ICStudent;
 import com.obsidiansoln.database.model.ICTeacher;
+import com.obsidiansoln.database.model.ICTeacherList;
 import com.obsidiansoln.database.model.ICTemplate;
 import com.obsidiansoln.database.model.ICUser;
 import com.obsidiansoln.database.model.UpdateCourseInfo;
@@ -751,7 +752,7 @@ public class RESTController {
 							CourseProxy l_course = l_manager.getCourseByName(courseInfo.getCourseTemplateId());
 							if (l_course != null) {
 								courseInfo.setCourseTemplateId(l_course.getId());
-								
+
 								// Get Hierarchy Node
 								ICNode l_node = dao.getNode(courseInfo.getSchoolName());
 								l_manager.createCourseCopy(courseInfo, l_node);
@@ -787,6 +788,23 @@ public class RESTController {
 								// Create Enrollments In New Course
 								List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(courseInfo.getSections());
 
+								// Add In Extra Teachers
+								List<ICTeacherList> l_teacherList = null;
+								for (SectionInfo l_sec : l_sectionInfoList) {
+									l_teacherList = dao.getTeacherList(l_sec.getCourseId());
+									mLog.info("Number of Teachers Found: " + l_teacherList.size());
+									for (ICTeacherList l_teacher : l_teacherList) {
+										ICEnrollment l_enrollment = new ICEnrollment();
+										l_enrollment.setPersonId(l_teacher.getTeacherId());
+										l_enrollment.setUsername(l_teacher.getUsername());
+										l_enrollment.setRole(l_teacher.getRole());
+										l_enrollment.setSectionId(String.valueOf(l_sec.getSectionId()));
+										l_enrollments.add(l_enrollment);
+										
+									}
+								}
+
+								
 								// Test Async to increase Performance
 								ArrayList<CompletableFuture<List<String>>> data = new ArrayList<CompletableFuture<List<String>>>();
 								List<SeparatedCourses> l_reportList = new ArrayList<SeparatedCourses>();
