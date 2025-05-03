@@ -791,8 +791,8 @@ public class RESTController {
 								// Add In Extra Teachers
 								List<ICTeacherList> l_teacherList = null;
 								for (SectionInfo l_sec : l_sectionInfoList) {
-									l_teacherList = dao.getTeacherList(l_sec.getCourseId());
-									mLog.info("Number of Teachers Found: " + l_teacherList.size());
+									l_teacherList = dao.getTeacherList(l_sec.getCourseId(), l_sec.getSectionNumber());
+					
 									for (ICTeacherList l_teacher : l_teacherList) {
 										ICEnrollment l_enrollment = new ICEnrollment();
 										l_enrollment.setPersonId(l_teacher.getTeacherId());
@@ -1032,6 +1032,7 @@ public class RESTController {
 			List<ICBBEnrollment> l_enrollments = dao.getBBEnrollments();
 			mLog.info("Number of Enrollments: " + l_enrollments.size());
 
+			
 			List<SnapshotFileInfo> l_files = l_manager.createEnrollmentFile(l_enrollments);
 			for (SnapshotFileInfo l_file:l_files) {
 				try {

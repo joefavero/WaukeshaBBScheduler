@@ -38,6 +38,7 @@ import com.obsidiansoln.database.model.ICPerson;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
+import com.obsidiansoln.database.model.ICStorage;
 import com.obsidiansoln.database.model.ICStudent;
 import com.obsidiansoln.database.model.ICTeacher;
 import com.obsidiansoln.database.model.ICTeacherList;
@@ -383,7 +384,7 @@ public class InfiniteCampusDAO {
 						l_sectionList.put(String.valueOf(bbSection.getSectionID())+bbSection.getTeacherName(), bbSection);
 						
 						// Now Update the Teacher Count
-						List<ICTeacherList> l_teacherList = this.getTeacherList(bbSection.getCourseId());
+						List<ICTeacherList> l_teacherList = this.getTeacherList(bbSection.getCourseId(), Integer.valueOf(bbSection.getSectionNumber()));
 						bbSection.setTeacherNumber(Long.valueOf(l_teacherList.size()));
 					}
 				}
@@ -425,23 +426,11 @@ public class InfiniteCampusDAO {
 	@Transactional(readOnly=true)
 	public List<ICBBEnrollment> getBBEnrollments() {
 		mLog.info("In getBBEnrollments ...");
-		String sql = "select sdw.bbCourseID as bbCourseId, "
-				+ " sdw.bbCOURSE_ID as courseId,"
-				+ " sdws.sectionID as sectionId,"
-				+ " Roster.personID as personId,"
-				+ " UserAccount.username as userName"
-				+ " from SDWBlackboardSchedulerBbCourses sdw"
-				+ "				left join SDWBlackboardSchedulerSISCourseSections sdws on sdws.bbCourseID=sdw.bbCourseID"
-				+ "        left join Roster on Roster.sectionID = sdws.sectionID"
-				+ "        left join Course on Course.courseID = sdws.courseID"
-				+ "        left join Section on Section.sectionID = Roster.sectionID"
-				+ "				left join [Identity] on [Identity].personID = Roster.personID"
-				+ "				left join UserAccount on UserAccount.personID = Roster.personID"
-				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) and sdws.sectionID is not null";
 
 		String sql2 = "select sdw.bbCourseID as bbCourseId,"
 				+ " sdw.bbCOURSE_ID as courseId,"
 				+ " sdws.sectionID as sectionId,"
+				+ " Section.number as sectionNumber, "
 				+ " Roster.personID as personId,"
 				+ " Person.studentNumber as studentNumber,"
 				+ " UserAccount.username as userName,"
@@ -467,7 +456,26 @@ public class InfiniteCampusDAO {
 		List<ICBBEnrollment> bbEnrollments = null;
 		try {
 			bbEnrollments= template.query(sql2, params, new BeanPropertyRowMapper<ICBBEnrollment>(ICBBEnrollment.class));
-
+			
+			// Now we need to add extra students and extra teacher
+			List<ICBBEnrollment> l_enrollments = this.getExtraEnrollments();
+			for (ICBBEnrollment l_enrollment : l_enrollments) {
+		
+				if (l_enrollment.getRole().equals("T")) {
+					l_enrollment.setRole("Instructor");
+				} else if (l_enrollment.getRole().equals("S")) {
+					l_enrollment.setRole("Student");
+				}
+				bbEnrollments.add(l_enrollment);
+			}
+			mLog.info("Number of Extra Enrollment: " + l_enrollments.size());
+			
+			// Now we need to add the Instructors
+			List<ICBBEnrollment> l_teacherEnrollments = this.getTeacherEnrollments();
+			for (ICBBEnrollment l_enrollment : l_teacherEnrollments) {
+				bbEnrollments.add(l_enrollment);
+			}
+			mLog.info("Number of Teacher Enrollment: " + l_enrollments.size());
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
 			return null;
@@ -475,6 +483,61 @@ public class InfiniteCampusDAO {
 		return bbEnrollments;
 	}
 
+	@Transactional(readOnly=true)
+	public List<ICBBEnrollment> getExtraEnrollments() {
+		mLog.info("In getExtraEnrollments ...");
+
+		String sql = "select distinct sdwp.personID as personId, "
+				+ "          sdwc.bbCOURSE_ID as courseId, "
+				+ "          Person.studentNumber as studentNumber, "
+				+ "          sdwp.personType as role "
+				+ "				  from SDWBlackboardSchedulerSISCoursePersons sdwp "
+				+ "				  left join SDWBlackboardSchedulerBBCourses sdwc on sdwc.bbCourseId=sdwp.bbCourseID "
+				+ "				  left join UserAccount on UserAccount.personID = sdwp.personID "
+				+ "          left join Person on Person.personID = sdwp.coursePersonID "
+				+ "          left join Calendar on Calendar.calendarID=sdwc.calendarID "
+				+ "				  where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1) and "
+				+ "             UserAccount.isSAMLAccount=1";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICBBEnrollment> bbEnrollments = null;
+		try {
+			bbEnrollments= template.query(sql, params, new BeanPropertyRowMapper<ICBBEnrollment>(ICBBEnrollment.class));
+
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return bbEnrollments;
+	}
+	
+	@Transactional(readOnly=true)
+	public List<ICBBEnrollment> getTeacherEnrollments() {
+		mLog.info("In getTeacherEnrollments ...");
+
+		String sql = "select distinct sdwc.bbCOURSE_ID as courseId, "
+				+ "      Section.teacherPersonID as personId, "
+				+ "      Person.studentNumber as studentNumber, "
+				+ "      'Instructor' as role "
+				+ "   from SDWBlackboardSchedulerSISCourseSections sdws"
+				+ "     left join SDWBlackboardSchedulerBBCourses sdwc on sdwc.bbCourseId=sdws.bbCourseId"
+				+ "     left join Section on Section.sectionID=sdws.sectionID"
+				+ "     left join Person on Person.personID = Section.teacherPersonID"
+				+ "     left join UserAccount on UserAccount.personID = Person.personID"
+				+ "   where Person.studentNumber is not null and UserAccount.isSAMLAccount=1";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICBBEnrollment> bbEnrollments = null;
+		try {
+			bbEnrollments= template.query(sql, params, new BeanPropertyRowMapper<ICBBEnrollment>(ICBBEnrollment.class));
+
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return bbEnrollments;
+	}
+	
 	@Transactional(readOnly=true)
 	public List<ICBBGroup> getBBGroups() {
 		mLog.info("In getBBGroups ...");
@@ -629,7 +692,7 @@ public class InfiniteCampusDAO {
 					l_sectionList.put(section.getSectionID(), section);
 
 					// Now Update the Teacher Count
-					List<ICTeacherList> l_teacherList = this.getTeacherList(section.getCourseID());
+					List<ICTeacherList> l_teacherList = this.getTeacherList(section.getCourseID(), section.getSectionNumber());
 					section.setTeacherNumber(l_teacherList.size());
 				}
 
@@ -672,17 +735,18 @@ public class InfiniteCampusDAO {
 	}
 
 	@Transactional(readOnly=true)
-	public List<ICTeacherList> getTeacherList(Long p_courseId) {
+	public List<ICTeacherList> getTeacherList(Long p_courseId, int p_sectionNumber) {
 		mLog.trace("getTeacherList called ...");
 
 		String sql = "select distinct Course.courseID as courseId, Section.teacherPersonID as teacherId, UserAccount.username as username, 'Instructor' as role  "
 				+ " from Section"
 				+ " inner join Course on Course.courseID = Section.courseID "
 				+ " inner join UserAccount on UserAccount.personID=Section.teacherPersonID "
-				+ " where Course.courseID = :courseId";
+				+ " where Course.courseID = :courseId and Section.number = :sectionNumber";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		params.addValue("courseId", p_courseId);
+		params.addValue("sectionNumber", p_sectionNumber);
 		List<ICTeacherList> l_teachers = null;
 
 		try {

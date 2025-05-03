@@ -9,6 +9,7 @@ public class ICBBEnrollment {
 	private String bbCourseId;
 	private String courseId;
 	private String sectionId;
+	private String sectionNumber;
 	private String personId;
 	private String studentNumber;
 	private String userName;
@@ -31,6 +32,12 @@ public class ICBBEnrollment {
 	public String getSectionId() {
 		return sectionId;
 	}
+	public String getSectionNumber() {
+		return sectionNumber;
+	}
+	public void setSectionNumber(String sectionNumber) {
+		this.sectionNumber = sectionNumber;
+	}
 	public void setSectionId(String sectionId) {
 		this.sectionId = sectionId;
 	}
@@ -47,7 +54,10 @@ public class ICBBEnrollment {
 		this.userName = userName;
 	}
 	public String getRole() {
-		return "Student";
+		if (role == null) {
+			return "Student";
+		}
+		return role;
 	}
 	public void setRole(String role) {
 		this.role = role;
