@@ -38,7 +38,6 @@ import com.obsidiansoln.database.model.ICPerson;
 import com.obsidiansoln.database.model.ICSection;
 import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
-import com.obsidiansoln.database.model.ICStorage;
 import com.obsidiansoln.database.model.ICStudent;
 import com.obsidiansoln.database.model.ICTeacher;
 import com.obsidiansoln.database.model.ICTeacherList;
@@ -128,7 +127,7 @@ public class InfiniteCampusDAO {
 				+ " Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
 				+ " Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear "
 				+ " where Section.courseID = Course.courseID and Section.teacherPersonId = (select personId from UserAccount where username = :username) "
-				+ " and Trial.active = 1 and schoolyear.active=1) > 0";
+				+ " and Trial.active = 1) > 0";
 
 		String userSQLAdmin = "select distinct Course.courseID,"
 				+ " Course.calendarID, "
@@ -166,7 +165,7 @@ public class InfiniteCampusDAO {
 				+ "				 Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
 				+ "				 Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear "
 				+ "				 where Section.courseID = Course.courseID "
-				+ "				 and Trial.active = 1 and schoolyear.active=1) > 0";
+				+ "				 and Trial.active = 1) > 0 and UserAccount.userName is not null";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 
@@ -488,16 +487,29 @@ public class InfiniteCampusDAO {
 		mLog.info("In getExtraEnrollments ...");
 
 		String sql = "select distinct sdwp.personID as personId, "
-				+ "          sdwc.bbCOURSE_ID as courseId, "
-				+ "          Person.studentNumber as studentNumber, "
-				+ "          sdwp.personType as role "
-				+ "				  from SDWBlackboardSchedulerSISCoursePersons sdwp "
-				+ "				  left join SDWBlackboardSchedulerBBCourses sdwc on sdwc.bbCourseId=sdwp.bbCourseID "
-				+ "				  left join UserAccount on UserAccount.personID = sdwp.personID "
-				+ "          left join Person on Person.personID = sdwp.coursePersonID "
-				+ "          left join Calendar on Calendar.calendarID=sdwc.calendarID "
-				+ "				  where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1) and "
-				+ "             UserAccount.isSAMLAccount=1";
+				+ "				          sdwc.bbCOURSE_ID as courseId, "
+				+ "				          prs.studentNumber as studentNumber, "
+				+ "				          sdwp.personType as role "
+				+ "								  from SDWBlackboardSchedulerSISCoursePersons sdwp "
+				+ "								  left join SDWBlackboardSchedulerBBCourses sdwc on sdwc.bbCourseId=sdwp.bbCourseID "
+				+ "								  left join UserAccount on UserAccount.personID = sdwp.personID "
+				+ "				          left join Person prs with (nolock) on UserAccount.personID=prs.personID "
+				+ "				          left join Calendar on Calendar.calendarID=sdwc.calendarID "
+				+ "								  where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1) and "
+				+ "				             UserAccount.isSAMLAccount=1 and sdwp.personType='S' "
+				+ " UNION "
+				+ " select distinct sdwp.personID as personId, "
+				+ "				          sdwc.bbCOURSE_ID as courseId, "
+				+ "                  prs.staffNumber as studentNumber, "
+				+ "				          sdwp.personType as role  "
+				+ "								  from SDWBlackboardSchedulerSISCoursePersons sdwp "
+				+ "								  left join SDWBlackboardSchedulerBBCourses sdwc on sdwc.bbCourseId=sdwp.bbCourseID "
+				+ "								  left join UserAccount on UserAccount.personID = sdwp.personID "
+				+ "				          join Person prs with (nolock) on UserAccount.personID=prs.personID "
+				+ "				       	    and NOT (prs.staffNumber Is Null OR prs.staffNumber='') "
+				+ "				          left join Calendar on Calendar.calendarID=sdwc.calendarID "
+				+ "								  where (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1) and "
+				+ "				             UserAccount.isSAMLAccount=1 and sdwp.personType='T'";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICBBEnrollment> bbEnrollments = null;
@@ -517,7 +529,7 @@ public class InfiniteCampusDAO {
 
 		String sql = "select distinct sdwc.bbCOURSE_ID as courseId, "
 				+ "      Section.teacherPersonID as personId, "
-				+ "      Person.studentNumber as studentNumber, "
+				+ "      Person.staffNumber as studentNumber, "
 				+ "      'Instructor' as role "
 				+ "   from SDWBlackboardSchedulerSISCourseSections sdws"
 				+ "     left join SDWBlackboardSchedulerBBCourses sdwc on sdwc.bbCourseId=sdws.bbCourseId"

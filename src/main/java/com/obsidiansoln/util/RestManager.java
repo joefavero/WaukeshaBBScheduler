@@ -81,9 +81,7 @@ import com.obsidiansoln.blackboard.model.NotInListStatus;
 import com.obsidiansoln.blackboard.model.RequestData;
 import com.obsidiansoln.blackboard.model.StudentData;
 import com.obsidiansoln.blackboard.node.NodeHandler;
-import com.obsidiansoln.blackboard.node.NodeListProxy;
 import com.obsidiansoln.blackboard.node.NodeProxy;
-import com.obsidiansoln.blackboard.node.NodeResponseProxy;
 import com.obsidiansoln.blackboard.templates.TemplateHandler;
 import com.obsidiansoln.blackboard.templates.TemplateListProxy;
 import com.obsidiansoln.blackboard.templates.TemplateProxy;
@@ -2529,7 +2527,7 @@ public class RestManager implements IGradesDb {
 				}
 			} while (l_task != null && l_task.getStatus() != null);
 
-			// Now update the Course Name and Description and Term
+			// Now update the Course Name and Description and Term and Datasource
 			l_task.getCourse().setName(p_info.getTargetCourseName());
 			CourseHandler l_courseHandler = new CourseHandler();
 			l_requestData.setCourseId(l_task.getCourse().getId());
@@ -2540,10 +2538,21 @@ public class RestManager implements IGradesDb {
 			if (l_termId != null) {
 				l_task.getCourse().setTermId(l_termId);
 			}
+			
+			// Set the Datasource to be SIS2.XXXXClass ... where XXXX is the School Year
+			log.info("Getting Datasource: " + "SIS2:"+p_info.getEndYear()+"Class");
+			DatasourceProxy l_datasource = this.getDataSourceByName("SIS2."+p_info.getEndYear()+"Class");
+			if (l_datasource != null) {
+				log.info("Setting Datasource: " + l_datasource.getId());
+				l_task.getCourse().setDataSourceId(l_datasource.getId());
+			}
+			
 			l_courseHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_task.getCourse());
 
 			// Need to Associate the course to the Correct Node based on School Name
 			this.associatedNode(l_task.getCourse().getId(),p_node);
+			
+			
 		}
 
 		return l_response;

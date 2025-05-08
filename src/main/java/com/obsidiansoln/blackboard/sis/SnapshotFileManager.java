@@ -229,7 +229,7 @@ public class SnapshotFileManager {
 							+ "FaCP@$sW0RD4Bb!" + "|" 		        //passwd
 							+ l_staff.getFirstName() + "|"			//firstname
 							+ l_staff.getLastName() + "|"			//lastname
-							+ "N" + "|"								//system_role
+							+ "SELFMANAGER" + "|"				    //system_role
 							+ l_role + "|"							//institution_role
 							+ "enabled" + "|"						//row_status
 							+ "" + "|"		    //student_id
