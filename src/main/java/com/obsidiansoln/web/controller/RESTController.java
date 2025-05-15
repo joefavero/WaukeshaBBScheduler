@@ -35,7 +35,6 @@ import com.obsidiansoln.blackboard.model.SnapshotFileInfo;
 import com.obsidiansoln.blackboard.model.StudentInfo;
 import com.obsidiansoln.blackboard.model.TeacherInfo;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
-import com.obsidiansoln.blackboard.term.TermProxy;
 import com.obsidiansoln.database.dao.InfiniteCampusDAO;
 import com.obsidiansoln.database.model.ICBBCourse;
 import com.obsidiansoln.database.model.ICBBEnrollment;
@@ -792,7 +791,7 @@ public class RESTController {
 								List<ICTeacherList> l_teacherList = null;
 								for (SectionInfo l_sec : l_sectionInfoList) {
 									l_teacherList = dao.getTeacherList(l_sec.getCourseId(), l_sec.getSectionNumber());
-					
+
 									for (ICTeacherList l_teacher : l_teacherList) {
 										ICEnrollment l_enrollment = new ICEnrollment();
 										l_enrollment.setPersonId(l_teacher.getTeacherId());
@@ -800,11 +799,11 @@ public class RESTController {
 										l_enrollment.setRole(l_teacher.getRole());
 										l_enrollment.setSectionId(String.valueOf(l_sec.getSectionId()));
 										l_enrollments.add(l_enrollment);
-										
+
 									}
 								}
 
-								
+
 								// Test Async to increase Performance
 								ArrayList<CompletableFuture<List<String>>> data = new ArrayList<CompletableFuture<List<String>>>();
 								List<SeparatedCourses> l_reportList = new ArrayList<SeparatedCourses>();
@@ -1032,7 +1031,7 @@ public class RESTController {
 			List<ICBBEnrollment> l_enrollments = dao.getBBEnrollments();
 			mLog.info("Number of Enrollments: " + l_enrollments.size());
 
-			
+
 			List<SnapshotFileInfo> l_files = l_manager.createEnrollmentFile(l_enrollments);
 			for (SnapshotFileInfo l_file:l_files) {
 				try {
@@ -1655,24 +1654,53 @@ public class RESTController {
 	}
 
 
-	@RequestMapping(value = "/api/test", method = RequestMethod.GET, produces = "application/json")
+	@RequestMapping(value = "/api/removeBBCourse/{bbCourseId}", method = RequestMethod.DELETE, produces = "application/json")
 	@ResponseBody
-	public String test(HttpServletRequest request) {
-		mLog.info("In test ...");
+	public RestResponse removeBBCourse(@PathVariable("bbCourseId") String bbCourseId, HttpServletRequest request) {
+		mLog.info("In removeBBCourse ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
 
-		ConfigData l_configData;
-		try {
-			l_configData = m_service.getConfigData();
-			RestManager l_manager = new RestManager(l_configData);
+				ICBBCourse l_bbCourse = dao.getBBCourseByBBId(bbCourseId);
+				if (l_bbCourse != null) {
+					// Remove the BB Course
+					l_manager.deleteCourse(l_bbCourse.getCourseId());
+				}
 
-			//l_manager.createCourseGroup("SIS_2425NorthHighSchool_000008298", 123);
+				// Remove SDW Course Entries
+				dao.deleteBBCourses(bbCourseId);
 
-		} catch (Exception e) {
-			return FAILURE;
+				// Remove SDW Section Entries
+				dao.deleteBBSections(bbCourseId);
+
+				// Remove SDW Person Entries
+				dao.deleteBBPersons(bbCourseId);
+
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("Cleanup Data Successfull");
+				l_restResponse.setToast(l_toast);
+
+			} catch (Exception e) {
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On Removing BB Course");
+				l_restResponse.setToast(l_toast);
+			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
 		}
-
-
-		return SUCCESS;
+		return l_restResponse;
 	}
 
 	public String getPersonId(String username) {

@@ -7,6 +7,7 @@ package com.obsidiansoln.database.model;
 public class ICBBCourse {
 	private Long id;
 	private String bbCourseId;
+	private String courseId;
 	private String bbCourseName;
 	private String bbCourseDescription;
 	private String schoolYear;
@@ -29,6 +30,14 @@ public class ICBBCourse {
 
 	public void setBbCourseId(String bbCourseId) {
 		this.bbCourseId = bbCourseId;
+	}
+
+	public String getCourseId() {
+		return courseId;
+	}
+
+	public void setCourseId(String courseId) {
+		this.courseId = courseId;
 	}
 
 	public String getBbCourseName() {

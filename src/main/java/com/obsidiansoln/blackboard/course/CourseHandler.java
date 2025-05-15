@@ -84,7 +84,7 @@ public class CourseHandler implements RestHandler {
 	@Override
 	public HTTPStatus deleteObject(String host, String access_token, RequestData data) {
 		log.trace("In deleteObject()");
-		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH+data.getCourseId(), HttpMethod.DELETE, access_token, ""));
+		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH+ RestConstants.COURSE_COURSENAME_PARAMETER + data.getCourseName(), HttpMethod.DELETE, access_token, ""));
 	}
 
 	public CourseResponseProxy getClientData(String host, String access_token, String p_nextPage, RequestData p_data) {

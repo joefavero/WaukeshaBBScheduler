@@ -1171,12 +1171,13 @@ public class RestManager implements IGradesDb {
 		return l_course;
 	}
 
-	public void deleteCourse(String p_courseId) {
-		log.trace("In deleteCourse()");
+	public void deleteCourse(String p_courseName) {
+		log.info("In deleteCourse()");
+		log.info("Course ID: " + p_courseName);
 
 		CourseHandler l_courseHandler = new CourseHandler();
 		RequestData l_requestData = new RequestData();
-		l_requestData.setCourseId(p_courseId);
+		l_requestData.setCourseName(p_courseName);
 		checkToken();
 		HTTPStatus l_status = l_courseHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 		log.info("Status: " + l_status.getStatus());

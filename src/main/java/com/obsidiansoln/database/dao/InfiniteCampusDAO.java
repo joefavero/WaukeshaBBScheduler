@@ -106,7 +106,7 @@ public class InfiniteCampusDAO {
 				+ " Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1"
 				+ " Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear"
 				+ " where Section.courseID = Course.courseID and Section.teacherPersonId = (select personId from UserAccount where username = :username)"
-				+ " and Trial.active = 1 and schoolyear.active=1) as sectionCount,"
+				+ " and Trial.active = 1) as sectionCount,"
 				+ " a.bbCourseID as bbCourseId, "
 				+ " a.bbCOURSE_ID as blackboardId, "
 				+ " a.bbCOURSE_NAME as blackboardName "
@@ -145,7 +145,7 @@ public class InfiniteCampusDAO {
 				+ " Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
 				+ " Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear "
 				+ " where Section.courseID = Course.courseID "
-				+ " and Trial.active = 1 and schoolyear.active=1) as sectionCount, "
+				+ " and Trial.active = 1 ) as sectionCount, "
 				+ " a.bbCourseID as bbCourseId, "
 				+ " a.bbCOURSE_ID as blackboardId, "
 				+ " a.bbCOURSE_NAME as blackboardName "
@@ -603,6 +603,27 @@ public class InfiniteCampusDAO {
 		}
 		return bbCourse;
 	}
+	
+	@Transactional(readOnly=true)
+	public ICBBCourse getBBCourseByBBId(String bbCourseId) {
+		mLog.trace("In getBBCoursesById ...");
+		mLog.debug("BB COURSE ID: " + bbCourseId);
+		String sql = "select sdw.bbCourseID as bbCourseId, sdw.bbCOURSE_ID as courseId, sdw.bbCOURSE_NAME as courseName, sdw.bbDESCRIPTION as courseDescription, sdw.groupSetId from SDWBlackboardSchedulerBbCourses sdw"
+				+ " where sdw.bbCourseID=:bbCourseid";
+
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("bbCourseid", bbCourseId);
+		ICBBCourse bbCourse = null;
+		try {
+			bbCourse= (ICBBCourse) template.queryForObject(sql, params, new BeanPropertyRowMapper(ICBBCourse.class));
+
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return bbCourse;
+	}
 
 	@Transactional(readOnly=true)
 	public List<ICSection> getSectionsByCourseIdUsername(String courseId, String username) {
@@ -640,7 +661,7 @@ public class InfiniteCampusDAO {
 				+ " left Join SchoolYear on SchoolYear.endYear=calendar.endYear"
 				+ " left join PeriodSchedule on PeriodSchedule.periodScheduleID = Period.periodScheduleID"
 				+ " where Section.courseID = :courseid and Section.teacherPersonId = (select personId from UserAccount where username = :username)"
-				+ " and Trial.active = 1 and schoolyear.active=1";
+				+ " and Trial.active = 1 ";
 
 		String sqlAdmin = "select Distinct"
 				+ " Section.sectionID, "
@@ -673,7 +694,7 @@ public class InfiniteCampusDAO {
 				+ " left Join SchoolYear on SchoolYear.endYear=calendar.endYear"
 				+ " left join PeriodSchedule on PeriodSchedule.periodScheduleID = Period.periodScheduleID"
 				+ " where Section.courseID = :courseid "
-				+ " and Trial.active = 1 and schoolyear.active=1";
+				+ " and Trial.active = 1 ";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 
@@ -1916,11 +1937,30 @@ public class InfiniteCampusDAO {
 	}
 
 	@Transactional
-	public Number deleteBBCourses() {
+	public Number deleteBBCourses(String p_bbCourseId) {
 		mLog.info("deleteBBCourses  called ...");
 		Number rows = null;
-		String sql = "delete from  SDWBlackboardSchedulerBBCourses where bbCourseID>8292";
+		String sql = "delete from  SDWBlackboardSchedulerBBCourses where bbCourseID=:bbCourseId";
 		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("bbCourseId", p_bbCourseId);
+
+		try {
+			rows = template.update(sql, params);
+			mLog.info("Number of rows deleted: " + rows);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return rows;
+	}
+
+	@Transactional
+	public Number deleteBBSections(String p_bbCourseId) {
+		mLog.info("deleteBBSections  called ...");
+		Number rows = null;
+		String sql = "delete from  SDWBlackboardSchedulerSISCourseSections where bbCourseID=:bbCourseId";
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("bbCourseId", p_bbCourseId);
 
 		try {
 			rows = template.update(sql, params);
@@ -1930,16 +1970,16 @@ public class InfiniteCampusDAO {
 			return null;
 		}
 
-
 		return rows;
 	}
-
+	
 	@Transactional
-	public Number deleteBBSections() {
-		mLog.info("deleteBBSections  called ...");
+	public Number deleteBBPersons(String p_bbCourseId) {
+		mLog.info("deleteBBPersons  called ...");
 		Number rows = null;
-		String sql = "delete from  SDWBlackboardSchedulerSISCourseSections where courseSectionID>50292";
+		String sql = "delete from  SDWBlackboardSchedulerSISCoursePersons where bbCourseID=:bbCourseId";
 		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("bbCourseId", p_bbCourseId);
 
 		try {
 			rows = template.update(sql, params);
