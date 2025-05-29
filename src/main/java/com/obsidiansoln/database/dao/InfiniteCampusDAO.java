@@ -1182,7 +1182,7 @@ public class InfiniteCampusDAO {
 				+ "				 join Enrollment enr with (nolock) on prs.personID=enr.personID "
 				+ "					and (enr.endDate Is Null or enr.endDate>GETDATE()) "
 				+ "					and enr.active=1 "
-				+ "				 	and enr.serviceType IN ('P') "
+				+ "				 	and enr.serviceType IN ('P','S','N')  "
 				+ "				  join Calendar cal with (nolock) on enr.calendarID=cal.calendarID "
 				+ "					and ((select min(trm.startDate) "
 				+ "					 from Term trm with (nolock) "
@@ -1635,12 +1635,12 @@ public class InfiniteCampusDAO {
 		try {
 			guardians= template.query(sql,params,  new BeanPropertyRowMapper<ICGuardian>(ICGuardian.class));
 			for (ICGuardian l_guardian : guardians) {
-				if (l_guardian.getBbUsername() == null) {
+				if (l_guardian.getBbUsername() == null || l_guardian.getBbUsername().isBlank()) {
 					l_guardian.setBbUsername("C"+l_guardian.getBbPersonId());
 					this.insertBBUsername(l_guardian.getBbUsername(), l_guardian.getPersonId());
 
 				}
-				if (l_guardian.getBbPassword() == null) {
+				if (l_guardian.getBbPassword() == null || l_guardian.getBbPassword().isBlank()) {
 					Random random = new Random();
 					int number = random.nextInt(900) + 100; // Generates number between 100 and 999
 					String l_password = l_guardian.getFirstName().substring(0, 1).toLowerCase() + l_guardian.getLastName().toLowerCase();

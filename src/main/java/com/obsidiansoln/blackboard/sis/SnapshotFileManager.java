@@ -56,7 +56,7 @@ public class SnapshotFileManager {
 		m_service = new BBSchedulerService();
 	}
 
-	public List<SnapshotFileInfo> createStudentFile(List<ICUser>l_students) {
+	public List<SnapshotFileInfo> createStudentFile(List<ICUser>p_students) {
 		mLog.trace("In createStudentFile() ...");
 
 		List<SnapshotFileInfo> l_fileList = new ArrayList<SnapshotFileInfo>();
@@ -70,6 +70,21 @@ public class SnapshotFileManager {
 		FileWriter fileWriter = null;
 		PrintWriter p = null;
 		try {
+			// First De-Dedup Records based on Service Type
+			HashMap<String, ICUser> l_studentRecords = new HashMap<String, ICUser>();
+			for (ICUser l_student:p_students) {
+				if (l_studentRecords.get(l_student.getStudentNumber()) == null) {
+					l_studentRecords.put(l_student.getStudentNumber(), l_student);
+				} else {
+					ICUser l_temp = l_studentRecords.get(l_student.getStudentNumber());
+					if (l_temp.getServiceType().equals("S") && l_student.getServiceType().equals("P")) {
+						l_studentRecords.put(l_student.getStudentNumber(), l_student);
+					} else if (l_temp.getServiceType().equals("N") && (l_student.getServiceType().equals("P") || l_student.getServiceType().equals("S"))) {
+						l_studentRecords.put(l_student.getStudentNumber(), l_student);
+					}
+				}
+			}
+			mLog.info("Number of Student Records: " + l_studentRecords.size());
 			l_snapshotFilename = m_service.getConfigData().getWorkingDirectory() + "/" + fileName;
 			fileWriter = new FileWriter(l_snapshotFilename);
 			p = new PrintWriter(fileWriter);
@@ -78,7 +93,8 @@ public class SnapshotFileManager {
 
 			HashMap<String, String> l_institutionRoles = new HashMap<String, String>();
 			int i=0;
-			for (ICUser l_student:l_students) {
+			for (HashMap.Entry<String, ICUser> l_students : l_studentRecords.entrySet()) {
+				ICUser l_student = l_students.getValue();
 				if (l_institutionRoles.get(l_student.getStudentNumber()) == null) {
 					i++;
 					String l_role = "Student-SDW";
@@ -136,7 +152,7 @@ public class SnapshotFileManager {
 			l_studentFile.setFileName(l_snapshotFilename);
 			l_studentFile.setEndpoint("person");
 			l_studentFile.setType(1);
-			l_studentFile.setNumberOfRecords(l_students.size());
+			l_studentFile.setNumberOfRecords(l_studentRecords.size());
 			l_fileList.add(l_studentFile);
 
 			p.flush();
