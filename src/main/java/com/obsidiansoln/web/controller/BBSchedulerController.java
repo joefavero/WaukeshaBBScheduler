@@ -152,6 +152,7 @@ public class BBSchedulerController {
 									}
 
 									// TBD Testing - Will be removed for Production
+									//mLog.info("In TEST Mode");
 									//l_userMode.setMode("teacher");
 									//l_userMode.setUserId("lpotter"); 
 									
