@@ -260,7 +260,7 @@ public class InfiniteCampusDAO {
 	public List<ICBBCourse> getBBCoursesByUsername(String username) {
 		mLog.trace("In getBBCoursesByUsername ...");
 		String sql = "select distinct sdw.bbCourseID as id, sdw.bbCOURSE_ID as bbCourseId,  Calendar.name as calendarName,"
-				+ "	 UserAccount.username as userName,"
+				+ "	 (select UserAccount.username from UserAccount  where UserAccount.personID = sdw.createdByPersonID) as userName,"
 				+ "	 sdw.schoolYear,"
 				+ "	 sdw.bbCOURSE_NAME as bbCourseName, "
 				+ "	 sdw.bbDESCRIPTION as bbCourseDescription, "
@@ -275,7 +275,7 @@ public class InfiniteCampusDAO {
 				+ "  or (UserAccount.username=:username and sdwp.personType='T' and (Calendar.endYear=year(GETDATE()) or Calendar.endYear=year(GETDATE())+1))";
 
 		String sqlAdmin = "select distinct sdw.bbCourseID as id, sdw.bbCOURSE_ID as bbCourseId,  Calendar.name as calendarName,"
-				+ " UserAccount.username as userName, "
+				+ " (select UserAccount.username from UserAccount  where UserAccount.personID = sdw.createdByPersonID) as userName, "
 				+ " sdw.schoolYear,"
 				+ " sdw.bbCOURSE_NAME as bbCourseName, "
 				+ " sdw.bbDESCRIPTION as bbCourseDescription, "
