@@ -7,12 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   	<title>BB Scheduler</title>
   	<base href="/WaukeshaBBScheduler/static/BBSCHEDULER/">
-    <script type="module" crossorigin src="./assets/index-DjohAF56.js"></script>
+    <script type="module" crossorigin src="./assets/index-bis_Yh_d.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-bxscZUz_.css">
   </head>
   <body>
     <div id="root"></div>
   </body>
 </html>
+
 
 
