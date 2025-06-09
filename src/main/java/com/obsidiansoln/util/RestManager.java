@@ -2957,6 +2957,8 @@ public class RestManager implements IGradesDb {
 			l_termExternalId = p_info.getEndYear()+"S1";
 		} else if  (p_info.getCourseDuration().equalsIgnoreCase("semester2")) {
 			l_termExternalId = p_info.getEndYear()+"S2";
+		} else if  (p_info.getCourseDuration().equalsIgnoreCase("summer")) {
+			l_termExternalId = p_info.getEndYear()+"SUM";
 		}
 		log.debug("External Term ID: " + l_termExternalId);
 

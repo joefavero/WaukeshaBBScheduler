@@ -135,7 +135,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/utilityData", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public String getUtilityData(HttpServletRequest request) {
-		mLog.info("In getUtilityData ...");
+		mLog.trace("In getUtilityData ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -157,7 +157,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/utilityData", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse putUtiltyData(@RequestBody final UtilityInfo utilityData, HttpServletRequest request) {
-		mLog.info("In putUtilityData ...");
+		mLog.trace("In putUtilityData ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			try {

@@ -867,12 +867,11 @@ public class InfiniteCampusDAO {
 		try {
 			// First Remove all the Messages
 			l_rows = template.update(deleteSql, params);
-			mLog.info("Number of rows deleted: " + l_rows);
 
 			for (ICTemplate l_template : p_templates) {
-				mLog.info("Master ID: " + l_template.getBbMasterId());
-				mLog.info("Master BB Course ID: " + l_template.getBbCourseId());
-				mLog.info("Master BB Course Name: " + l_template.getBbCourseName());
+				mLog.debug("Master ID: " + l_template.getBbMasterId());
+				mLog.debug("Master BB Course ID: " + l_template.getBbCourseId());
+				mLog.debug("Master BB Course Name: " + l_template.getBbCourseName());
 
 				params.addValue("bbCourseId", l_template.getBbCourseId());
 				params.addValue("bbCourseName", l_template.getBbCourseName());
