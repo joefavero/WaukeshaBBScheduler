@@ -838,7 +838,7 @@ public class InfiniteCampusDAO {
 	@Transactional(readOnly=true)
 	public List<ICTemplate> getTemplates() {
 		mLog.trace("getTemplates called ...");
-		String sql = "select bbMasterID as bbMasterId, bbCOURSE_ID as bbCourseId, bbCOURSE_NAME as bbCourseName, MasterLevel as masterLevel, MasterSubjectArea as masterSubjectArea from SDWBlackboardSchedulerMasterCourses ";
+		String sql = "select bbMasterID as bbMasterId, bbCOURSE_ID as bbCourseId, bbCOURSE_NAME as bbCourseName, MasterLevel as masterLevel, MasterSubjectArea as masterSubjectArea from SDWBlackboardSchedulerMasterCourses order by bbCOURSE_NAME";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICTemplate> templates = null;
