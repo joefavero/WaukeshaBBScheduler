@@ -729,29 +729,44 @@ public class RESTController {
 		mLog.info(" Additional Teachers: " + courseInfo.getAdditionalTeachers());
 		ConfigData l_configData;
 		if (checkApiKey(request)) {
-			if (courseInfo.getSections().size() > 0) {
 
-				// Insert a record in the SDWBlackboardSchedulerBbCourses
-				Number l_key = dao.insertBBCourseLink(courseInfo);
-				if (l_key != null) {
+			// Check that the Template Course Exists
+			CourseProxy l_course = null;
+			RestManager l_manager = null;
+			try {
+				l_configData = m_service.getConfigData();
+				l_manager = new RestManager(l_configData);
+				l_course = l_manager.getCourseByName(courseInfo.getCourseTemplateId());
+			} catch (Exception e) {
+				mLog.error(e.getMessage());
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On REST API");
+				l_restResponse.setToast(l_toast);
+			}
 
-					// Fix The Course ID to contain the Key
-					String l_convertedKey = StringUtils.leftPad(Long.toString(l_key.longValue()), 9, "0");
-					mLog.info(" KEY: " + l_convertedKey);
+			if (l_course != null) {
+				if (courseInfo.getSections().size() > 0) {
 
-					courseInfo.setTargetCourseId(courseInfo.getTargetCourseId().concat("_"+l_convertedKey));
+					// Insert a record in the SDWBlackboardSchedulerBbCourses
+					Number l_key = dao.insertBBCourseLink(courseInfo);
+					if (l_key != null) {
 
-					// Update the Course ID in SDWBlackboardSchedulerBbCourses
-					Number l_key2 = dao.updateBBCourseLink(l_key, courseInfo);
-					if (l_key2 != null ) {
+						// Fix The Course ID to contain the Key
+						String l_convertedKey = StringUtils.leftPad(Long.toString(l_key.longValue()), 9, "0");
+						mLog.info(" KEY: " + l_convertedKey);
 
-						try {
-							l_configData = m_service.getConfigData();
-							RestManager l_manager = new RestManager(l_configData);
-							CourseProxy l_course = l_manager.getCourseByName(courseInfo.getCourseTemplateId());
-							if (l_course != null) {
+						courseInfo.setTargetCourseId(courseInfo.getTargetCourseId().concat("_"+l_convertedKey));
+
+						// Update the Course ID in SDWBlackboardSchedulerBbCourses
+						Number l_key2 = dao.updateBBCourseLink(l_key, courseInfo);
+						if (l_key2 != null ) {
+
+							try {
+								// Set the Template ID
 								courseInfo.setCourseTemplateId(l_course.getId());
-
+								
 								// Get Hierarchy Node
 								ICNode l_node = dao.getNode(courseInfo.getSchoolName());
 								l_manager.createCourseCopy(courseInfo, l_node);
@@ -865,45 +880,45 @@ public class RESTController {
 								l_toast.setType("success");
 								l_toast.setMessage("BB Course Successfully copied/created");
 								l_restResponse.setToast(l_toast);
-							} else {
-								mLog.error("Template Course Not Found");
+							} catch (Exception e) {
+								mLog.error(e.getMessage());
 								l_restResponse.setSuccess(false);
 								ToastMessage l_toast = new ToastMessage();
 								l_toast.setType("error");
-								l_toast.setMessage("Template Course Not Found");
+								l_toast.setMessage("Error On REST API");
 								l_restResponse.setToast(l_toast);
 							}
-						} catch (Exception e) {
-							mLog.error(e.getMessage());
+
+						} else {
+							mLog.error ("SDW BB Course Update Failed");
 							l_restResponse.setSuccess(false);
 							ToastMessage l_toast = new ToastMessage();
 							l_toast.setType("error");
-							l_toast.setMessage("Error On REST API");
+							l_toast.setMessage("SDW BB Course Update Failed");
 							l_restResponse.setToast(l_toast);
 						}
-
 					} else {
-						mLog.error ("SDW BB Course Update Failed");
+						mLog.error ("SDW BB Course Insert Failed");
 						l_restResponse.setSuccess(false);
 						ToastMessage l_toast = new ToastMessage();
 						l_toast.setType("error");
-						l_toast.setMessage("SDW BB Course Update Failed");
+						l_toast.setMessage("SDW BB Course Insert Failed");
 						l_restResponse.setToast(l_toast);
 					}
 				} else {
-					mLog.error ("SDW BB Course Insert Failed");
+					mLog.error ("No Sections Detected");
 					l_restResponse.setSuccess(false);
 					ToastMessage l_toast = new ToastMessage();
 					l_toast.setType("error");
-					l_toast.setMessage("SDW BB Course Insert Failed");
+					l_toast.setMessage("No Sections Detected");
 					l_restResponse.setToast(l_toast);
 				}
 			} else {
-				mLog.error ("No Sections Detected");
+				mLog.error("Template Course Not Found");
 				l_restResponse.setSuccess(false);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("error");
-				l_toast.setMessage("No Sections Detected");
+				l_toast.setMessage("Template Course Not Found");
 				l_restResponse.setToast(l_toast);
 			}
 		} else {

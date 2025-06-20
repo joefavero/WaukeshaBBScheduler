@@ -113,7 +113,6 @@ public class SyncLMS {
 				l_configData = m_service.getConfigData();
 				RestManager l_manager = new RestManager(l_configData);
 				l_manager.createGroupMembership(l_group);
-				mLog.info ("DONE");
 			} catch (Exception e) {
 				mLog.error("ERROR: ", e);
 				l_message = "ERRROR IN BB Scheduler Group Sync" + "<br>";

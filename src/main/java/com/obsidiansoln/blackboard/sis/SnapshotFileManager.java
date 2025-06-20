@@ -516,7 +516,6 @@ public class SnapshotFileManager {
 
 	public DataSetStatus sendFile(SnapshotFileInfo p_file) {
 		mLog.trace("In sendFile() ...");
-		mLog.info("TYPE: " + p_file.getType());
 
 		DataSetStatus status = null;
 		String l_message = null;
@@ -536,18 +535,18 @@ public class SnapshotFileManager {
 
 			Credentials credentials = null;
 			if (p_file.getType() == 1) {
-				mLog.info("OPTION 1");
+				mLog.debug("OPTION 1");
 				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotStudentSharedUsername(),
 						l_configData.getSnapshotStudentSharedPassword());
 			} else if (p_file.getType() == 2) {
 				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotStaffSharedUsername(),
 						l_configData.getSnapshotStaffSharedPassword());
 			} else if (p_file.getType() == 3) {
-				mLog.info("OPTION 3");
+				mLog.debug("OPTION 3");
 				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotGuardianSharedUsername(),
 						l_configData.getSnapshotGuardianSharedPassword());
 			} else if (p_file.getType() == 4) {
-				mLog.info("OPTION 4");
+				mLog.debug("OPTION 4");
 				credentials = new UsernamePasswordCredentials(l_configData.getSnapshotStudentSharedUsername(),
 						l_configData.getSnapshotStudentSharedPassword());
 			}
@@ -570,9 +569,9 @@ public class SnapshotFileManager {
 				details.setEndpoint(p_file.getEndpoint());
 				details.setOperation("refresh");
 				details.setJobTitle("Infinite Campus Integration");
-				mLog.info("Endpoint: " + details.getEndpoint());
-				mLog.info("Operation: " + details.getOperation());
-				mLog.info("Job Title: " + details.getJobTitle());
+				mLog.debug("Endpoint: " + details.getEndpoint());
+				mLog.debug("Operation: " + details.getOperation());
+				mLog.debug("Job Title: " + details.getJobTitle());
 
 
 				try {
@@ -581,13 +580,13 @@ public class SnapshotFileManager {
 							+ "/endpoint/" + details.getEndpoint() + "/" + details.getOperation());
 					FileEntity tmp = new FileEntity(new File(p_file.getFileName()), ContentType.create("text/plain", "UTF-8"));
 					httppost.setEntity(tmp);
-					mLog.info("executing request " + details.getOperation());
-					mLog.info("executing request " + httppost.getRequestLine());
+					mLog.debug("executing request " + details.getOperation());
+					mLog.debug("executing request " + httppost.getRequestLine());
 					CloseableHttpResponse response = httpclient.execute(httppost);
 					try {
 						if (response.getStatusLine().getStatusCode() == 200) {
-							mLog.info("----------------------------------------");
-							mLog.info("Status Line: " + response.getStatusLine());
+							mLog.debug("----------------------------------------");
+							mLog.debug("Status Line: " + response.getStatusLine());
 							HttpEntity resEntity = response.getEntity();
 							if (resEntity != null) {
 								InputStream data = resEntity.getContent();
@@ -596,7 +595,7 @@ public class SnapshotFileManager {
 								if (s.contains("code") && s.contains("to")) {
 									String code = s.substring(s.indexOf("code") + 4, s.indexOf("to"));
 									code = code.trim();
-									mLog.info("Code: " + code);
+									mLog.debug("Code: " + code);
 
 									String resultURL = l_configData.getRestHost()
 											+ "/webapps/bb-data-integration-flatfile-"
@@ -604,10 +603,10 @@ public class SnapshotFileManager {
 											+ code;
 
 									HttpPost httppost1 = new HttpPost(resultURL);
-									mLog.info("executing request " + resultURL);
+									mLog.debug("executing request " + resultURL);
 									CloseableHttpResponse response1 = httpclient.execute(httppost1);
-									mLog.info("Code: " + code);
-									mLog.info("Status: " + response1.getStatusLine().getStatusCode());
+									mLog.debug("Code: " + code);
+									mLog.debug("Status: " + response1.getStatusLine().getStatusCode());
 									HttpEntity resEntity1 = response1.getEntity();
 									if (response1.getStatusLine().getStatusCode() == 200) {
 
@@ -615,7 +614,7 @@ public class SnapshotFileManager {
 										do {
 											response1 = httpclient.execute(httppost1);
 											resEntity1 = response1.getEntity();
-											mLog.info("Status Line: " + response1.getStatusLine());
+											mLog.debug("Status Line: " + response1.getStatusLine());
 
 											InputStream data1 = resEntity1.getContent();
 											text = data1.readAllBytes();
@@ -623,10 +622,10 @@ public class SnapshotFileManager {
 											XmlMapper xmlMapper = new XmlMapper();
 											status = xmlMapper.readValue(s, DataSetStatus.class);
 											mLog.debug("Code: " + s);
-											mLog.info("Completed Count: " + status.getCompletedCount());
-											mLog.info("Error Count: " + status.getErrorCount());
-											mLog.info("Queued Count: " + status.getQueuedCount());
-											mLog.info("Warning Count: " + status.getWarningCount());
+											mLog.debug("Completed Count: " + status.getCompletedCount());
+											mLog.debug("Error Count: " + status.getErrorCount());
+											mLog.debug("Queued Count: " + status.getQueuedCount());
+											mLog.debug("Warning Count: " + status.getWarningCount());
 											if (status.getQueuedCount() == 0) {
 												l_retry++;
 											}
