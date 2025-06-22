@@ -800,7 +800,8 @@ public class RESTController {
 
 
 								// Create Enrollments In New Course
-								List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(courseInfo.getSections());
+								//List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(courseInfo.getSections());
+								List<ICEnrollment> l_enrollments = new ArrayList<ICEnrollment>();
 
 								// Add In Extra Teachers
 								List<ICTeacherList> l_teacherList = null;

@@ -46,7 +46,6 @@ public class BBSchedulerService {
 		ch.qos.logback.classic.Logger logger = getLogger();
 		if (logger != null)
 		{
-			mLog.debug("Setting log verbosity to [{}]", l_logLevel);
 			logger.setLevel(Level.valueOf(l_logLevel));
 		}
 		String l_workingDirectory = l_props.getProperty(BBSchedulerUtil.WORKING_DIRECTORY);
@@ -245,7 +244,6 @@ public class BBSchedulerService {
 		ch.qos.logback.classic.Logger logger = getLogger();
 		if (logger != null)
 		{
-			mLog.debug("Setting log verbosity to [{}]", p_data.getLogLevel());
 			logger.setLevel(Level.valueOf(p_data.getLogLevel()));
 		}
 		
