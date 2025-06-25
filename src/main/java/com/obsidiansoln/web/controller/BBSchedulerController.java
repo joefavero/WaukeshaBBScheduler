@@ -125,6 +125,7 @@ public class BBSchedulerController {
 								// TBD This is used for Testing ... will be removed for Production
 								if (l_personId == null && l_user.getUserName().equalsIgnoreCase("joetest")) {
 									mLog.info("Defaulting to lpotter");
+									mLog.info("Username: " + l_user.getUserName());
 									l_personId = dao.getPersonId("lpotter");
 								}
 								mLog.info("Person ID: " + l_personId);

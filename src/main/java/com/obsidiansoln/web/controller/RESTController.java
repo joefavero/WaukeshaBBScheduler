@@ -1079,7 +1079,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/syncGroups", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse syncGroups (HttpServletRequest request) {
-		mLog.info("In syncGroups() ...");
+		mLog.trace("In syncGroups() ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Groups between Infinite Campus and Blackboard");
@@ -1110,6 +1110,7 @@ public class RESTController {
 			l_toast.setMessage("Apikey not found/incorrect");
 			l_restResponse.setToast(l_toast);
 		}
+		mLog.info ("Sync the Groups Completed");
 		return l_restResponse;
 	}
 
