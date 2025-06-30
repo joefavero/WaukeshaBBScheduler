@@ -306,7 +306,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional(readOnly=true)
 	public List<ICBBSection> getBBSectionsByCourseIdUsername(String courseId, String username) {
-		mLog.trace("In getBBCoursesByUsername ...");
+		mLog.info("In getBBCoursesByUsername ...");
 		List<ICBBSection> l_returnList = new ArrayList<ICBBSection>();
 		String sql = "select distinct sdws.sectionID as sectionID, "
 				+ "			 Course.courseID as courseId, "
@@ -316,7 +316,6 @@ public class InfiniteCampusDAO {
 				+ "          Term.name as termName, "
 				+ "          [Period].name as period, "
 				+ "          (select count(*) as studentCount from Roster "
-				+ "				 inner join [Identity] on [Identity].personID = Roster.personID "
 				+ "				 inner join UserAccount on UserAccount.personID = Roster.personID "
 				+ "				 where Roster.sectionID = Section.sectionID "
 				+ "				 and (Roster.endDate is null or Roster.endDate > GETDATE())) as studentNumber, "
@@ -446,7 +445,7 @@ public class InfiniteCampusDAO {
 				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) and "
 				+ "             (sdws.sectionID is not null) and "
 				+ "             (Cal.endDate is null or Cal.endDate >= GETDATE()) and "
-				+ "             ((Enrollment.endDate is null or Enrollment.endDate > GETDATE()) and Enrollment.startDate <= GETDATE()) and "
+				+ "             ((Enrollment.endDate is null or Enrollment.endDate > GETDATE())) and "
 				+ "             UserAccount.userName is not null and "
 				+ "             sdws.IsSelected = 1";
 
