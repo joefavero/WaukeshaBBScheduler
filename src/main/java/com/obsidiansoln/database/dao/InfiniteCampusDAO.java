@@ -1177,13 +1177,7 @@ public class InfiniteCampusDAO {
 				+ "					and (enr.endDate Is Null or enr.endDate>GETDATE()) "
 				+ "					and enr.active=1 "
 				+ "				 	and enr.serviceType IN ('P','S','N')  "
-				+ "				  join Calendar cal with (nolock) on enr.calendarID=cal.calendarID "
-				+ "					and ((select min(trm.startDate) "
-				+ "					 from Term trm with (nolock) "
-				+ "					 join TermSchedule ts with (nolock) on ts.termScheduleID=trm.termScheduleID "
-				+ "					 join ScheduleStructure ss with (nolock) on ss.structureID=ts.structureID "
-				+ "					 and ss.calendarID=cal.calendarID)>=GETDATE() "
-				+ "					or enr.startDate<GETDATE()) "
+				+ "				 join Calendar cal with (nolock) on enr.calendarID=cal.calendarID "
 				+ "				 join schoolyear sy with (nolock) on sy.endyear=cal.endyear and sy.active=1 "
 				+ "				 join [Identity] idn with (nolock) on prs.currentIdentityID=idn.identityID "
 				+ "				 join Contact con with (nolock) on con.personID=prs.personID "
@@ -1980,7 +1974,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional
 	public Number insertBBUsername (String p_bbUsername, String p_personId) {
-		mLog.info("insertBBUserName called ...");
+		mLog.trace("insertBBUserName called ...");
 
 		String sql = "insert INTO CustomStudent (personID,enrollmentID,attributeID,value,[date],districtID) "
 				+ "values (:personId,Null,672,:bbusername,GETDATE(),Null)";
@@ -2003,7 +1997,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional
 	public Number insertBBPassword (String p_bbPassword, String p_personId) {
-		mLog.info("insertBBPassword called ...");
+		mLog.trace("insertBBPassword called ...");
 
 		String sql = "insert INTO CustomStudent (personID,enrollmentID,attributeID,value,[date],districtID) "
 				+ "values (:personId,Null,673,:bbpw,GETDATE(),Null)";
