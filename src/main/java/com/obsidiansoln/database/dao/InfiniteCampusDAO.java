@@ -1499,7 +1499,7 @@ public class InfiniteCampusDAO {
 			for (ICGuardian l_guardian : guardians) {
 				if (l_guardian.getBbUsername() == null || l_guardian.getBbUsername().isBlank()) {
 					l_guardian.setBbUsername("C"+l_guardian.getBbPersonId());
-					this.insertBBUsername(l_guardian.getBbUsername(), l_guardian.getPersonId());
+					this.insertBBUsername(l_guardian.getBbUsername(), l_guardian.getBbPersonId());
 
 				}
 				if (l_guardian.getBbPassword() == null || l_guardian.getBbPassword().isBlank()) {
@@ -1511,7 +1511,7 @@ public class InfiniteCampusDAO {
 					} else {
 						l_guardian.setBbPassword(l_password+number);
 					}
-					this.insertBBPassword(l_guardian.getBbPassword(), l_guardian.getPersonId());
+					this.insertBBPassword(l_guardian.getBbPassword(), l_guardian.getBbPersonId());
 				}
 			}
 		} catch (DataAccessException l_ex) {
