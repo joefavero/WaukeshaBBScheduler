@@ -41,6 +41,7 @@ import com.obsidiansoln.database.model.ICBBEnrollment;
 import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICBBSection;
 import com.obsidiansoln.database.model.ICCalendar;
+import com.obsidiansoln.database.model.ICCalendarList;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
 import com.obsidiansoln.database.model.ICGuardian;
@@ -766,7 +767,7 @@ public class RESTController {
 							try {
 								// Set the Template ID
 								courseInfo.setCourseTemplateId(l_course.getId());
-								
+
 								// Get Hierarchy Node
 								ICNode l_node = dao.getNode(courseInfo.getSchoolName());
 								l_manager.createCourseCopy(courseInfo, l_node);
@@ -1670,6 +1671,22 @@ public class RESTController {
 		return null;
 	}
 
+	@RequestMapping(value = "/api/getCalendarList", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public List<String> getCalendarList(HttpServletRequest request) {
+		mLog.trace("In getCalendarList ...");
+		if (checkApiKey(request)) {
+			List<String> l_returnList = new ArrayList<String>();
+			List <ICCalendarList> l_calendars = dao.getCalendarList();
+			for (ICCalendarList l_calendar :  l_calendars) {
+				l_returnList.add(l_calendar.getCalendarName());
+			}
+			return l_returnList;
+		}
+
+		return null;
+	}
+
 
 	@RequestMapping(value = "/api/removeBBCourse/{bbCourseId}", method = RequestMethod.DELETE, produces = "application/json")
 	@ResponseBody
@@ -1718,6 +1735,135 @@ public class RESTController {
 			l_restResponse.setToast(l_toast);
 		}
 		return l_restResponse;
+	}
+
+	@RequestMapping(value = "/api/archiveBBCourse/{bbCourseId}", method = RequestMethod.DELETE, produces = "application/json")
+	@ResponseBody
+	public RestResponse archiveBBCourse(@PathVariable("bbCourseId") String bbCourseId, HttpServletRequest request) {
+		mLog.trace("In archiveBBCourse ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+
+				ICBBCourse l_bbCourse = dao.getBBCourseByBBId(bbCourseId);
+				if (l_bbCourse != null) {
+					// Archive the BB Course
+					l_manager.updateCourse(l_bbCourse.getCourseId());
+
+
+					// Remove SDW Course Entries
+					dao.deleteBBCourses(bbCourseId);
+
+					// Remove SDW Section Entries
+					dao.deleteBBSections(bbCourseId);
+
+					// Remove SDW Person Entries
+					dao.deleteBBPersons(bbCourseId);
+
+					l_restResponse.setSuccess(true);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("success");
+					l_toast.setMessage("Archive Course Successfull");
+					l_restResponse.setToast(l_toast);
+
+				} else {
+					l_restResponse.setSuccess(false);
+					ToastMessage l_toast = new ToastMessage();
+					l_toast.setType("error");
+					l_toast.setMessage("Unable to find BB Course");
+					l_restResponse.setToast(l_toast);
+				}
+
+			} catch (Exception e) {
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On Archiving BB Course");
+				l_restResponse.setToast(l_toast);
+			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+		return l_restResponse;
+	}
+
+	@RequestMapping(value = "/api/archiveBBCourses/{bbCourseIds}", method = RequestMethod.DELETE, produces = "application/json")
+	@ResponseBody
+	public RestResponse archiveBBCourses(@PathVariable("bbCourseIds") String[] bbCourseIds, HttpServletRequest request) {
+		mLog.info("In archiveBBCourses ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+
+				for (String bbCourseId : bbCourseIds) {
+					mLog.info("Processing BB Course ID: " + bbCourseId);
+					ICBBCourse l_bbCourse = dao.getBBCourseByBBId(bbCourseId);
+					if (l_bbCourse != null) {
+						// Archive the BB Course
+						l_manager.updateCourse(l_bbCourse.getCourseId());
+
+						// Remove SDW Course Entries
+						dao.deleteBBCourses(bbCourseId);
+
+						// Remove SDW Section Entries
+						dao.deleteBBSections(bbCourseId);
+
+						// Remove SDW Person Entries
+						dao.deleteBBPersons(bbCourseId);
+
+						l_restResponse.setSuccess(true);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("success");
+						l_toast.setMessage("Archive Courses Successfull");
+						l_restResponse.setToast(l_toast);
+
+					} else {
+						l_restResponse.setSuccess(false);
+						ToastMessage l_toast = new ToastMessage();
+						l_toast.setType("error");
+						l_toast.setMessage("Unable to find BB Course");
+						l_restResponse.setToast(l_toast);
+					}
+				}
+
+			} catch (Exception e) {
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("Error On Archiving BB Course");
+				l_restResponse.setToast(l_toast);
+			}
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+		return l_restResponse;
+	}
+
+
+	@RequestMapping(value = "/api/getBBCoursesByCalendarList/{calendars}", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public List<ICBBCourse> getBBCoursesByCalendarList(@PathVariable("calendars") String[] calendars, HttpServletRequest request) {
+		mLog.trace("In getBBCoursesByCalendarList ...");
+		if (checkApiKey(request)) {
+			List <ICBBCourse> l_bbCourses = dao.getBBCoursesByCalendarList(calendars);
+			return l_bbCourses;
+		}
+
+		return null;
 	}
 
 	public String getPersonId(String username) {

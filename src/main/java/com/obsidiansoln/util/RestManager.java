@@ -1185,6 +1185,25 @@ public class RestManager implements IGradesDb {
 		return;
 	}
 
+	public void updateCourse(String p_courseName) {
+		log.trace("In updateCourse()");
+
+
+		CourseHandler l_courseHandler = new CourseHandler();
+		RequestData l_requestData = new RequestData();
+		l_requestData.setCourseName(p_courseName);
+		checkToken();
+		CourseProxy l_course = l_courseHandler.getClientData2(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
+		if (l_course != null) {
+			l_course.getAvailability().setAvailable("No");
+			l_requestData.setCourseId(l_course.getId());
+			HTTPStatus l_status = l_courseHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_course);
+			log.info("Status: " + l_status.getStatus());
+		}
+
+		return;
+	}
+
 	public List<String> getCourses(String p_termId, boolean p_includeUnavailable) {
 		log.trace("In getCourses()");
 		ArrayList<String> l_courseList = new ArrayList<String>();
@@ -2539,7 +2558,7 @@ public class RestManager implements IGradesDb {
 			if (l_termId != null) {
 				l_task.getCourse().setTermId(l_termId);
 			}
-			
+
 			// Set the Datasource to be SIS2.XXXXClass ... where XXXX is the School Year
 			log.info("Getting Datasource: " + "SIS2:"+p_info.getEndYear()+"Class");
 			DatasourceProxy l_datasource = this.getDataSourceByName("SIS2."+p_info.getEndYear()+"Class");
@@ -2547,13 +2566,13 @@ public class RestManager implements IGradesDb {
 				log.info("Setting Datasource: " + l_datasource.getId());
 				l_task.getCourse().setDataSourceId(l_datasource.getId());
 			}
-			
+
 			l_courseHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_task.getCourse());
 
 			// Need to Associate the course to the Correct Node based on School Name
 			this.associatedNode(l_task.getCourse().getId(),p_node);
-			
-			
+
+
 		}
 
 		return l_response;

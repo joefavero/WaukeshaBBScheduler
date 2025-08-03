@@ -5,6 +5,7 @@
 package com.obsidiansoln.database.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import com.obsidiansoln.database.model.ICBBEnrollment;
 import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICBBSection;
 import com.obsidiansoln.database.model.ICCalendar;
+import com.obsidiansoln.database.model.ICCalendarList;
 import com.obsidiansoln.database.model.ICCourse;
 import com.obsidiansoln.database.model.ICEnrollment;
 import com.obsidiansoln.database.model.ICGuardian;
@@ -2016,5 +2018,54 @@ public class InfiniteCampusDAO {
 
 		return keyHolder.getKey();
 
+	}
+	
+	@Transactional(readOnly=true)
+	public List<ICCalendarList> getCalendarList () {
+		mLog.trace("getCalendarList  called ...");
+		String sql = "select distinct Calendar.name as calendarName"
+				+ "				 from SDWBlackboardSchedulerBbCourses sdw"
+				+ "				 left join SDWBlackboardSchedulerSISCourseSections on SDWBlackboardSchedulerSISCourseSections.bbCourseID=sdw.bbCourseID"
+				+ "				 left join UserAccount on UserAccount.personID=sdw.createdByPersonID"
+				+ "				 left join Calendar on Calendar.calendarID=sdw.calendarID";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICCalendarList> l_calendars = null;
+		try {
+			l_calendars= template.query(sql,params,  new BeanPropertyRowMapper<ICCalendarList>(ICCalendarList.class));
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return l_calendars;
+	}
+	
+	@Transactional(readOnly=true)
+	public List<ICBBCourse> getBBCoursesByCalendarList (String[] p_calendars) {
+		mLog.info("getBBCoursesByCalendarList  called ...");
+		mLog.info("getBBCoursesByCalendarList  called ..." + p_calendars[0]);
+		String sql = "select distinct sdw.bbCourseID as id, sdw.bbCOURSE_ID as bbCourseId,  Calendar.name as calendarName, "
+				+ "				 (select top 1 UserAccount.username from UserAccount  where UserAccount.personID = sdw.createdByPersonID) as userName,  "
+				+ "				 sdw.schoolYear, "
+				+ "				 sdw.bbCOURSE_NAME as bbCourseName, "
+				+ "				 sdw.bbDESCRIPTION as bbCourseDescription, "
+				+ "				 sdw.groupSetId as groupSetId "
+				+ "				 from SDWBlackboardSchedulerBbCourses sdw "
+				+ "				 left join SDWBlackboardSchedulerSISCourseSections on SDWBlackboardSchedulerSISCourseSections.bbCourseID=sdw.bbCourseID "
+				+ "				 left join UserAccount on UserAccount.personID=sdw.createdByPersonID "
+				+ "				 left join Calendar on Calendar.calendarID=sdw.calendarID "
+				+ "				 where Calendar.name in (:calendars)";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<String> stringList = Arrays.asList(p_calendars);
+		params.addValue("calendars", stringList);
+		List<ICBBCourse> l_bbCourses = null;
+		try {
+			l_bbCourses= template.query(sql,params,  new BeanPropertyRowMapper<ICBBCourse>(ICBBCourse.class));
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return l_bbCourses;
 	}
 }

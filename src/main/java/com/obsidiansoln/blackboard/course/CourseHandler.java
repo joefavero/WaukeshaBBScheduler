@@ -70,7 +70,7 @@ public class CourseHandler implements RestHandler {
 	}
 	
 	public HTTPStatus updateObject(String host, String access_token, RequestData data, CourseProxy proxy) {
-		log.info("In updateObject()");
+		log.trace("In updateObject()");
 		if (data != null && data.getCourseId() != null) {
 			return (RestRequest.sendRequest(
 					host, RestConstants.COURSE_PATH + data.getCourseId(),

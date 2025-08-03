@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   	<title>BB Scheduler</title>
   	<base href="/WaukeshaBBScheduler/static/BBSCHEDULER/">
-    <script type="module" crossorigin src="./assets/index-CnGZe2Ve.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-bxscZUz_.css">
+    <script type="module" crossorigin src="./assets/index-QNvV3adn.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-U-RZ8VV2.css">
   </head>
   <body>
     <div id="root"></div>
