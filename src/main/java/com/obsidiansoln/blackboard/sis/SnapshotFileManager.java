@@ -425,8 +425,9 @@ public class SnapshotFileManager {
 					i++;
 					List<String> l_observees = new ArrayList<String>();
 					l_observees.add(l_guardian.getStudentNumber());
-					l_observers.put(l_guardian.getContactNumber(), l_observees);
-					p.write(m_service.getConfigData().getSnapshotGuardianDatasource()+"|"					           //data_source
+					//l_observers.put(l_guardian.getContactNumber(), l_observees);
+					l_observers.put(l_guardian.getBbPersonId(), l_observees);
+					p.write(m_service.getConfigData().getSnapshotGuardianDatasource()+"|"	//data_source
 							+ "Observer"+l_guardian.getContactNumber() + "|"   //external_person_key
 							+ l_guardian.getBbUsername() + "|" 	    //user_id
 							+ l_guardian.getBbPassword() + "|"		//passwd
@@ -452,7 +453,8 @@ public class SnapshotFileManager {
 				} else {
 					List<String> l_observees = l_observers.get(l_guardian.getBbPersonId());
 					l_observees.add(l_guardian.getStudentNumber());
-					l_observers.put(l_guardian.getContactNumber(), l_observees);
+					//l_observers.put(l_guardian.getContactNumber(), l_observees);
+					l_observers.put(l_guardian.getBbPersonId(), l_observees);
 				}
 			}
 			p.flush();
