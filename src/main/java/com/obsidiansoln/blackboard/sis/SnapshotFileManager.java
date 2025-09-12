@@ -39,6 +39,7 @@ import com.obsidiansoln.blackboard.model.SnapshotFileInfo;
 import com.obsidiansoln.blackboard.model.SnapshotJobDetails;
 import com.obsidiansoln.database.model.ICBBEnrollment;
 import com.obsidiansoln.database.model.ICGuardian;
+import com.obsidiansoln.database.model.ICObserver;
 import com.obsidiansoln.database.model.ICStaff;
 import com.obsidiansoln.database.model.ICUser;
 import com.obsidiansoln.util.EmailManager;
@@ -418,14 +419,13 @@ public class SnapshotFileManager {
 			p = new PrintWriter(fileWriter);
 			p.write("data_source_key|external_person_key|user_id|passwd|firstname|lastname|system_role|institution_role|row_status|company|email|street_1|street_2|title|city|state|zip_code|department|job_title|available_ind|locale");
 			p.write("\r\n");
-			HashMap<String, List<String>> l_observers = new HashMap<String, List<String>>();
+			HashMap<String, List<ICObserver>> l_observers = new HashMap<String, List<ICObserver>>();
 			int i=0;
 			for (ICGuardian l_guardian:p_guardians) {
 				if (l_observers.get(l_guardian.getBbPersonId()) == null) {
 					i++;
-					List<String> l_observees = new ArrayList<String>();
-					l_observees.add(l_guardian.getStudentNumber());
-					//l_observers.put(l_guardian.getContactNumber(), l_observees);
+					List<ICObserver> l_observees = new ArrayList<ICObserver>();
+					l_observees.add(new ICObserver(l_guardian.getContactNumber(), l_guardian.getStudentNumber()));
 					l_observers.put(l_guardian.getBbPersonId(), l_observees);
 					p.write(m_service.getConfigData().getSnapshotGuardianDatasource()+"|"	//data_source
 							+ "Observer"+l_guardian.getContactNumber() + "|"   //external_person_key
@@ -451,9 +451,8 @@ public class SnapshotFileManager {
 
 					p.write("\r\n");
 				} else {
-					List<String> l_observees = l_observers.get(l_guardian.getBbPersonId());
-					l_observees.add(l_guardian.getStudentNumber());
-					//l_observers.put(l_guardian.getContactNumber(), l_observees);
+					List<ICObserver> l_observees = l_observers.get(l_guardian.getBbPersonId());
+					l_observees.add(new ICObserver(l_guardian.getContactNumber(),l_guardian.getStudentNumber()));
 					l_observers.put(l_guardian.getBbPersonId(), l_observees);
 				}
 			}
@@ -480,13 +479,13 @@ public class SnapshotFileManager {
 			p.write("DATA_SOURCE_KEY|EXTERNAL_OBSERVER_KEY|EXTERNAL_USER_KEY");
 			p.write("\r\n");
 			int j=0;
-			for (HashMap.Entry<String, List<String>> l_observer : l_observers.entrySet()) {
-				List<String> l_observees = l_observer.getValue();
-				for (String l_observee:l_observees) {
+			for (HashMap.Entry<String, List<ICObserver>> l_observer : l_observers.entrySet()) {
+				List<ICObserver> l_observees = l_observer.getValue();
+				for (ICObserver l_observee:l_observees) {
 					j++;
 					p.write(m_service.getConfigData().getSnapshotGuardianAssociationDatasource() + "|"					           //data_source
-							+ "Observer"+l_observer.getKey() + "|"             //external_observer_key
-							+ l_observee);                                     //external_user_key
+							+ "Observer"+l_observee.getContactNumber() + "|"             //external_observer_key
+							+ l_observee.getObservee());                                     //external_user_key
 					p.write("\r\n");
 				}
 			}
