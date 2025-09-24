@@ -113,7 +113,10 @@ public abstract class RestRequest {
 			} else if (response.getStatusCode().value() == 303) {
 				l_httpStatus.setData(response.getBody());
 				return (l_httpStatus);
-			}else if (response.getStatusCode().value() == 400) { // Bad Request
+			} else if (response.getStatusCode().value() == 400) { // Bad Request
+				return (l_httpStatus);
+			} else if (response.getStatusCode().value() == 401) { // Token Expired
+				log.info("Token Expired");
 				return (l_httpStatus);
 			} else if (response.getStatusCode().value() == 403) { // Forbidden
 				return (l_httpStatus);

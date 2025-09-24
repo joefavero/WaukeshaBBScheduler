@@ -1123,7 +1123,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/fixGroups", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse fixGroups (HttpServletRequest request) {
-		mLog.info("In fixGroups() ...");
+		mLog.trace("In fixGroups() ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Fix the Groups between Infinite Campus and Blackboard");
@@ -1148,6 +1148,7 @@ public class RESTController {
 						// Update The Section Link Info
 						// Get the Sections
 						List<ICSection> l_sections = dao.getSectionList(l_group.getBbCourseId());
+						mLog.info("Number of Section: " + l_sections.size());
 
 						List<SectionInfo> l_sectionInfoList = new ArrayList<SectionInfo>();
 						for (ICSection l_section : l_sections) {
@@ -1213,7 +1214,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/syncGuardians", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse syncGuardians (HttpServletRequest request) {
-		mLog.info("In syncGuardians() ...");
+		mLog.trace("In syncGuardians() ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Guardians between Infinite Campus and Blackboard");

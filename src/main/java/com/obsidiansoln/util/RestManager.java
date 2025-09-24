@@ -531,7 +531,7 @@ public class RestManager implements IGradesDb {
 		Available l_available = new Available();
 		l_available.setAvailable("Yes");
 		l_enrollmentOption.setavailabilityd(l_available);
-
+		checkToken();
 		MembershipHandler l_membershipHandler = new MembershipHandler();
 		HTTPStatus l_response =l_membershipHandler.createObject(m_configData.getRestHost(), m_token.getToken(),l_requestData, l_enrollmentOption);
 
@@ -1693,6 +1693,7 @@ public class RestManager implements IGradesDb {
 			if (p_sections != null) {
 				for (SectionInfo l_section: p_sections) {
 					if (l_list.get(l_section.getCourseNumber()) == null) {
+						checkToken();
 						GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC " + l_section.getCourseNumber());
 						l_list.put(l_section.getCourseNumber(), l_groupSet);
 					}
@@ -1703,6 +1704,7 @@ public class RestManager implements IGradesDb {
 			if (p_sections != null) {
 				for (SectionInfo l_section: p_sections) {
 					GroupProxy l_groupSet = l_list.get(l_section.getCourseNumber());
+					checkToken();
 					GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_section, l_groupSet.getId());
 					if (l_group != null) {
 						l_list.put(String.valueOf(l_section.getSectionId()), l_group);
@@ -1726,6 +1728,7 @@ public class RestManager implements IGradesDb {
 			l_requestData.setCourseId(l_course.getId());
 
 			l_requestData.setCourseName(p_course);
+			checkToken();
 			GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, p_section, p_groupSetId);
 			if (l_group != null) {
 				log.debug("Group Created: " + l_group.getId());
@@ -1750,6 +1753,7 @@ public class RestManager implements IGradesDb {
 
 			l_requestData.setCourseId(l_course.getId());
 			l_requestData.setCourseNumber(p_sectionInfo.getCourseNumber());
+			checkToken();
 			GroupResponseProxy l_groupResponse = l_groupHandler.getClientData(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
 			if (l_groupResponse != null) {
 				GroupListProxy l_groupList = l_groupResponse.getResults();
@@ -1758,11 +1762,13 @@ public class RestManager implements IGradesDb {
 					return l_groupList.get(0);
 				} else {
 					// Create Group
+					checkToken();
 					GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC " + p_sectionInfo.getCourseNumber());
 					return l_groupSet;
 				}
 			} else {
 				// Create Group
+				checkToken();
 				GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC " + p_sectionInfo.getCourseNumber());
 				return l_groupSet;
 			}
@@ -1778,6 +1784,7 @@ public class RestManager implements IGradesDb {
 		RequestData l_requestData = new RequestData();
 		l_requestData.setCourseId(p_courseId);
 		l_requestData.setGroupId(p_sectionId);
+		checkToken();
 		HTTPStatus l_status = l_groupHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 		log.debug("Group Deleted");
 
@@ -1796,6 +1803,7 @@ public class RestManager implements IGradesDb {
 			l_requestData.setGroupId(p_course.getGroupSetId());
 
 			// Get the Groups in this Group Set
+			checkToken();
 			GroupResponseProxy l_groupResponse = l_groupHandler.getClientData(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
 			if (l_groupResponse != null) {
 				GroupListProxy l_groupList = l_groupResponse.getResults();
@@ -1804,6 +1812,7 @@ public class RestManager implements IGradesDb {
 					log.info("Deleting Group: " + l_group.getName());
 					l_requestData.setCourseId(l_course.getId());
 					l_requestData.setGroupId(l_group.getId());
+					checkToken();
 					HTTPStatus l_status = l_groupHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 				}
 
@@ -1811,6 +1820,7 @@ public class RestManager implements IGradesDb {
 				l_requestData.setCourseId(l_course.getId());
 				l_requestData.setGroupId(p_course.getGroupSetId());
 				l_requestData.setUserName("test");
+				checkToken();
 				GroupProxy  l_groupSet = l_groupHandler.getClientData2(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
 				log.info("Deleting Group: " + l_groupSet.getName());
 				HTTPStatus l_status = l_groupHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
@@ -1829,6 +1839,7 @@ public class RestManager implements IGradesDb {
 		l_requestData.setUserName(p_enrollment.getUsername());
 		GroupProxy l_groupProxy = l_groups.get(p_enrollment.getSectionId());
 		l_requestData.setGroupId(l_groupProxy.getId());
+		checkToken();
 		l_groupHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 	}
 
@@ -1840,7 +1851,8 @@ public class RestManager implements IGradesDb {
 		l_requestData.setCourseName(p_group.getCourseId());
 		l_requestData.setUserName(p_group.getUserName());
 		l_requestData.setGroupId(p_group.getGroupId());
-		log.info("Adding User: " + p_group.getUserName() + " into group " + p_group.getGroupId());
+		log.debug("Adding User: " + p_group.getUserName() + " into group " + p_group.getGroupId());
+		checkToken();
 		l_groupHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 	}
 
@@ -2534,6 +2546,7 @@ public class RestManager implements IGradesDb {
 			TermHandler l_termHandler = new TermHandler();
 			RequestData l_request = new RequestData();
 			l_request.setTermId(termId);
+			checkToken();
 			TermProxy l_term = l_termHandler.getClientData2(m_configData.getRestHost(), m_token.getToken(), null,
 					l_request);
 			return l_term;
@@ -2671,10 +2684,12 @@ public class RestManager implements IGradesDb {
 			NodeHandler l_nodeHandler = new NodeHandler();
 			RequestData l_requestData = new RequestData();
 			l_requestData.setNodeExternalId(l_nodeExternalId);
+			checkToken();
 			NodeProxy l_node = l_nodeHandler.getClientData2(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
 			if (l_node != null) {
 				l_requestData.setCourseId(p_courseId);
 				l_requestData.setNodeId(l_node.getId());
+				checkToken();
 				l_nodeHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 			}
 		}
@@ -2694,11 +2709,13 @@ public class RestManager implements IGradesDb {
 
 		// Get the Course
 		l_requestData.setCourseName(p_info.getBbCourseId());
+		checkToken();
 		CourseProxy l_course = l_courseHandler.getClientData2(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
 		if (l_course != null) {
 			l_course.setName(p_info.getBbCourseName());
 			l_course.setDescription(p_info.getBbCourseDescription());
 			l_requestData.setCourseId(l_course.getId());
+			checkToken();
 			l_response = l_courseHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_course);
 		}
 

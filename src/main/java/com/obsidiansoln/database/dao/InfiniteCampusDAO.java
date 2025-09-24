@@ -551,7 +551,7 @@ public class InfiniteCampusDAO {
 
 	@Transactional(readOnly=true)
 	public List<ICBBGroup> getBBGroups() {
-		mLog.info("In getBBGroups ...");
+		mLog.trace("In getBBGroups ...");
 
 		String sql2 = "select distinct sdws.groupId as groupId,"
 				+ " sdw.bbCOURSE_ID as courseId,"
@@ -568,7 +568,9 @@ public class InfiniteCampusDAO {
 				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) "
 				+ "   and (sdws.sectionID is not null) "
 				+ "   and (Cal.endDate is null or Cal.endDate >= GETDATE())"
-				+ "   and sdws.groupId is not null ";
+				+ "   and sdws.groupId is not null"
+				+ "   and ((Cal.enddate >= CAST(GETDATE() as date)) or Cal.endYear=year(GETDATE())+1)"
+				+ "   and UserAccount.username is not null";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICBBGroup> bbGroups = null;
@@ -584,12 +586,11 @@ public class InfiniteCampusDAO {
 
 	@Transactional(readOnly=true)
 	public List<ICBBCourse> getBBGroupsToFix() {
-		mLog.info("In getBBGroupsToFix ...");
+		mLog.trace("In getBBGroupsToFix ...");
 
 		String sql2 = "select sdw.bbCourseID as bbCourseId, sdw.bbCOURSE_ID as courseId, sdw.bbCOURSE_NAME as courseName, sdw.bbDESCRIPTION as courseDescription, sdw.groupSetId as groupSetId, createdByPersonID as personId"
-				+ "  from SDWBlackboardSchedulerBbCourses sdw "
-				+ "  where sdw.groupSetId is not null";
-		;
+				+ "  from SDWBlackboardSchedulerBbCourses sdw ";
+		
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICBBCourse> bbGroups = null;
@@ -767,7 +768,7 @@ public class InfiniteCampusDAO {
 	public ICSectionInfo getSectionInfo(String p_section) {
 		mLog.info("Section ID: " + p_section);
 
-		String sql = "select Course.calendarID, Section.sectionID, Section.courseID, Section.number as sectionNumber, Course.number as courseNumber, UserAccount.username as teacherName from Section"
+		String sql = "select top 1 Course.calendarID, Section.sectionID, Section.courseID, Section.number as sectionNumber, Course.number as courseNumber, UserAccount.username as teacherName from Section"
 				+ " left join Course on Course.courseID = Section.courseID"
 				+ " left join UserAccount on UserAccount.personID=Section.teacherPersonID "
 				+ " where Section.sectionID = :sectionId";

@@ -103,7 +103,7 @@
 		<property name="driverClassName"
 			value="com.microsoft.sqlserver.jdbc.SQLServerDriver" />
 		<property name="url"
-			value="jdbc:sqlserver://waukeshawi.infinitecampus.org:7771;databaseName=waukesha;encrypt=true;trustServerCertificate=true;" />
+			value="jdbc:sqlserver://waukeshawi.infinitecampus.org:7771;databaseName=waukesha_sandbox;encrypt=true;trustServerCertificate=true;" />
 		<property name="username" value="SDW_BBDEV" />
 		<property name="password" value="dWUV0nxK9*9JwRGf" />
 	</bean>

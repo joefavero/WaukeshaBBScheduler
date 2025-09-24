@@ -66,7 +66,7 @@ public class AsyncService {
 	@Async("asyncExecutor1")
 	@ResponseBody
 	public CompletableFuture<List<StudentData>> processCourse(String p_courseId, boolean p_includeUnavailable, RestManager p_manager) throws InterruptedException {
-		mLog.trace("In procesCourse()" + p_courseId);
+		mLog.trace("In processCourse()" + p_courseId);
 		HashMap<String, StudentData> l_studentList = new HashMap<String, StudentData>();
 		try {
 			List<StudentData> l_students = p_manager.getMembershipStudents(p_courseId, p_includeUnavailable);
@@ -97,13 +97,13 @@ public class AsyncService {
 	@Async("asyncExecutor2")
 	@ResponseBody
 	public void processSISGroups (List<ICBBGroup> p_groups, RestManager p_manager) throws InterruptedException {
-		mLog.info("In procesSISGroups()");
-		mLog.info("Number of Enrollments: " + p_groups.size());
+		mLog.trace("In procesSISGroups()");
+		mLog.debug("Number of Enrollments: " + p_groups.size());
 		int i=0;
 		for (ICBBGroup l_group:p_groups) {
 			try {
 				i++;
-				mLog.info("Processing " + i + " of " + p_groups.size());
+				mLog.debug("Processing " + i + " of " + p_groups.size());
 				p_manager.createGroupMembership(l_group);
 			} catch (Exception e) {
 				mLog.error("Error: ", e);
