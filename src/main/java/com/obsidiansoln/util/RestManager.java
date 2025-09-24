@@ -66,7 +66,9 @@ import com.obsidiansoln.blackboard.gradebook.SchemaListProxy;
 import com.obsidiansoln.blackboard.gradebook.SchemaProxy;
 import com.obsidiansoln.blackboard.gradebook.SchemaResponseProxy;
 import com.obsidiansoln.blackboard.group.GroupHandler;
+import com.obsidiansoln.blackboard.group.GroupListProxy;
 import com.obsidiansoln.blackboard.group.GroupProxy;
+import com.obsidiansoln.blackboard.group.GroupResponseProxy;
 import com.obsidiansoln.blackboard.membership.Available;
 import com.obsidiansoln.blackboard.membership.EnrollmentOptionProxy;
 import com.obsidiansoln.blackboard.membership.MembershipHandler;
@@ -95,6 +97,7 @@ import com.obsidiansoln.blackboard.user.UserHandler;
 import com.obsidiansoln.blackboard.user.UserListProxy;
 import com.obsidiansoln.blackboard.user.UserProxy;
 import com.obsidiansoln.blackboard.user.UserResponseProxy;
+import com.obsidiansoln.database.model.ICBBCourse;
 import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICEnrollment;
 import com.obsidiansoln.database.model.ICNode;
@@ -1686,16 +1689,25 @@ public class RestManager implements IGradesDb {
 		if (l_course != null) {
 			l_requestData.setCourseId(l_course.getId());
 
-			// First Create the Group Set IC Enrollments
-			GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC Enrollments");
-			l_list.put(p_courseId, l_groupSet);
+			// First Create the Group Set IC Enrollments Group Set
+			if (p_sections != null) {
+				for (SectionInfo l_section: p_sections) {
+					if (l_list.get(l_section.getCourseNumber()) == null) {
+						GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC " + l_section.getCourseNumber());
+						l_list.put(l_section.getCourseNumber(), l_groupSet);
+					}
+				}
+			}
 
 			// Now add the Groups to the Group Set, IC Enrollments
 			if (p_sections != null) {
 				for (SectionInfo l_section: p_sections) {
+					GroupProxy l_groupSet = l_list.get(l_section.getCourseNumber());
 					GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, l_section, l_groupSet.getId());
-					l_list.put(String.valueOf(l_section.getSectionId()), l_group);
-					log.info("Group Created: " + l_group.getId());
+					if (l_group != null) {
+						l_list.put(String.valueOf(l_section.getSectionId()), l_group);
+						log.debug("Group Created: " + l_group.getId());
+					}
 				}
 			}
 		}
@@ -1715,15 +1727,48 @@ public class RestManager implements IGradesDb {
 
 			l_requestData.setCourseName(p_course);
 			GroupProxy l_group = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, p_section, p_groupSetId);
-			log.info("Group Created: " + l_group.getId());
+			if (l_group != null) {
+				log.debug("Group Created: " + l_group.getId());
 
-			l_list.put(String.valueOf(p_section.getSectionId()), l_group);
-			log.info("Group Created: " + l_group.getId());
+				l_list.put(String.valueOf(p_section.getSectionId()), l_group);
+				log.debug("Group Created: " + l_group.getId());
+			}
 		} else {
 			return null;
 		}
 
 		return l_list;
+	}
+
+	public GroupProxy checkGroupSet(SectionInfo p_sectionInfo, ICBBCourse p_course) {
+		log.trace("In checkGroupSet()");
+		GroupHandler l_groupHandler = new GroupHandler();
+
+		CourseProxy l_course = this.getCourseByName(p_course.getCourseId());
+		if (l_course != null) {
+			RequestData l_requestData = new RequestData();
+
+			l_requestData.setCourseId(l_course.getId());
+			l_requestData.setCourseNumber(p_sectionInfo.getCourseNumber());
+			GroupResponseProxy l_groupResponse = l_groupHandler.getClientData(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
+			if (l_groupResponse != null) {
+				GroupListProxy l_groupList = l_groupResponse.getResults();
+
+				if (l_groupList.size() > 0) {
+					return l_groupList.get(0);
+				} else {
+					// Create Group
+					GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC " + p_sectionInfo.getCourseNumber());
+					return l_groupSet;
+				}
+			} else {
+				// Create Group
+				GroupProxy l_groupSet = l_groupHandler.createObject(m_configData.getRestHost(), m_token.getToken(), l_requestData, "IC " + p_sectionInfo.getCourseNumber());
+				return l_groupSet;
+			}
+		}
+
+		return null;
 	}
 
 	public int deleteCourseGroup(String p_courseId, String p_sectionId) {
@@ -1737,6 +1782,42 @@ public class RestManager implements IGradesDb {
 		log.debug("Group Deleted");
 
 		return l_status.getStatus();
+	}
+
+	public int deleteAllGroups(ICBBCourse p_course) {
+		log.info("In deleteAllGroups()");
+		GroupHandler l_groupHandler = new GroupHandler();
+
+		CourseProxy l_course = this.getCourseByName(p_course.getCourseId());
+		if (l_course != null) {
+
+			RequestData l_requestData = new RequestData();
+			l_requestData.setCourseId(l_course.getId());
+			l_requestData.setGroupId(p_course.getGroupSetId());
+
+			// Get the Groups in this Group Set
+			GroupResponseProxy l_groupResponse = l_groupHandler.getClientData(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
+			if (l_groupResponse != null) {
+				GroupListProxy l_groupList = l_groupResponse.getResults();
+				// Delete each Group
+				for (GroupProxy l_group : l_groupList) {
+					log.info("Deleting Group: " + l_group.getName());
+					l_requestData.setCourseId(l_course.getId());
+					l_requestData.setGroupId(l_group.getId());
+					HTTPStatus l_status = l_groupHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
+				}
+
+				// Delete the Group Set
+				l_requestData.setCourseId(l_course.getId());
+				l_requestData.setGroupId(p_course.getGroupSetId());
+				l_requestData.setUserName("test");
+				GroupProxy  l_groupSet = l_groupHandler.getClientData2(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
+				log.info("Deleting Group: " + l_groupSet.getName());
+				HTTPStatus l_status = l_groupHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
+			}
+
+		}
+		return 0;
 	}
 
 	public void createGroupMembership(String p_courseName, ICEnrollment p_enrollment, HashMap<String, GroupProxy> l_groups) {
@@ -1759,6 +1840,7 @@ public class RestManager implements IGradesDb {
 		l_requestData.setCourseName(p_group.getCourseId());
 		l_requestData.setUserName(p_group.getUserName());
 		l_requestData.setGroupId(p_group.getGroupId());
+		log.info("Adding User: " + p_group.getUserName() + " into group " + p_group.getGroupId());
 		l_groupHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 	}
 

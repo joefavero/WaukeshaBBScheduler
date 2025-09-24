@@ -756,7 +756,7 @@ public class RESTController {
 
 						// Fix The Course ID to contain the Key
 						String l_convertedKey = StringUtils.leftPad(Long.toString(l_key.longValue()), 9, "0");
-						mLog.info(" KEY: " + l_convertedKey);
+						mLog.debug(" KEY: " + l_convertedKey);
 
 						courseInfo.setTargetCourseId(courseInfo.getTargetCourseId().concat("_"+l_convertedKey));
 
@@ -784,6 +784,8 @@ public class RESTController {
 									l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
 									l_sectionInfo.setPersonId(courseInfo.getPersonId());
 									l_sectionInfo.setSectionNumber(l_sectionICInfo.getSectionNumber());
+									l_sectionInfo.setCourseNumber(l_sectionICInfo.getCourseNumber());
+									l_sectionInfo.setTeacherName(l_sectionICInfo.getTeacherName());
 									l_sectionInfoList.add(l_sectionInfo);
 								}
 
@@ -791,7 +793,8 @@ public class RESTController {
 								HashMap<String,GroupProxy> l_list=l_manager.createCourseGroup(courseInfo.getTargetCourseId(), l_sectionInfoList);
 
 								//Update the SDWBlackboardSchedulerBBCourses with groupSetId
-								dao.updateBBCourseGroupSet(l_key, l_list.get(courseInfo.getTargetCourseId()), String.valueOf(courseInfo.getPersonId()));
+								// Not Using GroupSet Field any more due to Change in way Groups are managed
+								//dao.updateBBCourseGroupSet(l_key, l_list.get(courseInfo.getTargetCourseId()), String.valueOf(courseInfo.getPersonId()));
 
 								//Update the SDWBlackboardSchedulerSISCourseSection
 								for (SectionInfo l_sec : l_sectionInfoList) {
@@ -1080,7 +1083,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/syncGroups", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse syncGroups (HttpServletRequest request) {
-		mLog.trace("In syncGroups() ...");
+		mLog.info("In syncGroups() ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Groups between Infinite Campus and Blackboard");
@@ -1098,6 +1101,7 @@ public class RESTController {
 				l_restResponse.setToast(l_toast);
 
 			} catch (Exception e) {
+				mLog.error("Error: " + e);
 				l_restResponse.setSuccess(false);
 				ToastMessage l_toast = new ToastMessage();
 				l_toast.setType("error");
@@ -1112,6 +1116,96 @@ public class RESTController {
 			l_restResponse.setToast(l_toast);
 		}
 		mLog.info ("Sync the Groups Completed");
+		return l_restResponse;
+	}
+
+
+	@RequestMapping(value = "/api/fixGroups", method = RequestMethod.GET, produces = "application/json")
+	@ResponseBody
+	public RestResponse fixGroups (HttpServletRequest request) {
+		mLog.info("In fixGroups() ...");
+		RestResponse l_restResponse = new RestResponse();
+		if (checkApiKey(request)) {
+			mLog.info ("Starting to Fix the Groups between Infinite Campus and Blackboard");
+
+			List<ICBBCourse> l_groups = dao.getBBGroupsToFix();
+			ConfigData l_configData;
+			try {
+				l_configData = m_service.getConfigData();
+				RestManager l_manager = new RestManager(l_configData);
+				mLog.info("Number of Courses to Process: " + l_groups.size());
+				int i=0;
+				for (ICBBCourse l_group : l_groups) {
+					i++;
+					mLog.info("Processing Process: " + i + " of " + l_groups.size());
+					mLog.info("Processing Course: " + l_group.getCourseId());
+					if (l_group.getGroupSetId() != null) {
+
+						l_manager.deleteAllGroups(l_group);
+
+
+						// Now Recreate The Groups
+						// Update The Section Link Info
+						// Get the Sections
+						List<ICSection> l_sections = dao.getSectionList(l_group.getBbCourseId());
+
+						List<SectionInfo> l_sectionInfoList = new ArrayList<SectionInfo>();
+						for (ICSection l_section : l_sections) {
+							mLog.info("Processing Section: " + l_section.getSectionID());
+							SectionInfo l_sectionInfo = new SectionInfo();
+							ICSectionInfo l_sectionICInfo = dao.getSectionInfo(Long.toString(l_section.getSectionID()));
+							if (l_sectionICInfo != null) {
+								//l_sectionInfo.setBbCourseId(l_key.longValue());
+								l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
+								l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
+								l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
+								//l_sectionInfo.setPersonId(courseInfo.getPersonId());
+								l_sectionInfo.setSectionNumber(l_sectionICInfo.getSectionNumber());
+								l_sectionInfo.setCourseNumber(l_sectionICInfo.getCourseNumber());
+								l_sectionInfo.setTeacherName(l_sectionICInfo.getTeacherName());
+								l_sectionInfoList.add(l_sectionInfo);
+
+								GroupProxy l_groupSet = l_manager.checkGroupSet (l_sectionInfo, l_group);
+
+								if (l_groupSet != null) {
+									HashMap<String,GroupProxy> l_list = l_manager.createCourseGroup(l_group.getCourseId(), l_sectionInfo, l_groupSet.getId());
+
+									//Update the SDWBlackboardSchedulerSISCourseSection
+									mLog.info("Processing Section " + l_sectionInfo.getSectionNumber());
+									if (l_list != null && l_list.get(String.valueOf(l_sectionInfo.getSectionId())) != null) {
+										l_sectionInfo.setGroupId(l_list.get(String.valueOf(l_sectionInfo.getSectionId())).getId());
+										dao.updateBBSectionLink(l_sectionInfo);
+									}
+								}
+							}
+						}
+					}
+					// Set the Group Set ID to Null
+					dao.updateBBCourseGroupSet(l_group.getBbCourseId(), null);
+				}
+
+				l_restResponse.setSuccess(true);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("success");
+				l_toast.setMessage("Sync Groups Successfully Submitted");
+				l_restResponse.setToast(l_toast);
+
+			} catch (Exception e) {
+				mLog.info("Error", e);
+				l_restResponse.setSuccess(false);
+				ToastMessage l_toast = new ToastMessage();
+				l_toast.setType("error");
+				l_toast.setMessage("RestManager Error");
+				l_restResponse.setToast(l_toast);
+			}	
+		} else {
+			l_restResponse.setSuccess(false);
+			ToastMessage l_toast = new ToastMessage();
+			l_toast.setType("error");
+			l_toast.setMessage("Apikey not found/incorrect");
+			l_restResponse.setToast(l_toast);
+		}
+		mLog.info ("Fix the Groups Completed");
 		return l_restResponse;
 	}
 
@@ -1445,18 +1539,19 @@ public class RESTController {
 	@RequestMapping(value = "/api/removeSection/{sectionId}", method = RequestMethod.DELETE, produces = "application/json")
 	@ResponseBody
 	public RestResponse removeSection(@PathVariable("sectionId") String sectionId, HttpServletRequest request) {
-		mLog.info("In removeSection ...");
+		mLog.trace("In removeSection ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			String l_course = dao.removeSection(sectionId);
 			mLog.info("Course ID: " + l_course);
+			mLog.info("Section ID: " + sectionId);
 			if (l_course != null) {
-				ConfigData l_configData;
-				List<String> sections = new ArrayList<String>();
-				sections.add(sectionId);
-				List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(sections);
-				RestManager l_manager=null;
 				try {
+					ConfigData l_configData;
+					List<String> sections = new ArrayList<String>();
+					sections.add(sectionId);
+					List<ICEnrollment> l_enrollments = dao.getEnrollmentsForSections(sections);
+					RestManager l_manager=null;
 					l_configData = m_service.getConfigData();
 					l_manager = new RestManager(l_configData);
 					CourseProxy l_courseProxy = l_manager.getCourseByName(l_course);
@@ -1511,10 +1606,10 @@ public class RESTController {
 	@RequestMapping(value = "/api/addSection/{courseId}/{sectionId}/{personId}", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse addSection(@PathVariable("courseId") String courseId, @PathVariable("sectionId") String sectionId, @PathVariable("personId") String personId , HttpServletRequest request) {
-		mLog.info("In addSection ...");
-		mLog.info("COURSE ID: " + courseId);
-		mLog.info("SECTION ID: " + sectionId);
-		mLog.info("PERSON ID: " + personId);
+		mLog.trace("In addSection ...");
+		mLog.debug("COURSE ID: " + courseId);
+		mLog.debug("SECTION ID: " + sectionId);
+		mLog.debug("PERSON ID: " + personId);
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			// Need to add to SDWBlackboardSchedulerSISCourseSections and Add Enrollments to Course
@@ -1527,14 +1622,6 @@ public class RESTController {
 				// Create Course Group
 				ICBBCourse l_bbCourse = dao.getBBCourseById(courseId);
 				if (l_bbCourse != null) {
-
-					// If this is a BB Course Created before BB Scheduler, need to add in Group Set
-					if (l_bbCourse.getGroupSetId() == null) {
-						HashMap<String,GroupProxy> l_groups =l_manager.createCourseGroup(courseId, null);
-						// Update SDWBlackboardSchedulerBbCourse with GroupSetId
-						dao.updateBBCourseGroupSet(l_bbCourse.getId(), l_groups.get(l_bbCourse.getBbCourseId()), personId);
-					}
-
 					SectionInfo l_sectionInfo = new SectionInfo();
 					ICSectionInfo l_sectionICInfo = dao.getSectionInfo(sectionId);
 					if (l_sectionICInfo != null) {
@@ -1544,15 +1631,20 @@ public class RESTController {
 						l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
 						l_sectionInfo.setPersonId(Long.valueOf(personId));
 						l_sectionInfo.setSectionNumber(l_sectionICInfo.getSectionNumber());
+						l_sectionInfo.setCourseNumber(l_sectionICInfo.getCourseNumber());
+						l_sectionInfo.setTeacherName(l_sectionICInfo.getTeacherName());
 
-						HashMap<String,GroupProxy> l_list = l_manager.createCourseGroup(courseId, l_sectionInfo, l_bbCourse.getGroupSetId());
+						// Check to see if Group Set is create ... if not ... create it
+						GroupProxy l_group = l_manager.checkGroupSet (l_sectionInfo, l_bbCourse);
+
+						HashMap<String,GroupProxy> l_list = l_manager.createCourseGroup(courseId, l_sectionInfo, l_group.getId());
 						if (l_list != null) {
 
 							List<ICEnrollment> l_enrollments = dao.addSection(courseId, sectionId, Long.valueOf(personId), l_list.get(sectionId).getId());
 							if (l_enrollments != null) {
 								for (ICEnrollment l_enrollment:l_enrollments) {
-									mLog.info("Adding User: " + l_enrollment.getUsername());
-									l_manager.createMembership(courseId, l_enrollment.getUsername(), l_enrollment.getRole());
+									mLog.debug("Adding User: " + l_enrollment.getUsername());
+									//l_manager.createMembership(courseId, l_enrollment.getUsername(), l_enrollment.getRole());
 									l_manager.createGroupMembership(courseId, l_enrollment, l_list);
 								}
 								l_restResponse.setSuccess(true);

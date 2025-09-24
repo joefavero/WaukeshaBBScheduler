@@ -85,6 +85,7 @@ public class AsyncService {
 		return CompletableFuture.completedFuture(l_newList);
 	}
 	
+	
 	@Async("asyncExecutor2")
 	@ResponseBody
 	public void processSISFile (SnapshotFileInfo p_file,  SnapshotFileManager p_manager) throws InterruptedException {
@@ -96,9 +97,13 @@ public class AsyncService {
 	@Async("asyncExecutor2")
 	@ResponseBody
 	public void processSISGroups (List<ICBBGroup> p_groups, RestManager p_manager) throws InterruptedException {
-		mLog.trace("In procesSISGroups()");
+		mLog.info("In procesSISGroups()");
+		mLog.info("Number of Enrollments: " + p_groups.size());
+		int i=0;
 		for (ICBBGroup l_group:p_groups) {
 			try {
+				i++;
+				mLog.info("Processing " + i + " of " + p_groups.size());
 				p_manager.createGroupMembership(l_group);
 			} catch (Exception e) {
 				mLog.error("Error: ", e);

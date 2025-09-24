@@ -30,6 +30,7 @@ public class RequestData {
 	private String date;
 	private String nodeId;
 	private String nodeExternalId;
+	private String courseNumber;
 
 	public RequestData() {
 
@@ -226,6 +227,14 @@ public class RequestData {
 
 	public void setNodeExternalId(String nodeExternalId) {
 		this.nodeExternalId = nodeExternalId;
+	}
+
+	public String getCourseNumber() {
+		return courseNumber;
+	}
+
+	public void setCourseNumber(String courseNumber) {
+		this.courseNumber = courseNumber;
 	}
 
 	

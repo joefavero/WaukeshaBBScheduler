@@ -126,8 +126,8 @@ public abstract class RestRequest {
 			}
 		} catch(HttpStatusCodeException e) {
 			l_httpStatus.setStatus(e.getStatusCode().value());
-			log.info("STATUS: " + e.getStatusCode().value());
-			log.info("MESSAGE: " + e.getResponseBodyAsString());
+			log.debug("STATUS: " + e.getStatusCode().value());
+			log.debug("MESSAGE: " + e.getResponseBodyAsString());
 	        return l_httpStatus;
 	    }
 	}

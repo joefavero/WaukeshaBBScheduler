@@ -14,6 +14,7 @@ public class ICBBCourse {
 	private String calendarName;
 	private String userName;
 	private String groupSetId;
+	private String personId;
 	
 	public Long getId() {
 		return id;
@@ -87,6 +88,13 @@ public class ICBBCourse {
 	public void setGroupSetId(String groupSetId) {
 		this.groupSetId = groupSetId;
 	}
-	
 
+	public String getPersonId() {
+		return personId;
+	}
+
+	public void setPersonId(String personId) {
+		this.personId = personId;
+	}
+	
 }

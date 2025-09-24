@@ -381,7 +381,7 @@ public class InfiniteCampusDAO {
 						l_sectionList.put(String.valueOf(bbSection.getSectionID())+bbSection.getTeacherName(), l_temp);
 					} else {
 						l_sectionList.put(String.valueOf(bbSection.getSectionID())+bbSection.getTeacherName(), bbSection);
-						
+
 						// Now Update the Teacher Count
 						List<ICTeacherList> l_teacherList = this.getTeacherList(bbSection.getCourseId(), Integer.valueOf(bbSection.getSectionNumber()));
 						bbSection.setTeacherNumber(Long.valueOf(l_teacherList.size()));
@@ -454,11 +454,11 @@ public class InfiniteCampusDAO {
 		List<ICBBEnrollment> bbEnrollments = null;
 		try {
 			bbEnrollments= template.query(sql2, params, new BeanPropertyRowMapper<ICBBEnrollment>(ICBBEnrollment.class));
-			
+
 			// Now we need to add extra students and extra teacher
 			List<ICBBEnrollment> l_enrollments = this.getExtraEnrollments();
 			for (ICBBEnrollment l_enrollment : l_enrollments) {
-		
+
 				if (l_enrollment.getRole().equals("T")) {
 					l_enrollment.setRole("Instructor");
 				} else if (l_enrollment.getRole().equals("S")) {
@@ -467,7 +467,7 @@ public class InfiniteCampusDAO {
 				bbEnrollments.add(l_enrollment);
 			}
 			mLog.info("Number of Extra Enrollment: " + l_enrollments.size());
-			
+
 			// Now we need to add the Instructors
 			List<ICBBEnrollment> l_teacherEnrollments = this.getTeacherEnrollments();
 			for (ICBBEnrollment l_enrollment : l_teacherEnrollments) {
@@ -521,7 +521,7 @@ public class InfiniteCampusDAO {
 		}
 		return bbEnrollments;
 	}
-	
+
 	@Transactional(readOnly=true)
 	public List<ICBBEnrollment> getTeacherEnrollments() {
 		mLog.info("In getTeacherEnrollments ...");
@@ -548,7 +548,7 @@ public class InfiniteCampusDAO {
 		}
 		return bbEnrollments;
 	}
-	
+
 	@Transactional(readOnly=true)
 	public List<ICBBGroup> getBBGroups() {
 		mLog.info("In getBBGroups ...");
@@ -568,12 +568,33 @@ public class InfiniteCampusDAO {
 				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) "
 				+ "   and (sdws.sectionID is not null) "
 				+ "   and (Cal.endDate is null or Cal.endDate >= GETDATE())"
-				+ "   and sdws.groupId is not null";
+				+ "   and sdws.groupId is not null ";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICBBGroup> bbGroups = null;
 		try {
 			bbGroups= template.query(sql2, params, new BeanPropertyRowMapper<ICBBGroup>(ICBBGroup.class));
+
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+		return bbGroups;
+	}
+
+	@Transactional(readOnly=true)
+	public List<ICBBCourse> getBBGroupsToFix() {
+		mLog.info("In getBBGroupsToFix ...");
+
+		String sql2 = "select sdw.bbCourseID as bbCourseId, sdw.bbCOURSE_ID as courseId, sdw.bbCOURSE_NAME as courseName, sdw.bbDESCRIPTION as courseDescription, sdw.groupSetId as groupSetId, createdByPersonID as personId"
+				+ "  from SDWBlackboardSchedulerBbCourses sdw "
+				+ "  where sdw.groupSetId is not null";
+		;
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		List<ICBBCourse> bbGroups = null;
+		try {
+			bbGroups= template.query(sql2, params, new BeanPropertyRowMapper<ICBBCourse>(ICBBCourse.class));
 
 		} catch (DataAccessException l_ex) {
 			mLog.error("Database Access Error", l_ex);
@@ -602,7 +623,7 @@ public class InfiniteCampusDAO {
 		}
 		return bbCourse;
 	}
-	
+
 	@Transactional(readOnly=true)
 	public ICBBCourse getBBCourseByBBId(String bbCourseId) {
 		mLog.trace("In getBBCoursesById ...");
@@ -746,8 +767,9 @@ public class InfiniteCampusDAO {
 	public ICSectionInfo getSectionInfo(String p_section) {
 		mLog.info("Section ID: " + p_section);
 
-		String sql = "select Course.calendarID, Section.sectionID, Section.courseID, Section.number as sectionNumber from Section"
+		String sql = "select Course.calendarID, Section.sectionID, Section.courseID, Section.number as sectionNumber, Course.number as courseNumber, UserAccount.username as teacherName from Section"
 				+ " left join Course on Course.courseID = Section.courseID"
+				+ " left join UserAccount on UserAccount.personID=Section.teacherPersonID "
 				+ " where Section.sectionID = :sectionId";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
@@ -762,6 +784,26 @@ public class InfiniteCampusDAO {
 		}
 
 		return l_section;
+	}
+
+	@Transactional(readOnly=true)
+	public List<ICSection> getSectionList(String p_courseId) {
+		mLog.info("Course ID: " + p_courseId);
+
+		String sql = "select sectionID from SDWBlackboardSchedulerSISCourseSections where bbCourseID=:courseId";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("courseId", p_courseId);
+		List<ICSection> l_sections = null;
+
+		try {
+			l_sections = template.query(sql, params, new BeanPropertyRowMapper<ICSection>(ICSection.class));
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+
+		return l_sections;
 	}
 
 	@Transactional(readOnly=true)
@@ -1586,6 +1628,31 @@ public class InfiniteCampusDAO {
 	}
 
 	@Transactional
+	public Number updateBBSectionLink (SectionInfo sectionInfo) {
+		mLog.info("updateBBSectionLink  called ...");
+		mLog.info("Section ID: "+ sectionInfo.getSectionId());
+		mLog.info("Group ID: "+ sectionInfo.getGroupId());
+
+		String sql = "update SDWBlackboardSchedulerSISCourseSections"
+				+ " set groupId=:groupId where sectionId=:sectionId";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("sectionId", sectionInfo.getSectionId());
+		params.addValue("groupId", sectionInfo.getGroupId());
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		Number id = null;
+		try {
+			id = template.update(sql, params, keyHolder);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+
+		return id;
+
+	}
+
+	@Transactional
 	public Number insertBBPersonLink (PersonInfo personInfo) {
 		mLog.trace("insertBBCSectionLink  called ...");
 
@@ -1696,23 +1763,49 @@ public class InfiniteCampusDAO {
 				+ " set groupSetId = :groupSetId, modifiedByPersonID=:personId, modified=GETDATE()"
 				+ " where  bbCourseID = :key";
 		Number id = null;
+		MapSqlParameterSource params = new MapSqlParameterSource();
 		if (p_group != null) {
-			MapSqlParameterSource params = new MapSqlParameterSource();
 			params.addValue("groupSetId", p_group.getId());
-			params.addValue("key", p_key);
-			params.addValue("personId", p_personId);
-			KeyHolder keyHolder = new GeneratedKeyHolder();
-
-
-			try {
-				id = template.update(sql, params, keyHolder);
-			} catch (DataAccessException l_ex) {
-				mLog.error("Database Access Error", l_ex);
-			}
 		} else {
-			mLog.info("Unable to BB Course Groups Set.  Group is empty");
+			params.addValue("groupSetId", null);
 		}
+		params.addValue("key", p_key);
+		params.addValue("personId", p_personId);
+		KeyHolder keyHolder = new GeneratedKeyHolder();
 
+
+		try {
+			id = template.update(sql, params, keyHolder);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+		}
+		return id;
+
+	}
+
+	@Transactional
+	public Number updateBBCourseGroupSet (String p_bbCourseId, GroupProxy p_group) {
+		mLog.info("updateBBCourseLink  called ...");
+
+		String sql = "update SDWBlackboardSchedulerBBCourses"
+				+ " set groupSetId = :groupSetId, modified=GETDATE()"
+				+ " where  bbCourseID = :bbCourseId";
+		Number id = null;
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		if (p_group != null) {
+			params.addValue("groupSetId", p_group.getId());
+		} else {
+			params.addValue("groupSetId", null);
+		}
+		params.addValue("bbCourseId", p_bbCourseId);
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+
+
+		try {
+			id = template.update(sql, params, keyHolder);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+		}
 		return id;
 
 	}
@@ -1722,7 +1815,7 @@ public class InfiniteCampusDAO {
 		mLog.trace("removeSection  called ...");
 		Number rows = null;
 
-		String sql1 = "select b.bbCOURSE_ID from SDWBlackboardSchedulerSISCourseSections a"
+		String sql1 = "select top 1 b.bbCOURSE_ID from SDWBlackboardSchedulerSISCourseSections a"
 				+ " left join SDWBlackboardSchedulerBbCourses b on b.bbCourseID = a.bbCourseID"
 				+ " where a.sectionID=:sectionid";
 
@@ -1836,7 +1929,7 @@ public class InfiniteCampusDAO {
 
 		return rows;
 	}
-	
+
 	@Transactional
 	public Number deleteBBPersons(String p_bbCourseId) {
 		mLog.info("deleteBBPersons  called ...");
@@ -2019,7 +2112,7 @@ public class InfiniteCampusDAO {
 		return keyHolder.getKey();
 
 	}
-	
+
 	@Transactional(readOnly=true)
 	public List<ICCalendarList> getCalendarList () {
 		mLog.trace("getCalendarList  called ...");
@@ -2039,7 +2132,7 @@ public class InfiniteCampusDAO {
 		}
 		return l_calendars;
 	}
-	
+
 	@Transactional(readOnly=true)
 	public List<ICBBCourse> getBBCoursesByCalendarList (String[] p_calendars) {
 		mLog.info("getBBCoursesByCalendarList  called ...");

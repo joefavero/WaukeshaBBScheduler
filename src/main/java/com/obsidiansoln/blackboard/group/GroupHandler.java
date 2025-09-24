@@ -31,7 +31,7 @@ public class GroupHandler implements RestHandler {
 		log.trace("In createObject()");
 		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2, HttpMethod.POST, access_token, getBody("")));
 	}
-	
+
 	public GroupProxy createObject(String host, String access_token, RequestData data, String name) {
 		log.trace("In createObject()");
 		HTTPStatus l_response = RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP_SET_PATH, HttpMethod.POST, access_token, getBody(name));
@@ -54,7 +54,7 @@ public class GroupHandler implements RestHandler {
 		}
 		return obj;
 	}
-	
+
 	public GroupProxy createObject(String host, String access_token, RequestData data, SectionInfo section, String groupSet) {
 		log.trace("In createObject()");
 		HTTPStatus l_response = RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2+data.getCourseId()+ RestConstants.COURSE_GROUP_SET_PATH + "/" + groupSet +"/groups", HttpMethod.POST, access_token, getBody(data.getCourseId(),section));
@@ -83,11 +83,21 @@ public class GroupHandler implements RestHandler {
 	public HTTPStatus readObject(String host, String access_token, RequestData data) {
 		log.trace("In readObject()");
 		if (data.getCourseId() != null) {
-				return (RestRequest.sendRequest(host, RestConstants.GRADEBOOK_PATH_V1 + data.getCourseId()
-						+ RestConstants.GRADEBOOK_SCHEMAS, HttpMethod.GET, access_token, ""));
+			if (data.getCourseNumber() != null) {
+				return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2+data.getCourseId()+ RestConstants.COURSE_GROUP_SET_PATH
+						+ "?name=" + data.getCourseNumber() + "&nameCompare=contains", HttpMethod.GET, access_token, ""));
+			} else {
+				if (data.getUserName() != null) {
+					return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2+data.getCourseId()+ RestConstants.COURSE_GROUP_SET_PATH + "/" + data.getGroupId()
+					, HttpMethod.GET, access_token, ""));
+				} else {
+					return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2+data.getCourseId()+ RestConstants.COURSE_GROUP_SET_PATH + "/" + data.getGroupId() + "/groups"
+							, HttpMethod.GET, access_token, ""));
+				}
+			}
 		} else {
 			return (RestRequest.sendRequest(host, RestConstants.GRADEBOOK_PATH_V1 + data.getCourseId()
-					+ RestConstants.GRADEBOOK_SCHEMAS, HttpMethod.GET, access_token, ""));
+			+ RestConstants.GRADEBOOK_SCHEMAS, HttpMethod.GET, access_token, ""));
 		}
 	}
 
@@ -102,12 +112,16 @@ public class GroupHandler implements RestHandler {
 		log.trace("In updateObject()");
 		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + "courseId:" + data.getCourseName() + RestConstants.COURSE_GROUP + data.getGroupId() + RestConstants.COURSE_USER + "userName:" + data.getUserName(), HttpMethod.PUT, access_token,null));
 	}
-	
+
 
 	@Override
 	public HTTPStatus deleteObject(String host, String access_token, RequestData data) {
 		log.trace("In deleteObject()");
-		return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP + "externalId:" + data.getCourseId()+"."+data.getGroupId(), HttpMethod.DELETE, access_token, ""));
+		if (data.getUserName() != null) {
+			return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP + "sets/" +data.getGroupId(), HttpMethod.DELETE, access_token, ""));
+		} else {
+			return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP +data.getGroupId(), HttpMethod.DELETE, access_token, ""));
+		}
 	}
 
 	public GroupResponseProxy getClientData(String host, String access_token, String p_nextPage,
@@ -166,13 +180,13 @@ public class GroupHandler implements RestHandler {
 		}
 		return obj;
 	}
-	
+
 	private String getBody(String courseId, SectionInfo section) {
 		log.trace("In getBody()");
 
 		ObjectMapper objMapper = new ObjectMapper();
 		GroupProxy l_group = new GroupProxy();
-		l_group.setName(String.valueOf("SECTION " + section.getSectionNumber()));
+		l_group.setName(String.valueOf("SECTION " + section.getSectionNumber()) + " " + section.getCourseNumber() + " " + section.getTeacherName());
 		l_group.setExternalId(courseId + "." + String.valueOf(section.getSectionId()));
 		l_group.setDescription("Auto generated groups synced to IC roster.  Do not modify manually.");
 		Availability l_avail = new Availability();
@@ -181,7 +195,7 @@ public class GroupHandler implements RestHandler {
 		Enrollment l_enroll = new Enrollment();
 		l_enroll.setType("InstructorOnly");
 		l_group.setEnrollment(l_enroll);
-				
+
 		String body = "";
 		try {
 			body = objMapper.writeValueAsString(l_group);
@@ -207,7 +221,7 @@ public class GroupHandler implements RestHandler {
 		Enrollment l_enroll = new Enrollment();
 		l_enroll.setType("SelfEnrollment");
 		l_group.setEnrollment(l_enroll);
-				
+
 		String body = "";
 		try {
 			body = objMapper.writeValueAsString(l_group);
@@ -220,7 +234,7 @@ public class GroupHandler implements RestHandler {
 
 		return (body);
 	}
-	
+
 	private String getBody() {
 		log.trace("In getBody()");
 
