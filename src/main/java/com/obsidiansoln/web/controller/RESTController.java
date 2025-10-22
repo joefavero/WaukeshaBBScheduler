@@ -662,7 +662,7 @@ public class RESTController {
 	@ResponseBody
 	public String getBBSections (@PathVariable("bbCourseId") String bbCourseId, @PathVariable("userName") String userName,
 			HttpServletRequest request) {
-		mLog.trace("In getBBSections ...");
+		mLog.info("In getBBSections ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -1639,7 +1639,7 @@ public class RESTController {
 						GroupProxy l_group = l_manager.checkGroupSet (l_sectionInfo, l_bbCourse);
 
 						HashMap<String,GroupProxy> l_list = l_manager.createCourseGroup(courseId, l_sectionInfo, l_group.getId());
-						if (l_list != null) {
+						if (l_list != null && l_list.get(sectionId).getId() != null) {
 
 							List<ICEnrollment> l_enrollments = dao.addSection(courseId, sectionId, Long.valueOf(personId), l_list.get(sectionId).getId());
 							if (l_enrollments != null) {

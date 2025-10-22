@@ -59,6 +59,14 @@ public class GroupHandler implements RestHandler {
 		log.trace("In createObject()");
 		HTTPStatus l_response = RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2+data.getCourseId()+ RestConstants.COURSE_GROUP_SET_PATH + "/" + groupSet +"/groups", HttpMethod.POST, access_token, getBody(data.getCourseId(),section));
 
+		//  Need to handle if there is a group in BB that was not Deleted Correctly
+		if (l_response.getStatus() == 409) {
+			RequestData data2 = new RequestData();
+			data2.setCourseId(data.getCourseId());
+			data2.setExternalId(data.getCourseId() + "." + String.valueOf(section.getSectionId()));
+			l_response = this.deleteObject(host, access_token, data2);
+			l_response = RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2+data.getCourseId()+ RestConstants.COURSE_GROUP_SET_PATH + "/" + groupSet +"/groups", HttpMethod.POST, access_token, getBody(data.getCourseId(),section));
+		}
 		ObjectMapper mapper = new ObjectMapper();
 
 		GroupProxy obj = null;
@@ -119,6 +127,8 @@ public class GroupHandler implements RestHandler {
 		log.trace("In deleteObject()");
 		if (data.getUserName() != null) {
 			return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP + "sets/" +data.getGroupId(), HttpMethod.DELETE, access_token, ""));
+		} else if (data.getExternalId() != null) {
+			return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP + "externalId:" + data.getExternalId(), HttpMethod.DELETE, access_token, ""));
 		} else {
 			return (RestRequest.sendRequest(host, RestConstants.COURSE_PATH_V2 + data.getCourseId() + RestConstants.COURSE_GROUP +data.getGroupId(), HttpMethod.DELETE, access_token, ""));
 		}

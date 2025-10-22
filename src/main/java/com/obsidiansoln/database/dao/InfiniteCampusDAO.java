@@ -309,6 +309,7 @@ public class InfiniteCampusDAO {
 	@Transactional(readOnly=true)
 	public List<ICBBSection> getBBSectionsByCourseIdUsername(String courseId, String username) {
 		mLog.info("In getBBCoursesByUsername ...");
+		mLog.info("COURSE ID: " + courseId);
 		List<ICBBSection> l_returnList = new ArrayList<ICBBSection>();
 		String sql = "select distinct sdws.sectionID as sectionID, "
 				+ "			 Course.courseID as courseId, "
@@ -556,7 +557,8 @@ public class InfiniteCampusDAO {
 		String sql2 = "select distinct sdws.groupId as groupId,"
 				+ " sdw.bbCOURSE_ID as courseId,"
 				+ " sdws.sectionID as sectionId,"
-				+ " UserAccount.username as userName"
+				+ " UserAccount.username as userName,"
+				+ " sdws.modified"
 				+ " from SDWBlackboardSchedulerSISCourseSections sdws"
 				+ "		left join SDWBlackboardSchedulerBbCourses sdw on sdw.bbCourseID=sdws.bbCourseID"
 				+ "        left join Roster on Roster.sectionID = sdws.sectionID"
@@ -570,7 +572,8 @@ public class InfiniteCampusDAO {
 				+ "   and (Cal.endDate is null or Cal.endDate >= GETDATE())"
 				+ "   and sdws.groupId is not null"
 				+ "   and ((Cal.enddate >= CAST(GETDATE() as date)) or Cal.endYear=year(GETDATE())+1)"
-				+ "   and UserAccount.username is not null";
+				+ "   and UserAccount.username is not null"
+				+ "   order by sdws.modified desc";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICBBGroup> bbGroups = null;
