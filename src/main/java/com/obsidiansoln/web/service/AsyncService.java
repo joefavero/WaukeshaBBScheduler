@@ -103,7 +103,7 @@ public class AsyncService {
 		for (ICBBGroup l_group:p_groups) {
 			try {
 				i++;
-				mLog.info("Processing " + i + " of " + p_groups.size());
+				mLog.debug("Processing " + i + " of " + p_groups.size());
 				p_manager.createGroupMembership(l_group);
 			} catch (Exception e) {
 				mLog.error("Error: ", e);
