@@ -1783,7 +1783,7 @@ public class RestManager implements IGradesDb {
 
 		RequestData l_requestData = new RequestData();
 		l_requestData.setCourseId(p_courseId);
-		l_requestData.setGroupId(p_sectionId);
+		l_requestData.setExternalId(p_courseId + "." + p_sectionId);
 		checkToken();
 		HTTPStatus l_status = l_groupHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 		log.debug("Group Deleted");
@@ -1792,7 +1792,7 @@ public class RestManager implements IGradesDb {
 	}
 
 	public int deleteAllGroups(ICBBCourse p_course) {
-		log.info("In deleteAllGroups()");
+		log.trace("In deleteAllGroups()");
 		GroupHandler l_groupHandler = new GroupHandler();
 
 		CourseProxy l_course = this.getCourseByName(p_course.getCourseId());
@@ -1809,7 +1809,7 @@ public class RestManager implements IGradesDb {
 				GroupListProxy l_groupList = l_groupResponse.getResults();
 				// Delete each Group
 				for (GroupProxy l_group : l_groupList) {
-					log.info("Deleting Group: " + l_group.getName());
+					log.debug("Deleting Group: " + l_group.getName());
 					l_requestData.setCourseId(l_course.getId());
 					l_requestData.setGroupId(l_group.getId());
 					checkToken();
@@ -1822,7 +1822,7 @@ public class RestManager implements IGradesDb {
 				l_requestData.setUserName("test");
 				checkToken();
 				GroupProxy  l_groupSet = l_groupHandler.getClientData2(m_configData.getRestHost(), m_token.getToken(), null, l_requestData);
-				log.info("Deleting Group: " + l_groupSet.getName());
+				log.debug("Deleting Group: " + l_groupSet.getName());
 				HTTPStatus l_status = l_groupHandler.deleteObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 			}
 

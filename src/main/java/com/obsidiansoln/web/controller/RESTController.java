@@ -1540,7 +1540,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/removeSection/{sectionId}", method = RequestMethod.DELETE, produces = "application/json")
 	@ResponseBody
 	public RestResponse removeSection(@PathVariable("sectionId") String sectionId, HttpServletRequest request) {
-		mLog.trace("In removeSection ...");
+		mLog.info("In removeSection ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			String l_course = dao.removeSection(sectionId);
@@ -1559,7 +1559,7 @@ public class RESTController {
 					if (l_courseProxy != null) {
 						for (ICEnrollment l_enrollment:l_enrollments) {
 							if (l_enrollment.getRole().equals("Student")) {
-								l_manager.removeMembership(l_course, l_enrollment.getUsername());
+								//l_manager.removeMembership(l_course, l_enrollment.getUsername());
 							}
 						} 
 
