@@ -8,6 +8,8 @@ public class ICBBSection {
 	private int sectionID;
 	private Long courseId;
 	private String courseName;
+	private String courseNumber;
+	private String calendarName;
 	private String sectionNumber;
 	private String termName;
 	private String period;
@@ -32,6 +34,18 @@ public class ICBBSection {
 	}
 	public void setCourseName(String courseName) {
 		this.courseName = courseName;
+	}
+	public String getCourseNumber() {
+		return courseNumber;
+	}
+	public void setCourseNumber(String courseNumber) {
+		this.courseNumber = courseNumber;
+	}
+	public String getCalendarName() {
+		return calendarName;
+	}
+	public void setCalendarName(String calendarName) {
+		this.calendarName = calendarName;
 	}
 	public String getSectionNumber() {
 		return sectionNumber;

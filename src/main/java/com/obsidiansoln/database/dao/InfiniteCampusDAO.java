@@ -308,12 +308,14 @@ public class InfiniteCampusDAO {
 
 	@Transactional(readOnly=true)
 	public List<ICBBSection> getBBSectionsByCourseIdUsername(String courseId, String username) {
-		mLog.info("In getBBCoursesByUsername ...");
-		mLog.info("COURSE ID: " + courseId);
+		mLog.trace("In getBBCoursesByCourseIdUsername ...");
+		mLog.debug("COURSE ID: " + courseId);
 		List<ICBBSection> l_returnList = new ArrayList<ICBBSection>();
 		String sql = "select distinct sdws.sectionID as sectionID, "
 				+ "			 Course.courseID as courseId, "
 				+ "			 Course.name as courseName, "
+				+ "          Course.number as courseNumber, "
+				+ "          Calendar.name as calendarName, "
 				+ "          Section.number as sectionNumber, "
 				+ "          UserAccount.username as teacherName, "
 				+ "          Term.name as termName, "
@@ -328,7 +330,7 @@ public class InfiniteCampusDAO {
 				+ "         left join Section on section.sectionID= sdws.sectionID "
 				+ "         left join Course on course.courseID=Section.courseID "
 				+ "         left join UserAccount on UserAccount.personID=Section.teacherPersonID "
-				+ "         left join Calendar on Calendar.calendarID=sdw.calendarID "
+				+ "         left join Calendar on Calendar.calendarID=sdws.calendarID "
 				+ "         left Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID "
 				+ "         left Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
 				+ "			left Join SectionPlacement on SectionPlacement.sectionID=section.sectionID  and SectionPlacement.trialID=trial.trialID "
@@ -340,6 +342,8 @@ public class InfiniteCampusDAO {
 		String sqlAdmin = "select distinct sdws.sectionID as sectionID, "
 				+ "			 Course.courseID as courseId, "
 				+ "			 Course.name as courseName, "
+				+ "          Course.number as courseNumber, "
+				+ "          Calendar.name as calendarName, "
 				+ "          Section.number as sectionNumber, "
 				+ "          UserAccount.username as teacherName, "
 				+ "          Term.name as termName, "
@@ -354,7 +358,7 @@ public class InfiniteCampusDAO {
 				+ "         left join Section on section.sectionID= sdws.sectionID "
 				+ "         left join Course on course.courseID=Section.courseID "
 				+ "         left join UserAccount on UserAccount.personID=Section.teacherPersonID "
-				+ "         left join Calendar on Calendar.calendarID=sdw.calendarID "
+				+ "         left join Calendar on Calendar.calendarID=sdws.calendarID "
 				+ "         left Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID "
 				+ "         left Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
 				+ "			left Join SectionPlacement on SectionPlacement.sectionID=section.sectionID  and SectionPlacement.trialID=trial.trialID "
@@ -372,16 +376,16 @@ public class InfiniteCampusDAO {
 				params.addValue("courseid", courseId);
 				bbSections= template.query(sqlAdmin, params, new BeanPropertyRowMapper<ICBBSection>(ICBBSection.class));
 				for (ICBBSection bbSection : bbSections) {
-					ICBBSection l_temp = l_sectionList.get(Long.valueOf(bbSection.getSectionID()));
-
+					ICBBSection l_temp = l_sectionList.get(String.valueOf(bbSection.getSectionID()));
 					if (l_temp != null) {
 						if (l_temp.getTermName() != null) {
+							
 							l_temp.setTermName (l_temp.getTermName().concat("/"+bbSection.getTermName()));
 						}
 
-						l_sectionList.put(String.valueOf(bbSection.getSectionID())+bbSection.getTeacherName(), l_temp);
+						l_sectionList.put(String.valueOf(bbSection.getSectionID()), l_temp);
 					} else {
-						l_sectionList.put(String.valueOf(bbSection.getSectionID())+bbSection.getTeacherName(), bbSection);
+						l_sectionList.put(String.valueOf(bbSection.getSectionID()), bbSection);
 
 						// Now Update the Teacher Count
 						List<ICTeacherList> l_teacherList = this.getTeacherList(bbSection.getCourseId(), Integer.valueOf(bbSection.getSectionNumber()));
@@ -399,9 +403,9 @@ public class InfiniteCampusDAO {
 				bbSections= template.query(sql, params, new BeanPropertyRowMapper<ICBBSection>(ICBBSection.class));
 				for (ICBBSection bbSection : bbSections) {
 					ICBBSection l_temp = l_sectionList.get(Long.valueOf(bbSection.getSectionID()));
-
 					if (l_temp != null) {
 						if (l_temp.getTermName() != null) {
+							
 							l_temp.setTermName (l_temp.getTermName().concat("/"+bbSection.getTermName()));
 						}
 

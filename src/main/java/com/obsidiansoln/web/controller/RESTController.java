@@ -662,7 +662,7 @@ public class RESTController {
 	@ResponseBody
 	public String getBBSections (@PathVariable("bbCourseId") String bbCourseId, @PathVariable("userName") String userName,
 			HttpServletRequest request) {
-		mLog.info("In getBBSections ...");
+		mLog.trace("In getBBSections ...");
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
