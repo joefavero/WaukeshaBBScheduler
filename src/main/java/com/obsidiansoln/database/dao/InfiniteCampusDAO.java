@@ -446,7 +446,7 @@ public class InfiniteCampusDAO {
 				+ "     left join Section on Section.sectionID = Roster.sectionID"
 				+ "     left join Person on Person.personID = Roster.personID "
 				+ "     left join UserAccount on UserAccount.personID = Roster.personID "
-				+ "		Inner join Calendar cal on sdw.calendarID = cal.calendarID"
+				+ "		Inner join Calendar cal on sdws.calendarID = cal.calendarID"
 				+ "     Inner join enrollment on Person.personID = enrollment.personID and cal.calendarID = enrollment.calendarID"
 				+ "				where (Roster.endDate is null or Roster.endDate > GETDATE()) and "
 				+ "             (sdws.sectionID is not null) and "
