@@ -1486,7 +1486,7 @@ public class InfiniteCampusDAO {
 				+ "	 	)  "
 				+ "	  and enr.active=1  "
 				+ "	  and (enr.noShow=0 or enr.noShow Is Null)  "
-				+ "	  and enr.serviceType IN ('P')  "
+				+ "	  and enr.serviceType IN ('P','S')  "
 				+ " join [Identity] idn with (nolock) on prs.currentIdentityID=idn.identityID  "
 				+ "	  and prs.personID=idn.personID  "
 				+ " 	and enr.districtID=idn.districtID  "
