@@ -478,6 +478,25 @@ public class RestManager implements IGradesDb {
 		}
 		return l_instructorEmail;
 	}
+	
+	public MembershipProxy getCourseMembership (String p_course, String p_user) {
+		log.trace("In getCourseMembership()");
+		log.debug("COURSE: " + p_course);
+		log.debug("USER: " + p_user);
+		MembershipHandler l_membershipHandler = new MembershipHandler();
+		checkToken();
+		RequestData l_requestData = new RequestData();
+		l_requestData.setCourseName(p_course);
+		l_requestData.setUserName(p_user);
+		
+		MembershipProxy l_membership = l_membershipHandler.getClientData2(m_configData.getRestHost(),
+				m_token.getToken(), null, l_requestData);
+		
+		if (l_membership == null || l_membership.getId()  == null)
+			return null;
+		else
+			return l_membership;
+	}
 
 	public List<MembershipProxy> getMembershipCourse(String p_courseId, String p_userId) {
 		log.trace("In getMembership()");
@@ -1843,7 +1862,7 @@ public class RestManager implements IGradesDb {
 		l_groupHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
 	}
 
-	public void createGroupMembership(ICBBGroup p_group) {
+	public HTTPStatus createGroupMembership(ICBBGroup p_group) {
 		log.trace("In createGroupMembership2()");
 
 		GroupHandler l_groupHandler = new GroupHandler();
@@ -1851,9 +1870,9 @@ public class RestManager implements IGradesDb {
 		l_requestData.setCourseName(p_group.getCourseId());
 		l_requestData.setUserName(p_group.getUserName());
 		l_requestData.setGroupId(p_group.getGroupId());
-		log.debug("Adding User: " + p_group.getUserName() + " into group " + p_group.getGroupId());
 		checkToken();
-		l_groupHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
+		HTTPStatus l_status = l_groupHandler.updateObject(m_configData.getRestHost(), m_token.getToken(), l_requestData);
+		return l_status;
 	}
 
 	@Override

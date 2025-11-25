@@ -1637,9 +1637,9 @@ public class InfiniteCampusDAO {
 
 	@Transactional
 	public Number updateBBSectionLink (SectionInfo sectionInfo) {
-		mLog.info("updateBBSectionLink  called ...");
-		mLog.info("Section ID: "+ sectionInfo.getSectionId());
-		mLog.info("Group ID: "+ sectionInfo.getGroupId());
+		mLog.trace("updateBBSectionLink  called ...");
+		mLog.debug("Section ID: "+ sectionInfo.getSectionId());
+		mLog.debug("Group ID: "+ sectionInfo.getGroupId());
 
 		String sql = "update SDWBlackboardSchedulerSISCourseSections"
 				+ " set groupId=:groupId where sectionId=:sectionId";
@@ -1647,6 +1647,29 @@ public class InfiniteCampusDAO {
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		params.addValue("sectionId", sectionInfo.getSectionId());
 		params.addValue("groupId", sectionInfo.getGroupId());
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		Number id = null;
+		try {
+			id = template.update(sql, params, keyHolder);
+		} catch (DataAccessException l_ex) {
+			mLog.error("Database Access Error", l_ex);
+			return null;
+		}
+
+		return id;
+
+	}
+	
+	@Transactional
+	public Number updateBBSectionGroup (String p_oldGroup, String p_newGroup) {
+		mLog.trace("updateBBSectionGroup  called ...");
+
+		String sql = "update SDWBlackboardSchedulerSISCourseSections"
+				+ " set groupId=:newGroupId where groupId=:oldGroupId";
+
+		MapSqlParameterSource params = new MapSqlParameterSource();
+		params.addValue("oldGroupId", p_oldGroup);
+		params.addValue("newGroupId", p_newGroup);
 		KeyHolder keyHolder = new GeneratedKeyHolder();
 		Number id = null;
 		try {

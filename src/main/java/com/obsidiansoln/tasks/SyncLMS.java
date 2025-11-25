@@ -4,19 +4,27 @@
  */
 package com.obsidiansoln.tasks;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
+import com.obsidiansoln.blackboard.group.GroupProxy;
+import com.obsidiansoln.blackboard.membership.MembershipProxy;
+import com.obsidiansoln.blackboard.model.HTTPStatus;
 import com.obsidiansoln.blackboard.model.SnapshotFileInfo;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
 import com.obsidiansoln.database.dao.InfiniteCampusDAO;
+import com.obsidiansoln.database.model.ICBBCourse;
 import com.obsidiansoln.database.model.ICBBEnrollment;
 import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICGuardian;
+import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.database.model.ICStaff;
 import com.obsidiansoln.database.model.ICUser;
 import com.obsidiansoln.util.EmailManager;
@@ -108,15 +116,72 @@ public class SyncLMS {
 		List<ICBBGroup> l_groups = dao.getBBGroups();
 		ConfigData l_configData = null;
 		String l_message;
+		RestManager l_manager = null;
+		try {
+			l_configData = m_service.getConfigData();
+			l_manager = new RestManager(l_configData);
+		} catch (Exception e) {
+			mLog.error("ERROR: ", e);
+			l_message = "ERRROR IN BB Scheduler Group Sync" + "<br>";
+		}
+
+
+		// Add Enrollments Into Groups
+		int i=0;
+		HashMap<String,String> l_groupOverrideList = new HashMap<String,String>();
 		for (ICBBGroup l_group:l_groups) {
 			try {
-				l_configData = m_service.getConfigData();
-				RestManager l_manager = new RestManager(l_configData);
-				l_manager.createGroupMembership(l_group);
-			} catch (Exception e) {
-				mLog.error("ERROR: ", e);
-				l_message = "ERRROR IN BB Scheduler Group Sync" + "<br>";
+				i++;
+				mLog.info("Processing " + i + " of " + l_groups.size());
+				if (l_groupOverrideList.containsKey(l_group.getGroupId())) {
+					l_group.setGroupId(l_groupOverrideList.get(l_group.getGroupId()));
+					HTTPStatus l_status = l_manager.createGroupMembership(l_group);
 
+				} else {
+					HTTPStatus l_status = l_manager.createGroupMembership(l_group);
+					if (l_status.getStatus() == 404) {
+						// Try to fix the problem if it a Group Issue
+
+						// Is the User Enrolled in Course
+						MembershipProxy l_enrollment = l_manager.getCourseMembership(l_group.getCourseId(), l_group.getUserName());
+						if (l_enrollment != null) {
+							ICSectionInfo l_sectionICInfo = dao.getSectionInfo(l_group.getSectionId());
+							SectionInfo l_sectionInfo = new SectionInfo();
+							if (l_sectionICInfo != null) {
+								l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
+								l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
+								l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
+								//l_sectionInfo.setPersonId(courseInfo.getPersonId());
+								l_sectionInfo.setSectionNumber(l_sectionICInfo.getSectionNumber());
+								l_sectionInfo.setCourseNumber(l_sectionICInfo.getCourseNumber());
+								l_sectionInfo.setTeacherName(l_sectionICInfo.getTeacherName());
+
+								ICBBCourse l_course = dao.getBBCourseById(l_group.getCourseId());
+								GroupProxy l_groupSet = l_manager.checkGroupSet (l_sectionInfo, l_course);
+
+								if (l_groupSet != null) {
+									HashMap<String,GroupProxy> l_list = l_manager.createCourseGroup(l_group.getCourseId(), l_sectionInfo, l_groupSet.getId());
+
+									//Update the SDWBlackboardSchedulerSISCourseSection
+									if (l_list != null && l_list.get(String.valueOf(l_sectionInfo.getSectionId())) != null) {
+										l_sectionInfo.setGroupId(l_list.get(String.valueOf(l_sectionInfo.getSectionId())).getId());
+										l_groupOverrideList.put(l_group.getGroupId(), l_list.get(String.valueOf(l_sectionInfo.getSectionId())).getId());
+										l_group.setGroupId(l_groupOverrideList.get(l_group.getGroupId()));
+										l_status = l_manager.createGroupMembership(l_group);
+									}
+								}
+							}
+						}
+					}
+				}
+			} catch (Exception e) {
+				mLog.error("Error: ", e);
+			}
+		}
+		// Now Update the Fixed Group Ids
+		if (!l_groupOverrideList.isEmpty()) {
+			for (Map.Entry<String, String> set : l_groupOverrideList.entrySet()) {
+				dao.updateBBSectionGroup(set.getKey(), set.getValue());
 			}
 		}
 

@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.obsidiansoln.blackboard.RestConstants;
 import com.obsidiansoln.blackboard.RestHandler;
 import com.obsidiansoln.blackboard.RestRequest;
+import com.obsidiansoln.blackboard.group.GroupProxy;
 import com.obsidiansoln.blackboard.model.HTTPStatus;
 import com.obsidiansoln.blackboard.model.RequestData;
 
@@ -31,10 +32,10 @@ public class MembershipHandler implements RestHandler {
 		return (RestRequest
 				.sendRequest(host,
 						RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_COURSE_EXTENSION
-								+ "/users/externalId:" + RestConstants.USER_ID,
+						+ "/users/externalId:" + RestConstants.USER_ID,
 						HttpMethod.PUT, access_token, getBody(null)));
 	}
-	
+
 	public HTTPStatus createObject(String host, String access_token, RequestData data, EnrollmentOptionProxy enrollment) {
 		log.trace("In createObject()");
 		return (RestRequest
@@ -51,47 +52,55 @@ public class MembershipHandler implements RestHandler {
 			if (data.getCourseId() != null) {
 				return (RestRequest.sendRequest(host,
 						RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_COURSE_EXTENSION + data.getCourseId()
-								+ RestConstants.MEMBERSHIP_USER_EXTENSION + data.getUserId(),
+						+ RestConstants.MEMBERSHIP_USER_EXTENSION + data.getUserId(),
 						HttpMethod.GET, access_token, ""));
 
 			} else {
 				if (data.getCourseRole() != null && data.getCourseRole().equals("Instructor")) {
 					return (RestRequest.sendRequest(host,
 							RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_USER_EXTENSION + data.getUserId()
-									+ RestConstants.MEMBERSHIP_COURSE_EXTENSION
-									+ RestConstants.MEMBERSHIP_INSTRUCTOR_ROLE_PARAMETER,
+							+ RestConstants.MEMBERSHIP_COURSE_EXTENSION
+							+ RestConstants.MEMBERSHIP_INSTRUCTOR_ROLE_PARAMETER,
 							HttpMethod.GET, access_token, ""));
 				} else {
 					return (RestRequest.sendRequest(host,
 							RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_USER_EXTENSION + data.getUserId()
-									+ RestConstants.MEMBERSHIP_COURSE_EXTENSION
-									+ RestConstants.MEMBERSHIP_STUDENT_ROLE_PARAMETER,
+							+ RestConstants.MEMBERSHIP_COURSE_EXTENSION
+							+ RestConstants.MEMBERSHIP_STUDENT_ROLE_PARAMETER,
 							HttpMethod.GET, access_token, ""));
 				}
 			}
 		} else if (data != null & data.getUserName() != null) {
-			return (RestRequest.sendRequest(host,
-					RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_USER_EXTENSION
-							+ RestConstants.MEMBERSHIP_USERNAME_PARAMETER + data.getUserName()
-							+ RestConstants.MEMBERSHIP_COURSE_EXTENSION,
-					HttpMethod.GET, access_token, ""));
+			if (data.getCourseName() != null) {
+				return (RestRequest.sendRequest(host,
+						RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_COURSE_EXTENSION
+						+ RestConstants.MEMBERSHIP_COURSENAME_PARAMETER + data.getCourseName()
+						+ RestConstants.MEMBERSHIP_USER_EXTENSION + RestConstants.MEMBERSHIP_USERNAME_PARAMETER + data.getUserName(),
+						HttpMethod.GET, access_token, ""));
+			} else {
+				return (RestRequest.sendRequest(host,
+						RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_USER_EXTENSION
+						+ RestConstants.MEMBERSHIP_USERNAME_PARAMETER + data.getUserName()
+						+ RestConstants.MEMBERSHIP_COURSE_EXTENSION,
+						HttpMethod.GET, access_token, ""));
+			}
 		} else if (data != null & data.getCourseId() != null) {
 			if (data.getCourseRole() != null && data.getCourseRole().equals("Instructor")) {
 				return (RestRequest.sendRequest(host,
 						RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_COURSE_EXTENSION
-								+ data.getCourseId() + RestConstants.MEMBERSHIP_USER_EXTENSION + RestConstants.MEMBERSHIP_INSTRUCTOR_ROLE_PARAMETER,
+						+ data.getCourseId() + RestConstants.MEMBERSHIP_USER_EXTENSION + RestConstants.MEMBERSHIP_INSTRUCTOR_ROLE_PARAMETER,
 						HttpMethod.GET, access_token, ""));
 			} else {
 				return (RestRequest.sendRequest(host,
 						RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_COURSE_EXTENSION
-								+ data.getCourseId() +  RestConstants.MEMBERSHIP_USER_EXTENSION + RestConstants.MEMBERSHIP_STUDENT_ROLE_PARAMETER,
+						+ data.getCourseId() +  RestConstants.MEMBERSHIP_USER_EXTENSION + RestConstants.MEMBERSHIP_STUDENT_ROLE_PARAMETER,
 						HttpMethod.GET, access_token, ""));
 			}
 		} else {
 			return (RestRequest.sendRequest(host,
 					RestConstants.MEMBERSHIP_PATH + RestConstants.MEMBERSHIP_COURSE_EXTENSION + "/courseId:"
-							 + RestConstants.MEMBERSHIP_USER_EXTENSION,
-					HttpMethod.GET, access_token, ""));
+							+ RestConstants.MEMBERSHIP_USER_EXTENSION,
+							HttpMethod.GET, access_token, ""));
 		}
 	}
 
@@ -108,7 +117,7 @@ public class MembershipHandler implements RestHandler {
 				.sendRequest(host,
 						RestConstants.MEMBERSHIP_PATH + "/externalId:"
 								+ "/users/externalId:" + RestConstants.USER_ID,
-						HttpMethod.PUT, access_token, getBody(null)));
+								HttpMethod.PUT, access_token, getBody(null)));
 	}
 
 	@Override
@@ -141,6 +150,34 @@ public class MembershipHandler implements RestHandler {
 			// JSON file to Java object
 			try {
 				obj = mapper.readValue(data, MembershipResponseProxy.class);
+			} catch (JsonParseException e) {
+				log.error("Json Parser Error: ", e);
+			} catch (JsonMappingException e) {
+				log.error("Json Mapping Error: ", e);
+			} catch (IOException e) {
+				log.error("IO Error: ", e);
+			}
+		}
+		return obj;
+	}
+
+	public MembershipProxy getClientData2(String host, String access_token, String p_nextPage, RequestData p_data) {
+		log.trace("In getClientData2");
+		String data = null;
+		if (p_nextPage == null) {
+			data = readObject(host, access_token, p_data).getData();
+		} else {
+			data = readObject(host, access_token, p_nextPage).getData();
+		}
+
+		ObjectMapper mapper = new ObjectMapper();
+
+		MembershipProxy obj = null;
+
+		if (data != null) {
+			// JSON file to Java object
+			try {
+				obj = mapper.readValue(data, MembershipProxy.class);
 			} catch (JsonParseException e) {
 				log.error("Json Parser Error: ", e);
 			} catch (JsonMappingException e) {

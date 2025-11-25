@@ -712,7 +712,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/createCourse", method = RequestMethod.POST, produces = "application/json")
 	@ResponseBody
 	public RestResponse createCourse(@RequestBody final CourseInfo courseInfo, HttpServletRequest request) {
-		mLog.info("In createCourse ...");
+		mLog.trace("In createCourse ...");
 		RestResponse l_restResponse = new RestResponse();
 		mLog.info(" Course ID: " + courseInfo.getCourseTemplateId());
 		mLog.info(" Course Duration: " + courseInfo.getCourseDuration());
@@ -959,7 +959,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/syncUsers", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse syncUsers (HttpServletRequest request) {
-		mLog.info("In syncUsers() ...");
+		mLog.trace("In syncUsers() ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Users between Infinite Campus and Blackboard");
@@ -1002,7 +1002,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/syncStaff", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse syncStaff (HttpServletRequest request) {
-		mLog.info("In syncStaff() ...");
+		mLog.trace("In syncStaff() ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Staff between Infinite Campus and Blackboard");
@@ -1042,7 +1042,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/syncEnrollments", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse syncEnrollments (HttpServletRequest request) {
-		mLog.info("In syncEnrollments() ...");
+		mLog.trace("In syncEnrollments() ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Enrollments between Infinite Campus and Blackboard");
@@ -1083,7 +1083,7 @@ public class RESTController {
 	@RequestMapping(value = "/api/syncGroups", method = RequestMethod.GET, produces = "application/json")
 	@ResponseBody
 	public RestResponse syncGroups (HttpServletRequest request) {
-		mLog.info("In syncGroups() ...");
+		mLog.trace("In syncGroups() ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			mLog.info ("Starting to Sync the Groups between Infinite Campus and Blackboard");
@@ -1242,7 +1242,6 @@ public class RESTController {
 					l_restResponse.setToast(l_toast);
 				}
 			} 
-			mLog.info("DONE");
 
 		} else {
 			l_restResponse.setSuccess(false);
@@ -1311,7 +1310,7 @@ public class RESTController {
 	@ResponseBody
 	public RestResponse removeBBStudent(@PathVariable("courseId") String courseId,
 			@PathVariable("student") String student, HttpServletRequest request) {
-		mLog.info("In removeBBStudent ...");
+		mLog.trace("In removeBBStudent ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			ConfigData l_configData;
@@ -1540,12 +1539,12 @@ public class RESTController {
 	@RequestMapping(value = "/api/removeSection/{sectionId}", method = RequestMethod.DELETE, produces = "application/json")
 	@ResponseBody
 	public RestResponse removeSection(@PathVariable("sectionId") String sectionId, HttpServletRequest request) {
-		mLog.info("In removeSection ...");
+		mLog.trace("In removeSection ...");
 		RestResponse l_restResponse = new RestResponse();
 		if (checkApiKey(request)) {
 			String l_course = dao.removeSection(sectionId);
-			mLog.info("Course ID: " + l_course);
-			mLog.info("Section ID: " + sectionId);
+			mLog.debug("Course ID: " + l_course);
+			mLog.debug("Section ID: " + sectionId);
 			if (l_course != null) {
 				try {
 					ConfigData l_configData;

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
@@ -17,12 +18,20 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.obsidiansoln.blackboard.coursecopy.SectionInfo;
 import com.obsidiansoln.blackboard.group.GroupProxy;
+import com.obsidiansoln.blackboard.membership.MembershipProxy;
+import com.obsidiansoln.blackboard.model.HTTPStatus;
 import com.obsidiansoln.blackboard.model.SnapshotFileInfo;
 import com.obsidiansoln.blackboard.model.StudentData;
 import com.obsidiansoln.blackboard.sis.SnapshotFileManager;
+import com.obsidiansoln.database.dao.InfiniteCampusDAO;
+import com.obsidiansoln.database.model.ICBBCourse;
 import com.obsidiansoln.database.model.ICBBGroup;
 import com.obsidiansoln.database.model.ICEnrollment;
+import com.obsidiansoln.database.model.ICMessage;
+import com.obsidiansoln.database.model.ICSection;
+import com.obsidiansoln.database.model.ICSectionInfo;
 import com.obsidiansoln.util.RestManager;
 
 import jakarta.servlet.ServletContext;
@@ -34,6 +43,8 @@ public class AsyncService {
 	private BBSchedulerService m_service = null;
 	@Autowired
 	ServletContext servletContext;
+	@Autowired
+	private InfiniteCampusDAO dao;
 
 	public AsyncService() {
 		m_service = new BBSchedulerService();
@@ -54,14 +65,14 @@ public class AsyncService {
 			} else {
 				l_manager.createMembership(p_courseId, p_enrollment.getUsername(), p_enrollment.getRole());
 			}
-		
+
 		} catch (Exception e) {
 			mLog.error("An error occurred generating admin results", e);
 		}
 
 		return CompletableFuture.completedFuture(l_returnList);
 	}
-	
+
 
 	@Async("asyncExecutor1")
 	@ResponseBody
@@ -77,15 +88,15 @@ public class AsyncService {
 		} catch (Exception e) {
 			mLog.error("An error occurred generating admin results", e);
 		}
-		
+
 		Collection<StudentData> l_values = l_studentList.values();
 		List<StudentData> l_newList = new ArrayList<>(l_values);
 
 
 		return CompletableFuture.completedFuture(l_newList);
 	}
-	
-	
+
+
 	@Async("asyncExecutor2")
 	@ResponseBody
 	public void processSISFile (SnapshotFileInfo p_file,  SnapshotFileManager p_manager) throws InterruptedException {
@@ -93,20 +104,69 @@ public class AsyncService {
 		p_manager.sendFile(p_file);
 
 	}
-	
+
 	@Async("asyncExecutor2")
 	@ResponseBody
 	public void processSISGroups (List<ICBBGroup> p_groups, RestManager p_manager) throws InterruptedException {
 		mLog.trace("In procesSISGroups()");
-		mLog.debug("Number of Enrollments: " + p_groups.size());
+		mLog.info("Number of Group Enrollments: " + p_groups.size());
+
+		// Add Enrollments Into Groups
 		int i=0;
+		HashMap<String,String> l_groupOverrideList = new HashMap<String,String>();
 		for (ICBBGroup l_group:p_groups) {
 			try {
 				i++;
-				mLog.debug("Processing " + i + " of " + p_groups.size());
-				p_manager.createGroupMembership(l_group);
+				mLog.info("Processing " + i + " of " + p_groups.size());
+				if (l_groupOverrideList.containsKey(l_group.getGroupId())) {
+					l_group.setGroupId(l_groupOverrideList.get(l_group.getGroupId()));
+					HTTPStatus l_status = p_manager.createGroupMembership(l_group);
+
+				} else {
+					HTTPStatus l_status = p_manager.createGroupMembership(l_group);
+					if (l_status.getStatus() == 404) {
+						// Try to fix the problem if it a Group Issue
+
+						// Is the User Enrolled in Course
+						MembershipProxy l_enrollment = p_manager.getCourseMembership(l_group.getCourseId(), l_group.getUserName());
+						if (l_enrollment != null) {
+							ICSectionInfo l_sectionICInfo = dao.getSectionInfo(l_group.getSectionId());
+							SectionInfo l_sectionInfo = new SectionInfo();
+							if (l_sectionICInfo != null) {
+								l_sectionInfo.setCalendarId(l_sectionICInfo.getCalendarID());
+								l_sectionInfo.setCourseId(l_sectionICInfo.getCourseID());
+								l_sectionInfo.setSectionId(l_sectionICInfo.getSectionID());
+								//l_sectionInfo.setPersonId(courseInfo.getPersonId());
+								l_sectionInfo.setSectionNumber(l_sectionICInfo.getSectionNumber());
+								l_sectionInfo.setCourseNumber(l_sectionICInfo.getCourseNumber());
+								l_sectionInfo.setTeacherName(l_sectionICInfo.getTeacherName());
+
+								ICBBCourse l_course = dao.getBBCourseById(l_group.getCourseId());
+								GroupProxy l_groupSet = p_manager.checkGroupSet (l_sectionInfo, l_course);
+
+								if (l_groupSet != null) {
+									HashMap<String,GroupProxy> l_list = p_manager.createCourseGroup(l_group.getCourseId(), l_sectionInfo, l_groupSet.getId());
+
+									//Update the SDWBlackboardSchedulerSISCourseSection
+									if (l_list != null && l_list.get(String.valueOf(l_sectionInfo.getSectionId())) != null) {
+										l_sectionInfo.setGroupId(l_list.get(String.valueOf(l_sectionInfo.getSectionId())).getId());
+										l_groupOverrideList.put(l_group.getGroupId(), l_list.get(String.valueOf(l_sectionInfo.getSectionId())).getId());
+										l_group.setGroupId(l_groupOverrideList.get(l_group.getGroupId()));
+										l_status = p_manager.createGroupMembership(l_group);
+									}
+								}
+							}
+						}
+					}
+				}
 			} catch (Exception e) {
 				mLog.error("Error: ", e);
+			}
+		}
+		// Now Update the Fixed Group Ids
+		if (!l_groupOverrideList.isEmpty()) {
+			for (Map.Entry<String, String> set : l_groupOverrideList.entrySet()) {
+				dao.updateBBSectionGroup(set.getKey(), set.getValue());
 			}
 		}
 	}

@@ -129,6 +129,7 @@ public abstract class RestRequest {
 			}
 		} catch(HttpStatusCodeException e) {
 			l_httpStatus.setStatus(e.getStatusCode().value());
+			l_httpStatus.setData(e.getResponseBodyAsString());
 			log.debug("STATUS: " + e.getStatusCode().value());
 			log.debug("MESSAGE: " + e.getResponseBodyAsString());
 	        return l_httpStatus;
@@ -138,7 +139,7 @@ public abstract class RestRequest {
 	public static HttpHeaders sendRequest(String host, String sUri, HttpMethod method, String access_token) {
 
 		try {
-			log.trace("In sendRequest()");
+			log.trace("In sendRequest()2");
 			// Increment Counter
 			RestRequest.setCounter(RestRequest.getCounter() + 1);
 
