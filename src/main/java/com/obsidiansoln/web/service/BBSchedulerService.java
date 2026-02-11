@@ -198,6 +198,11 @@ public class BBSchedulerService {
 			l_snapshotEmail= "";
 		}
 		
+		boolean l_includeNextYearCourses = true;
+		if ( l_props.getProperty(BBSchedulerUtil.NEXT_YEAR_COURSES) != null) {
+			l_includeNextYearCourses= l_props.getProperty(BBSchedulerUtil.NEXT_YEAR_COURSES).equals("true") ? true : false;
+		} 
+		
 		
 		ConfigData l_data = new ConfigData(l_logLevel,
 				l_workingDirectory,
@@ -230,7 +235,8 @@ public class BBSchedulerService {
 				l_snapshotStudentAssociationDatasource,
 				l_snapshotStaffAssociationDatasource,
 				l_snapshotGuardianAssociationDatasource,
-				l_snapshotEmail);
+				l_snapshotEmail,
+				l_includeNextYearCourses);
 
 		return l_data;
 	}
@@ -309,6 +315,11 @@ public class BBSchedulerService {
 		
 		l_props.setProperty(BBSchedulerUtil.SNAPSHOT_EMAIL, p_data.getSnapshotEmail());
 
+		if ( p_data.isIncludeNextYearCourses()) {
+			l_props.setProperty(BBSchedulerUtil.NEXT_YEAR_COURSES, "true");
+		} else {
+			l_props.setProperty(BBSchedulerUtil.NEXT_YEAR_COURSES, "false");
+		}
 
 		l_pbean.writeProperties(l_props);
 	}

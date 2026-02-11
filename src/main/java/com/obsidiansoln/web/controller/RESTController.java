@@ -329,6 +329,7 @@ public class RESTController {
 				PortalInfo l_portalData = new PortalInfo();
 				l_portalData.setLogLevel(l_configData.getLogLevel());
 				l_portalData.setAdminPassword(l_configData.getAdminPW());
+				l_portalData.setIncludeNextYearCourses(l_configData.isIncludeNextYearCourses());
 				List<ICMessage> l_messages = dao.getMessages();
 				List<String> l_customMessages = new ArrayList<String>();
 				for (ICMessage l_message : l_messages) {
@@ -359,6 +360,7 @@ public class RESTController {
 				ConfigData l_configData = m_service.getConfigData();
 				l_configData.setLogLevel(portalData.getLogLevel());
 				l_configData.setAdminPW(portalData.getAdminPassword());
+				l_configData.setIncludeNextYearCourses(portalData.isIncludeNextYearCourses());
 
 				//Now need to add the Messages to the Database
 				List<String> l_customMessages = portalData.getCustomMessages();
@@ -593,7 +595,8 @@ public class RESTController {
 		if (checkApiKey(request)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
-				List<ICCourse> l_courses = dao.getCoursesByUsername(userName);
+				ConfigData l_configData = m_service.getConfigData();
+				List<ICCourse> l_courses = dao.getCoursesByUsername(userName, l_configData.isIncludeNextYearCourses());
 				return mapper.writeValueAsString(l_courses);
 			} catch (Exception e) {
 				mLog.error(e.getMessage());

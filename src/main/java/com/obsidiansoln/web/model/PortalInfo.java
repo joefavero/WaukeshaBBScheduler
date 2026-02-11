@@ -4,16 +4,14 @@
  */
 package com.obsidiansoln.web.model;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import com.obsidiansoln.database.model.ICMessage;
 
 public class PortalInfo {
 
 	private String logLevel;
 	private String adminPassword;
 	private List<String> customMessages;
+	private boolean includeNextYearCourses;
 	
 	public PortalInfo() {
 	}
@@ -42,4 +40,13 @@ public class PortalInfo {
 		this.customMessages = customMessages;
 	}
 
+	public boolean isIncludeNextYearCourses() {
+		return includeNextYearCourses;
+	}
+
+	public void setIncludeNextYearCourses(boolean includeNextYearCourses) {
+		this.includeNextYearCourses = includeNextYearCourses;
+	}
+
+	
 }

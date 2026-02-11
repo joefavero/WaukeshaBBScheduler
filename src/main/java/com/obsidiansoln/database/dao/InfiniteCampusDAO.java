@@ -89,7 +89,7 @@ public class InfiniteCampusDAO {
 	}
 
 	@Transactional(readOnly=true)
-	public List<ICCourse> getCoursesByUsername(String username) {
+	public List<ICCourse> getCoursesByUsername(String username, boolean includeNextYearCourses) {
 		mLog.trace("In getCoursesByUsername ...");
 		List<ICCourse> l_returnList = new ArrayList<ICCourse>();
 		String userSQL = "select distinct Course.courseID,"
@@ -159,22 +159,30 @@ public class InfiniteCampusDAO {
 				+ " left join UserAccount with (nolock) on UserAccount.personID = Section.teacherPersonID "
 				+ " left join SDWBlackboardSchedulerSISCourseSections b with (nolock) on b.sectionID = Section.sectionID "
 				+ " left join SDWBlackboardSchedulerBBCourses a with (nolock) on a.bbCourseId = b.bbCourseID "
-				+ " where ((Calendar.enddate >= CAST(GETDATE() as date)) or Calendar.endYear=year(GETDATE())+1) "
-				+ " and Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0 "
+				+ " where Section.externalLMSExclude = 0 and Course.externalLMSExclude = 0 "
 				+ " and (select distinct count(*) "
 				+ "				 From Section "
 				+ "				 Inner Join ScheduleStructure on ScheduleStructure.calendarID=calendar.calendarID "
 				+ "				 Inner Join Trial on Trial.trialID = Section.trialID  and trial.structureID=schedulestructure.structureID and trial.active=1 "
 				+ "				 Inner Join SchoolYear on SchoolYear.endYear=calendar.endYear "
 				+ "				 where Section.courseID = Course.courseID "
-				+ "				 and Trial.active = 1) > 0 and UserAccount.userName is not null";
+				+ "				 and Trial.active = 1) > 0 and UserAccount.userName is not null" ;
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 
 		List<ICCourse> courses = null;
 		try {
+			String l_extension;
+			if (includeNextYearCourses) {
+				l_extension = " and (Calendar.endYear = year(GETDATE()) or Calendar.endYear = year(GETDATE())+1)"
+						+ " order by Calendar.endYear, Course.number ";
+			} else {
+				l_extension = " and (Calendar.endYear = year(GETDATE()))"
+						+ " order by Calendar.endYear, Course.number";
+			}	
 			if (username.equals("admin")) {
-				courses= template.query(userSQLAdmin, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
+				String l_statement = userSQLAdmin.concat(l_extension);
+				courses= template.query(l_statement, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
 
 				// Now remove duplicates and add configure Linked Courses
 				HashMap<String, ICCourse> l_courseList = new HashMap<String, ICCourse>();
@@ -212,8 +220,9 @@ public class InfiniteCampusDAO {
 				}
 				return l_returnList;
 			} else {
+				String l_statement = userSQL.concat(l_extension);
 				params.addValue("username", username);
-				courses= template.query(userSQL, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
+				courses= template.query(l_statement, params, new BeanPropertyRowMapper<ICCourse>(ICCourse.class));
 
 				// Now remove duplicates and add configure Linked Courses
 				HashMap<Long, ICCourse> l_courseList = new HashMap<Long, ICCourse>();

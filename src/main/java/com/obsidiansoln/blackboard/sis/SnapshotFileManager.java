@@ -25,6 +25,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -604,11 +605,24 @@ public class SnapshotFileManager {
 											+ code;
 
 									HttpPost httppost1 = new HttpPost(resultURL);
+									
+									// Get the Response as a file now
+									MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+									HttpEntity multipartEntity = entityBuilder.build();
+									httppost1.setEntity(multipartEntity);
+									
 									mLog.debug("executing request " + resultURL);
 									CloseableHttpResponse response1 = httpclient.execute(httppost1);
+									
 									mLog.debug("Code: " + code);
 									mLog.debug("Status: " + response1.getStatusLine().getStatusCode());
 									HttpEntity resEntity1 = response1.getEntity();
+									if (resEntity1 != null) {
+										String result = EntityUtils.toString(resEntity1);
+										resEntity1.getContent();
+										EntityUtils.consume(resEntity1);
+									}
+									
 									if (response1.getStatusLine().getStatusCode() == 200) {
 
 										int l_retry=0;
@@ -618,6 +632,7 @@ public class SnapshotFileManager {
 											mLog.debug("Status Line: " + response1.getStatusLine());
 
 											InputStream data1 = resEntity1.getContent();
+											//EntityUtils.consume(resEntity1);
 											text = data1.readAllBytes();
 											s = new String(text, StandardCharsets.UTF_8);
 											XmlMapper xmlMapper = new XmlMapper();
@@ -663,7 +678,6 @@ public class SnapshotFileManager {
 								}
 							}
 
-							EntityUtils.consume(resEntity);
 						} else {
 							l_message = "Snapshot Integration Error for File: " + p_file + "<br>"
 									+ "    HTTP Status Code: " + response.getStatusLine().getStatusCode() + "<br>";

@@ -38,6 +38,7 @@ public class ConfigData {
     private String snapshotStaffAssociationDatasource;
     private String snapshotGuardianAssociationDatasource;
     private String snapshotEmail;
+    private boolean includeNextYearCourses;
     
 
 	public ConfigData() {
@@ -74,7 +75,8 @@ public class ConfigData {
     		String p_snapshotStudentAssociationDatasource,
     		String p_snapshotStaffAssociationDatasource,
     		String p_snapshotGuardianAssociationDatasource,
-    		String p_snapshotEmail) {
+    		String p_snapshotEmail,
+    		boolean p_includeNextYearCourses) {
         this.logLevel = p_logLevel;
         this.workingDirectory = p_workingDirectory;
         this.apiKey = p_apiKey;
@@ -107,6 +109,7 @@ public class ConfigData {
         this.snapshotStaffAssociationDatasource = p_snapshotStaffAssociationDatasource;
         this.snapshotGuardianAssociationDatasource = p_snapshotGuardianAssociationDatasource;
         this.snapshotEmail = p_snapshotEmail;
+        this.includeNextYearCourses =  p_includeNextYearCourses;
     }
 	public String getLogLevel() {
 		return logLevel;
@@ -364,6 +367,15 @@ public class ConfigData {
 	public void setSnapshotEmail(String snapshotEmail) {
 		this.snapshotEmail = snapshotEmail;
 	}
+	
+	public boolean isIncludeNextYearCourses() {
+		return includeNextYearCourses;
+	}
+
+	public void setIncludeNextYearCourses(boolean includeNextYearCourses) {
+		this.includeNextYearCourses = includeNextYearCourses;
+	}
+	
 
 	public String toString() {
 		return "ConfigData [logLevel=" + logLevel + "]";

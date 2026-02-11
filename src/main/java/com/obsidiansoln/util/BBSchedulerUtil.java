@@ -50,6 +50,7 @@ public class BBSchedulerUtil extends AppUtil {
 	public static final String SNAPSHOT_STAFF_ASSOCIATION_DATASOURCE = "SNAPSHOT_STAFF_ASSOCIATION_DATASOURCE";
 	public static final String SNAPSHOT_GUARDIAN_ASSOCIATION_DATASOURCE = "SNAPSHOT_GUARDIAN_ASSOCIATION_DATASOURCE";
 	public static final String SNAPSHOT_EMAIL = "SNAPSHOT_EMAIL";
+	public static final String NEXT_YEAR_COURSES = "NEXT_YEAR_COURSES";
 	public static final String OPERATOR_CONTAINS = "cont";
 	public static final String OPERATOR_EQ = "eq";
 	public static final String OPERATOR_BEGIN = "begin";
