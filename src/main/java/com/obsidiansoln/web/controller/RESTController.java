@@ -1902,7 +1902,7 @@ public class RESTController {
 
 				for (String bbCourseId : bbCourseIds) {
 					mLog.info("Processing BB Course ID: " + bbCourseId);
-					ICBBCourse l_bbCourse = dao.getBBCourseByBBId(bbCourseId);
+					ICBBCourse l_bbCourse = dao.getBBCourseById(bbCourseId);
 					if (l_bbCourse != null) {
 						// Archive the BB Course
 						l_manager.updateCourse(l_bbCourse.getCourseId());
