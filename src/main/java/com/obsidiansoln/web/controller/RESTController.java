@@ -1903,18 +1903,19 @@ public class RESTController {
 				for (String bbCourseId : bbCourseIds) {
 					mLog.info("Processing BB Course ID: " + bbCourseId);
 					ICBBCourse l_bbCourse = dao.getBBCourseById(bbCourseId);
+					mLog.info("Processing BB Course ID: " + l_bbCourse.getBbCourseId());
 					if (l_bbCourse != null) {
 						// Archive the BB Course
 						l_manager.updateCourse(l_bbCourse.getCourseId());
 
 						// Remove SDW Course Entries
-						dao.deleteBBCourses(bbCourseId);
+						dao.deleteBBCourses(l_bbCourse.getBbCourseId());
 
 						// Remove SDW Section Entries
-						dao.deleteBBSections(bbCourseId);
+						dao.deleteBBSections(l_bbCourse.getBbCourseId());
 
 						// Remove SDW Person Entries
-						dao.deleteBBPersons(bbCourseId);
+						dao.deleteBBPersons(l_bbCourse.getBbCourseId());
 
 						l_restResponse.setSuccess(true);
 						ToastMessage l_toast = new ToastMessage();
