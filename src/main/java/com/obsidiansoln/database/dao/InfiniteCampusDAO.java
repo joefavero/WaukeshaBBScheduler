@@ -549,7 +549,7 @@ public class InfiniteCampusDAO {
 				+ "     left join Section on Section.sectionID=sdws.sectionID"
 				+ "     left join Person on Person.personID = Section.teacherPersonID"
 				+ "     left join UserAccount on UserAccount.personID = Person.personID"
-				+ "   where Person.studentNumber is not null and UserAccount.isSAMLAccount=1";
+				+ "   where Person.staffNumber is not null and UserAccount.isSAMLAccount=1 and sdwc.bbCourse_ID is not null";
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		List<ICBBEnrollment> bbEnrollments = null;
@@ -1397,7 +1397,7 @@ public class InfiniteCampusDAO {
 				+ " join HouseholdLocation HL with (nolock) on Household.householdID=HL.householdID  "
 				+ "	  and (HL.endDate Is Null or HL.endDate>GETDATE())  "
 				+ "	  and HL.startDate=(select max(hlz.startDate) from HouseholdLocation hlz where hlz.householdID=HL.householdID and (HLz.endDate Is Null or HLz.endDate>GETDATE()) and (HLz.[private] Is Null or HLz.[private]=0) and HLz.mailing=1 and (HLz.[secondary] Is Null or HLz.[secondary]=0))  "
-				+ "	  and (HL.[private] Is Null or HL.[private]=0)  "
+				+ "	  and (HL.[private] Is Null or HL.[private]=0 or HL.[private]=1)  "
 				+ "	  and HL.mailing=1  "
 				+ "	  and (HL.[secondary] Is Null or HL.[secondary]=0)  "
 				+ " join Calendar cal with (nolock) on enr.calendarID=cal.calendarID  "
@@ -1512,7 +1512,7 @@ public class InfiniteCampusDAO {
 				+ " join HouseholdLocation HL with (nolock) on Household.householdID=HL.householdID  "
 				+ " 	and (HL.endDate Is Null or HL.endDate>GETDATE())  "
 				+ " 	and HL.startDate=(select max(hlz.startDate) from HouseholdLocation hlz where hlz.householdID=HL.householdID and (HLz.endDate Is Null or HLz.endDate>GETDATE()) and (HLz.[private] Is Null or HLz.[private]=0) and HLz.mailing=1)  "
-				+ " 	and (HL.[private] Is Null or HL.[private]=0)  "
+				+ " 	and (HL.[private] Is Null or HL.[private]=0 or HL.[private]=1)  "
 				+ " 	and HL.mailing=1  "
 				+ " join Calendar cal with (nolock) on enr.calendarID=cal.calendarID  "
 				+ " join schoolyear sy with (nolock) on sy.endyear=cal.endyear  "
