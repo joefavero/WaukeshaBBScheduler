@@ -418,7 +418,7 @@ public class SnapshotFileManager {
 			l_snapshotFilename = m_service.getConfigData().getWorkingDirectory() + "/" + fileName;
 			fileWriter = new FileWriter(l_snapshotFilename);
 			p = new PrintWriter(fileWriter);
-			p.write("data_source_key|external_person_key|user_id|passwd|firstname|lastname|system_role|institution_role|row_status|company|email|street_1|street_2|title|city|state|zip_code|department|job_title|available_ind|locale");
+			p.write("data_source_key|external_person_key|user_id|passwd|firstname|lastname|system_role|institution_role|row_status|company|email|title|department|job_title|available_ind|locale");
 			p.write("\r\n");
 			HashMap<String, List<ICObserver>> l_observers = new HashMap<String, List<ICObserver>>();
 			int i=0;
@@ -439,12 +439,7 @@ public class SnapshotFileManager {
 							+ l_guardian.getRowStatus()+ "|"		//rowStatus
 							+ l_guardian.getCompany()+ "|"			//company
 							+ l_guardian.getEmail()+ "|"			//email
-							+ l_guardian.getStreet1()+ "|"			//street1
-							+ l_guardian.getStreet2()+ "|"			//street2
 							+ l_guardian.getTitle()+ "|"			//title
-							+ l_guardian.getCity()+ "|"			    //city
-							+ l_guardian.getState()+ "|"			//state
-							+ l_guardian.getZip()+ "|"			    //zip_code
 							+ l_guardian.getDepartment()+ "|"	    //department
 							+ l_guardian.getJobTitle()+ "|"			//job_title
 							+ l_guardian.getAvailableInd()+ "|"	    //available_ind
